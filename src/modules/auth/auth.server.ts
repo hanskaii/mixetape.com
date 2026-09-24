@@ -48,7 +48,10 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        console.log(`[Better Auth OTP] Sending OTP to ${email}: ${otp} (type: ${type})`);
+        // The code itself is a login credential: it is only ever printed locally, where
+        // there is no EMAIL binding to deliver it. Production logs never contain it.
+        const isProduction = env.APP_ENV === "production";
+        console.log(`[Better Auth OTP] Sending ${type} code to ${email}`);
         if (env.EMAIL && typeof env.EMAIL.send === "function") {
           try {
             await env.EMAIL.send({
@@ -77,9 +80,15 @@ export const auth = betterAuth({
             );
           }
         } else {
-          console.warn(
-            "[Better Auth OTP] Cloudflare EMAIL binding not found in environment (local dev mode). Use console OTP above.",
-          );
+          if (isProduction) {
+            console.error(
+              "[Better Auth OTP] EMAIL binding missing in production; code not delivered",
+            );
+          } else {
+            console.warn(
+              `[Better Auth OTP] No EMAIL binding (local dev). Code for ${email}: ${otp}`,
+            );
+          }
         }
       },
     }),
