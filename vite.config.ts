@@ -9,7 +9,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
 const config = defineConfig({
-  server: { allowedHosts: true },
+  // .wrangler holds local D1 files and the emails Miniflare writes; watching it made the
+  // page reload mid-login every time a sign-in code was "sent".
+  server: { allowedHosts: true, watch: { ignored: ["**/.wrangler/**"] } },
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),

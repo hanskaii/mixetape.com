@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+import { siteConfig } from "#/config/site";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +37,8 @@ interface LoginModalProps {
 export function LoginModal({
   open,
   onOpenChange,
-  title = "Sign In Required",
-  description = "Sign in with your email OTP to bookmark articles and participate.",
+  title = `Sign in to ${siteConfig.name}`,
+  description = "We will email you a 6-digit code — no password needed.",
   onSuccess,
 }: LoginModalProps) {
   const router = useRouter();
