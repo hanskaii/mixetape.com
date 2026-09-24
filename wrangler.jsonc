@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kit",
+  "compatibility_date": "2026-08-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "observability": {
+    "enabled": true,
+  },
+  "upload_source_maps": true,
+  "d1_databases": [
+    {
+      "binding": "DATABASE",
+      "database_name": "kit-db",
+      "database_id": "9c9622c1-550f-4b9d-bb09-269cba450131",
+      "migrations_dir": "src/database/migrations",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KIT_CACHE",
+      "id": "597acdf46b05462eb001dbc173f19c90",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "kit-bucket",
+    },
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+    },
+  ],
+  "vars": {
+    "APP_ENV": "production",
+    "APP_NAME": "kit",
+    "EMAIL_FROM": "no-reply@example.com",
+  },
+}

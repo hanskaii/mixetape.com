@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "worker-configuration.d.ts",
+    "routeTree.gen.ts",
+    "pnpm-lock.yaml",
+    "dist/**",
+    ".wrangler/**",
+    ".nitro/**",
+    ".output/**",
+    ".claude/**",
+    ".agents/**",
+    ".impeccable/**",
+    "plans/**",
+    "*.md"
+  ]
+}

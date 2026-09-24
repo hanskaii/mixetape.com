@@ -1,0 +1,25 @@
+# ==============================================================================
+# Cloudflare Worker Local Environment Configuration (.dev.vars)
+# Copy this file to .dev.vars for local development:
+#   cp .dev.vars.example .dev.vars
+# ==============================================================================
+
+# Better-Auth Configuration
+BETTER_AUTH_SECRET=generate-a-secure-random-32-byte-secret-here
+BETTER_AUTH_URL=http://localhost:3001
+SITE_URL=http://localhost:3001
+
+# Cloudflare Email Routing (Optional - in dev mode OTP codes are logged to console)
+EMAIL_FROM=no-reply@example.com
+
+# GitHub OAuth Provider (Optional - leave empty for email OTP only)
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# AI Assistant & Chat (Optional - OpenAI, OpenRouter, or Cloudflare AI Gateway compatible)
+AI_API_KEY=
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+
+# MCP Server Shared Secret (For programmatic agent access to /api/posts/mcp)
+MCP_API_KEY=your-custom-mcp-bearer-token
