@@ -49,6 +49,19 @@ export type PlatformMetrics = {
   raw: unknown;
 };
 
+/** What the platform reports about a post right now. */
+export type PlatformStatus = {
+  /** e.g. YouTube: public | unlisted | private */
+  visibility?: string;
+  /** e.g. YouTube: uploaded | processed | failed | rejected | deleted */
+  uploadStatus?: string;
+  /** When the platform will publish it, if it is holding it. */
+  publishAt?: string | null;
+  /** Why the platform refused or failed it, if it did. */
+  problem?: string | null;
+  url?: string;
+};
+
 export interface SocialProvider {
   readonly id: string;
   readonly name: string;
@@ -78,6 +91,8 @@ export interface SocialProvider {
     accessToken: string,
     accountId: string,
   ): Promise<PlatformMetrics | null>;
+
+  fetchStatus?(platformPostId: string, accessToken: string): Promise<PlatformStatus | null>;
 }
 
 /** Errors a retry cannot fix; the scheduler fails the post at once instead of retrying. */

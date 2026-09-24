@@ -250,6 +250,59 @@ export type CreatePostInput = {
   metadata?: Partial<PlatformMetadata>;
 };
 
+function checkMedia(userId: string, url: string): string {
+  const mediaUrl = url.trim();
+  if (!/^(https:\/\/|r2:\/\/)/.test(mediaUrl))
+    throw new ServiceError("Media must be an https:// URL or an uploaded file");
+  // A file in our bucket must be one this user uploaded (keys live under media/<userId>/).
+  if (mediaUrl.startsWith("r2://") && !mediaUrl.startsWith(`r2://media/${userId}/`)) {
+    throw new ServiceError("That uploaded file belongs to someone else", 403);
+  }
+  return mediaUrl;
+}
+
+function checkTime(value: string | undefined): Date {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) throw new ServiceError("scheduledAt is not a valid date");
+  return date;
+}
+
+function checkMetadata(
+  provider: string,
+  input: Partial<PlatformMetadata> | undefined,
+  caption: string | null | undefined,
+): Record<string, JsonValue> {
+  const metadata = { ...input } as Record<string, JsonValue>;
+  if (provider === "youtube") {
+    const title = String(metadata.title ?? caption ?? "").trim();
+    if (!title) throw new ServiceError("A YouTube video needs a title");
+    if (title.length > 100) throw new ServiceError("YouTube titles are limited to 100 characters");
+    metadata.title = title;
+    delete metadata.publishAt; // set by the scheduler from scheduledAt
+  }
+  return metadata;
+}
+
+/**
+ * Starts a publishing workflow for the post and makes it the post's owner. Only the owner
+ * may publish, so an older instance still sleeping toward a previous time exits when it
+ * wakes instead of uploading a second copy.
+ */
+async function dispatch(postId: string, reason?: string) {
+  const instanceId = reason ? `${postId}-${reason}-${Date.now()}` : postId;
+  await updatePost(postId, { workflowId: instanceId });
+  await env.PUBLISH_WORKFLOW.create({ id: instanceId, params: { postId } });
+}
+
+async function stopWorkflow(instanceId: string | null) {
+  if (!instanceId) return;
+  try {
+    await (await env.PUBLISH_WORKFLOW.get(instanceId)).terminate();
+  } catch {
+    // already finished; if it is still waiting, it is no longer the owner and will stop
+  }
+}
+
 export async function createPost(userId: string, input: CreatePostInput) {
   const account = await db.query.socialAccounts.findFirst({
     where: and(eq(socialAccounts.id, input.accountId), eq(socialAccounts.userId, userId)),
@@ -258,42 +311,54 @@ export async function createPost(userId: string, input: CreatePostInput) {
   if (account.status !== "active")
     throw new ServiceError("This account needs to be reconnected first", 409);
 
-  const mediaUrl = input.mediaUrl.trim();
-  if (!/^(https:\/\/|r2:\/\/)/.test(mediaUrl))
-    throw new ServiceError("Media must be an https:// URL or an uploaded file");
-  // A file in our bucket must be one this user uploaded (keys live under media/<userId>/).
-  if (mediaUrl.startsWith("r2://") && !mediaUrl.startsWith(`r2://media/${userId}/`)) {
-    throw new ServiceError("That uploaded file belongs to someone else", 403);
-  }
-
-  const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
-  if (Number.isNaN(scheduledAt.getTime()))
-    throw new ServiceError("scheduledAt is not a valid date");
-
-  const metadata = { ...input.metadata } as Record<string, JsonValue>;
-  if (account.provider === "youtube") {
-    const title = String(metadata.title ?? input.caption ?? "").trim();
-    if (!title) throw new ServiceError("A YouTube video needs a title");
-    if (title.length > 100) throw new ServiceError("YouTube titles are limited to 100 characters");
-    metadata.title = title;
-    delete metadata.publishAt; // set by the scheduler from scheduledAt
-  }
-
   const id = newId();
   await db.insert(socialPosts).values({
     id,
     userId,
     accountId: account.id,
     provider: account.provider,
-    mediaUrl,
+    mediaUrl: checkMedia(userId, input.mediaUrl),
     caption: input.caption ?? null,
-    metadata,
-    scheduledAt,
+    metadata: checkMetadata(account.provider, input.metadata, input.caption),
+    scheduledAt: checkTime(input.scheduledAt),
   });
 
   // One durable workflow per post: it survives restarts, retries on its own, and sleeps
   // until the scheduled time when the platform cannot hold the post itself.
-  await env.PUBLISH_WORKFLOW.create({ id, params: { postId: id } });
+  await dispatch(id);
+  return getPost(userId, id);
+}
+
+export type EditPostInput = Partial<Omit<CreatePostInput, "accountId">>;
+
+/**
+ * Changes a post that has not gone out yet: its time, media, caption or metadata. The
+ * post gets a fresh workflow, so a new time takes effect whether it is sooner or later.
+ */
+export async function editPost(userId: string, id: string, input: EditPostInput) {
+  const post = await getPost(userId, id);
+  if (post.status !== "scheduled") {
+    throw new ServiceError(
+      `A ${post.status} post can no longer be edited here${post.platformUrl ? ` — change it on the platform: ${post.platformUrl}` : ""}`,
+      409,
+    );
+  }
+
+  const caption = input.caption !== undefined ? input.caption : post.caption;
+  await updatePost(id, {
+    ...(input.mediaUrl !== undefined && { mediaUrl: checkMedia(userId, input.mediaUrl) }),
+    ...(input.caption !== undefined && { caption: input.caption }),
+    ...(input.scheduledAt !== undefined && { scheduledAt: checkTime(input.scheduledAt) }),
+    ...(input.metadata !== undefined && {
+      metadata: checkMetadata(
+        post.provider,
+        { ...(post.metadata as Partial<PlatformMetadata>), ...input.metadata },
+        caption,
+      ),
+    }),
+  });
+  await stopWorkflow(post.workflowId);
+  await dispatch(id, "edit");
   return getPost(userId, id);
 }
 
@@ -329,12 +394,7 @@ export async function cancelPost(userId: string, id: string) {
     .update(socialPosts)
     .set({ status: "cancelled", updatedAt: new Date() })
     .where(and(eq(socialPosts.id, id), eq(socialPosts.status, "scheduled")));
-  try {
-    const instance = await env.PUBLISH_WORKFLOW.get(id);
-    await instance.terminate();
-  } catch {
-    // already finished, or waiting — it checks the status before doing anything
-  }
+  await stopWorkflow(post.workflowId ?? id);
   return getPost(userId, id);
 }
 
@@ -344,12 +404,27 @@ export async function retryPost(userId: string, id: string) {
   if (post.status !== "failed") throw new ServiceError("Only a failed post can be retried", 409);
   const scheduledAt = post.scheduledAt.getTime() > Date.now() ? post.scheduledAt : new Date();
   await updatePost(id, { status: "scheduled", scheduledAt, error: null });
-  // Workflow instance ids are single-use, so each retry gets its own.
-  await env.PUBLISH_WORKFLOW.create({
-    id: `${id}-retry-${post.attempts}-${Date.now()}`,
-    params: { postId: id },
-  });
+  await dispatch(id, "retry");
   return getPost(userId, id);
+}
+
+/**
+ * A post together with what the platform says about it now: whether it is processed,
+ * public, scheduled, locked or rejected, and its view, like and comment counts.
+ */
+export async function postInsights(userId: string, id: string) {
+  const post = await getPost(userId, id);
+  if (!post.platformPostId) return { post, platform: null, metrics: null };
+
+  const loaded = await loadForPublishing(id);
+  if (!loaded) return { post, platform: null, metrics: null };
+  const provider = getProvider(post.provider);
+  const token = await accessTokenFor(loaded.account, loaded.credential);
+  const [platform, metrics] = await Promise.all([
+    provider.fetchStatus?.(post.platformPostId, token) ?? null,
+    provider.fetchAnalytics?.(post.platformPostId, token, loaded.account.platformAccountId) ?? null,
+  ]);
+  return { post, platform, metrics: metrics ? { ...metrics, raw: undefined } : null };
 }
 
 /** Everything the workflow needs to publish one post. */

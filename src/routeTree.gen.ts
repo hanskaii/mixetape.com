@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as publicAboutRouteImport } from './routes/(public)/about'
 import { Route as ApiOgRouteImport } from './routes/api/og'
@@ -37,6 +38,11 @@ import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/con
 import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/file/$'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts.$id'
 
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const publicIndexRoute = publicIndexRouteImport.update({
   id: '/(public)/',
   path: '/',
@@ -175,6 +181,7 @@ const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/mcp': typeof McpRoute
   '/about': typeof publicAboutRoute
   '/api/og': typeof ApiOgRoute
   '/robots/txt': typeof RobotsTxtRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/publish/': typeof appAppPublishIndexRoute
 }
 export interface FileRoutesByTo {
+  '/mcp': typeof McpRoute
   '/about': typeof publicAboutRoute
   '/api/og': typeof ApiOgRoute
   '/robots/txt': typeof RobotsTxtRoute
@@ -234,6 +242,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/mcp': typeof McpRoute
   '/(public)/about': typeof publicAboutRoute
   '/api/og': typeof ApiOgRoute
   '/robots/txt': typeof RobotsTxtRoute
@@ -265,6 +274,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/mcp'
     | '/about'
     | '/api/og'
     | '/robots/txt'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/publish/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/mcp'
     | '/about'
     | '/api/og'
     | '/robots/txt'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/publish'
   id:
     | '__root__'
+    | '/mcp'
     | '/(public)/about'
     | '/api/og'
     | '/robots/txt'
@@ -353,6 +365,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  McpRoute: typeof McpRoute
   publicAboutRoute: typeof publicAboutRoute
   ApiOgRoute: typeof ApiOgRoute
   RobotsTxtRoute: typeof RobotsTxtRoute
@@ -382,6 +395,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(public)/': {
       id: '/(public)/'
       path: '/'
@@ -598,6 +618,7 @@ const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  McpRoute: McpRoute,
   publicAboutRoute: publicAboutRoute,
   ApiOgRoute: ApiOgRoute,
   RobotsTxtRoute: RobotsTxtRoute,

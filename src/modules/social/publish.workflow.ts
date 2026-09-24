@@ -25,6 +25,10 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
     const plan = await step.do("plan", async () => {
       const loaded = await loadForPublishing(postId);
       if (!loaded) return null;
+      // A reschedule or retry hands the post to a newer instance; this one steps aside.
+      if (loaded.post.workflowId && loaded.post.workflowId !== event.instanceId) {
+        return { status: "superseded", scheduledAt: 0, native: false };
+      }
       const provider = getProvider(loaded.post.provider);
       const scheduledAt = loaded.post.scheduledAt.getTime();
       return {
@@ -47,7 +51,11 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
           timeout: "45 minutes",
         },
         async () =>
-          publish(postId, plan.native ? new Date(plan.scheduledAt).toISOString() : undefined),
+          publish(
+            postId,
+            event.instanceId,
+            plan.native ? new Date(plan.scheduledAt).toISOString() : undefined,
+          ),
       );
     } catch (error) {
       // Retries are exhausted, or the error was permanent: the post says why.
@@ -60,11 +68,13 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
   }
 }
 
-async function publish(postId: string, publishAt?: string) {
+async function publish(postId: string, instanceId: string, publishAt?: string) {
   const loaded = await loadForPublishing(postId);
   if (!loaded) throw new NonRetryableError("The post, its account or its credential was deleted");
   const { post, account, credential } = loaded;
-  // A retry after a success must not upload the video twice.
+  // A retry after a success must not upload the video twice, and an instance that is no
+  // longer the post's owner (it was rescheduled or retried) must not upload it at all.
+  if (post.workflowId && post.workflowId !== instanceId) return { skipped: "superseded" };
   if (post.status === "cancelled" || post.status === "published" || post.status === "uploaded") {
     return { skipped: post.status };
   }

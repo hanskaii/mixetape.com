@@ -5,6 +5,7 @@ import type {
   PostWithMedia,
   UploadResult,
   PlatformMetrics,
+  PlatformStatus,
   YouTubeVideoMeta,
 } from "./types";
 import { PermanentPublishError } from "./types";
@@ -123,6 +124,46 @@ export class YoutubeProvider implements SocialProvider {
       likes: parseInt(stats.likeCount ?? "0", 10),
       comments: parseInt(stats.commentCount ?? "0", 10),
       raw: data,
+    };
+  }
+
+  /**
+   * Where a video stands on YouTube: visibility, processing, a scheduled publishAt, and
+   * any rejection or failure. YouTube has no field for "locked private" (what happens to
+   * uploads from an unverified OAuth app); such a video simply stays private after its
+   * publishAt has passed.
+   */
+  async fetchStatus(videoId: string, accessToken: string): Promise<PlatformStatus | null> {
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=status,processingDetails&id=${encodeURIComponent(videoId)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      items?: {
+        status?: {
+          uploadStatus?: string;
+          privacyStatus?: string;
+          publishAt?: string;
+          failureReason?: string;
+          rejectionReason?: string;
+        };
+        processingDetails?: { processingStatus?: string };
+      }[];
+    };
+    const item = data.items?.[0];
+    if (!item) return { uploadStatus: "deleted", problem: "The video is no longer on YouTube" };
+    const status = item.status ?? {};
+    return {
+      visibility: status.privacyStatus,
+      uploadStatus: status.uploadStatus ?? item.processingDetails?.processingStatus,
+      publishAt: status.publishAt ?? null,
+      problem: status.rejectionReason
+        ? `Rejected by YouTube: ${status.rejectionReason}`
+        : status.failureReason
+          ? `Processing failed: ${status.failureReason}`
+          : null,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
     };
   }
 

@@ -213,6 +213,7 @@ export const socialPosts = sqliteTable(
     platformUrl: text("platform_url"),
     error: text("error"),
     attempts: integer("attempts").notNull().default(0),
+    workflowId: text("workflow_id"), // the workflow instance allowed to publish this post
     publishedAt: integer("published_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
