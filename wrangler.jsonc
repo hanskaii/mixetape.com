@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "kit",
+  "name": "mixetape",
   "compatibility_date": "2026-08-31",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
@@ -8,24 +8,40 @@
     "enabled": true,
   },
   "upload_source_maps": true,
+  // The app lives on mixetape.com only; workers.dev would be a second origin for auth.
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "mixetape.com",
+      "custom_domain": true,
+    },
+  ],
   "d1_databases": [
     {
       "binding": "DATABASE",
-      "database_name": "kit-db",
-      "database_id": "9c9622c1-550f-4b9d-bb09-269cba450131",
+      "database_name": "mixetape-db",
+      "database_id": "4887c51e-32e1-4b2e-88b1-63e8c3b9d148",
       "migrations_dir": "src/database/migrations",
     },
   ],
   "kv_namespaces": [
     {
       "binding": "KIT_CACHE",
-      "id": "597acdf46b05462eb001dbc173f19c90",
+      "id": "84fbf589d26d45c98d6377da1e695eba",
     },
   ],
   "r2_buckets": [
     {
       "binding": "BUCKET",
-      "bucket_name": "kit-bucket",
+      "bucket_name": "mixetape-media",
+    },
+  ],
+  // One durable instance per scheduled post; see src/modules/social/publish.workflow.ts.
+  "workflows": [
+    {
+      "name": "mixetape-publish",
+      "binding": "PUBLISH_WORKFLOW",
+      "class_name": "PublishWorkflow",
     },
   ],
   "send_email": [
@@ -35,7 +51,9 @@
   ],
   "vars": {
     "APP_ENV": "production",
-    "APP_NAME": "kit",
-    "EMAIL_FROM": "no-reply@example.com",
+    "APP_NAME": "mixetape",
+    "SITE_URL": "https://mixetape.com",
+    "BETTER_AUTH_URL": "https://mixetape.com",
+    "EMAIL_FROM": "no-reply@mixetape.com",
   },
 }

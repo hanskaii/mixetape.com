@@ -1,224 +1,90 @@
-# Kit — Modern Cloudflare Edge Starter
+# mixetape
 
-> Production-ready fullstack starter kit powered by **TanStack Start**, **Cloudflare Workers**, **Cloudflare D1 (SQLite)**, **Drizzle ORM**, **Better-Auth**, and **Tailwind CSS v4**.
+Schedule videos to your social channels — a small, Buffer-like publisher on Cloudflare's
+edge. YouTube is the first platform; the provider layer is built for more.
 
-Designed to run **100% on Cloudflare's Free Tier** with zero complex external pipelines or paid plan locks.
+Live at **https://mixetape.com**. Built on the [kit](https://github.com/tanshipkit/kit)
+starter (TanStack Start, Better-Auth, D1 + Drizzle, R2, Tailwind v4).
 
----
+## How it works
 
-## ⚡ Tech Stack & Architecture
+| Piece | What it is |
+|---|---|
+| **Credential** | The OAuth app a user brings (their Google client ID + secret). Stored AES-GCM encrypted. The quota and the approval stay with the user. |
+| **Channel** | An account connected through a credential. Tokens are encrypted and refreshed on their own; a revoked one is marked *reconnect*. |
+| **Post** | Media + caption + per-platform metadata + a time. One row in `social_posts`. |
+| **Provider** | `src/modules/social/providers/*` — implements `SocialProvider`. YouTube: resumable chunked upload that resumes from the offset YouTube reports. |
+| **Publishing** | One [Cloudflare Workflow](https://developers.cloudflare.com/workflows/) instance per post (`PublishWorkflow`): durable, retried with backoff, sleeps until the scheduled time. Platforms that can hold a post themselves (YouTube `publishAt`) get it uploaded at once, so processing is done before it goes live. |
+| **API** | Per-user API keys (`mxt_…`, only the SHA-256 is stored) for `/api/v1/*`. |
 
-- **Framework**: [TanStack Start](https://tanstack.com/start) with full isomorphic SSR and file-based routing via TanStack Router.
-- **Runtime**: [Cloudflare Workers](https://workers.cloudflare.com/) (Workerd edge runtime with `nodejs_compat`).
-- **Database**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (Serverless distributed SQLite at the edge).
-- **ORM & Migrations**: [Drizzle ORM](https://orm.drizzle.team/) with Drizzle Kit.
-- **Authentication**: [Better-Auth](https://www.better-auth.com/) with email OTP (passwordless), two-factor authentication (2FA), and GitHub OAuth.
-- **Cache & Telemetry**: Cloudflare KV for high-speed edge session caching and lightweight article view tracking.
-- **Object Storage**: Cloudflare R2 for user-uploaded media and article assets.
-- **Editor**: [TipTap](https://tiptap.dev/) WYSIWYG editor with syntax highlighting, Markdown support, and table formatting.
-- **Dynamic OG Cards**: Real-time server-rendered social share images powered by `@takumi-js/response` WASM.
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with semantic theme tokens and zero-FOUC theme switching.
-- **AI & MCP Protocol**: Native [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server at `/api/posts/mcp` for agentic content publishing and in-editor AI writing assistant.
+Post statuses: `scheduled` → `publishing` → `uploaded` (on the platform, goes live at its
+time) or `published`; `failed` (with the reason, retryable) or `cancelled`.
 
----
+Media is either a public `https://` URL fetched with Range requests (e.g. a public R2
+object), or a file uploaded through the app: the browser sends it in 50 MB parts into an R2
+multipart upload (`/api/media/upload`), so any size works without a Worker holding it in
+memory.
 
-## 📁 Project Structure
+## Pages
 
-```
-kit/
-├── src/
-│   ├── components/            # UI components
-│   │   ├── layouts/           # App header, footer, user menus
-│   │   ├── providers/         # Modals and query client providers
-│   │   └── ui/                # Shared design primitives (Button, Input, Modal, etc.)
-│   ├── config/
-│   │   └── site.ts            # Centralized site branding & metadata
-│   ├── database/
-│   │   ├── schema.ts          # Drizzle D1 SQLite table definitions
-│   │   ├── index.ts           # D1 client proxy
-│   │   └── migrations/        # SQL migration files
-│   ├── modules/               # Domain feature modules
-│   │   ├── analytics/         # Post view tracking & dashboard telemetry
-│   │   ├── auth/              # Better-Auth server, client, and session loaders
-│   │   ├── og/                # Clean default social card generator (@takumi-js/response)
-│   │   ├── posts/             # Post creation, slugify, markdown/HTML parsers
-│   │   └── storage/           # R2 media asset uploads and management
-│   ├── routes/                # TanStack Start file-based routes
-│   │   ├── (public)/          # Public routes: landing page, blog, about
-│   │   ├── (app)/             # Authenticated workspace: dashboard, settings
-│   │   ├── api/               # Endpoints: auth, og image, MCP server, ai chat
-│   │   └── __root.tsx         # Root document & router context
-│   └── server.ts              # Worker entrypoint & fetch handler
-├── .dev.vars.example          # Local environment secrets template
-├── package.json               # Scripts & dependencies
-├── vite.config.ts             # Vite + Cloudflare + TanStack Start configuration
-└── wrangler.jsonc             # Cloudflare bindings: D1, KV, R2, Email
+- `/publish` — compose and schedule, the queue, cancel / retry
+- `/channels` — add an app credential (the redirect URI to register is shown there), connect channels
+- `/api-keys` — create keys for scripts, with a curl example
+
+## API
+
+```bash
+curl https://mixetape.com/api/v1/accounts -H "Authorization: Bearer mxt_…"
+
+curl -X POST https://mixetape.com/api/v1/posts \
+  -H "Authorization: Bearer mxt_…" -H "Content-Type: application/json" \
+  -d '{
+    "accountId": "…",
+    "mediaUrl": "https://…/video.mp4",
+    "scheduledAt": "2026-10-01T17:00:00+07:00",
+    "metadata": { "title": "…", "description": "…", "category": "27", "privacyStatus": "public" }
+  }'
 ```
 
----
+`GET /api/v1/posts?status=scheduled,failed&from=&to=`, `GET /api/v1/posts/:id`,
+`DELETE /api/v1/posts/:id` (cancel), `POST /api/v1/posts/:id` (retry a failed post).
 
-## 🚀 Quickstart
+## YouTube setup (per user)
 
-### 1. Install Dependencies
+1. Google Cloud → enable **YouTube Data API v3** → OAuth consent screen.
+2. Create an **OAuth client ID**, type *Web application*, with the redirect URI shown on
+   `/channels` (`https://mixetape.com/api/connect/youtube/callback`).
+3. Save the client ID + secret on `/channels`, then **Connect channel**.
+
+Until Google verifies the OAuth app (and YouTube audits the API project), uploads through
+it are locked to **private**. Scheduling works, but videos only go public after that
+approval. Each project also has a daily quota (about 6 uploads at the default 10,000 units).
+
+## Adding a platform
+
+1. `providers/<platform>.ts` implementing `SocialProvider` (`upload`, `refreshToken`, `schedulesNatively`).
+2. Register it in `providers/index.ts`.
+3. Its OAuth flow in `modules/social/oauth/` and a branch in `startConnect` / `completeConnect`.
+4. Its metadata type in `providers/types.ts`.
+
+## Develop
 
 ```bash
 pnpm install
+cp .dev.vars.example .dev.vars   # fill BETTER_AUTH_SECRET and CREDENTIALS_KEY
+npx wrangler d1 migrations apply mixetape-db --local
+pnpm dev                         # http://localhost:3001
+pnpm check && pnpm test
 ```
 
-### 2. Configure Local Environment
-
-Copy the example development variables:
+## Deploy
 
 ```bash
-cp .dev.vars.example .dev.vars
-```
-
-Update `.dev.vars` with your own values (or use the defaults for local testing).
-
-### 3. Initialize Local D1 Database
-
-Generate and apply database migrations to your local Miniflare instance:
-
-```bash
-pnpm db:migrate
-```
-
-### 4. Start Development Server
-
-```bash
-pnpm dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser.
-
----
-
-## 🎨 Rebranding & Customization
-
-All site branding, metadata, navigation, and author details are centralized in a single file:
-
-```ts
-// src/config/site.ts
-export const siteConfig = {
-  name: "Kit",
-  title: "Kit | Modern Cloudflare Edge Starter",
-  description: "Production-ready fullstack starter powered by TanStack Start and Cloudflare Workers.",
-  url: process.env.SITE_URL || "http://localhost:3001",
-  author: {
-    name: "Admin",
-    handle: "admin",
-    bio: "Fullstack developer and systems builder.",
-    email: "hello@example.com",
-    avatar: "/favicon.svg",
-    socials: {
-      github: "https://github.com",
-      x: "https://x.com",
-      linkedin: "https://linkedin.com",
-    },
-  },
-  nav: [
-    { label: "Blog", href: "/blog" },
-    { label: "About", href: "/about" },
-  ],
-};
-```
-
-Updating this configuration automatically updates the landing page, navigation header, footer, SEO metadata, JSON-LD schemas, and dynamic OG images.
-
----
-
-## 🔑 Authentication (Better-Auth)
-
-Kit uses [Better-Auth](https://www.better-auth.com/) configured with the Drizzle D1 adapter:
-
-- **Passwordless Email OTP**: In local development, verification codes are logged directly to the server terminal. In production, configure Cloudflare Email Routing or a transactional email provider.
-- **GitHub OAuth**: Provide `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `.dev.vars` (or as secrets in Cloudflare) to enable one-click social login.
-- **Two-Factor Authentication (2FA)**: Built-in TOTP authenticator app support with QR codes and recovery keys.
-
----
-
-## 🤖 Model Context Protocol (MCP) Server
-
-Kit includes a built-in MCP server at `/api/posts/mcp` allowing AI agents (like Claude Desktop or autonomous pipelines) to query and publish articles programmatically:
-
-1. Configure `MCP_API_KEY` in your `.dev.vars` or Cloudflare Worker secrets.
-2. In Claude Desktop or your MCP client, configure the HTTP SSE endpoint:
-   ```json
-   {
-     "mcpServers": {
-       "kit-blog": {
-         "type": "http",
-         "url": "https://your-worker-domain.workers.dev/api/posts/mcp",
-         "headers": {
-           "Authorization": "Bearer your-mcp-api-key"
-         }
-       }
-     }
-  }
-   ```
-3. Your agent will now have access to tools: `list_articles`, `get_article`, and `create_post`.
-
----
-
-## 🚢 Deployment to Cloudflare Workers
-
-### 1. Provision Cloudflare D1 Database
-
-```bash
-npx wrangler d1 create kit-db
-```
-
-Copy the generated `database_id` into `wrangler.jsonc`:
-
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DATABASE",
-    "database_name": "kit-db",
-    "database_id": "<YOUR_D1_DATABASE_ID>",
-    "migrations_dir": "src/database/migrations"
-  }
-]
-```
-
-### 2. Apply Migrations to Remote D1
-
-```bash
-npx wrangler d1 migrations apply kit-db --remote
-```
-
-### 3. Set Production Secrets
-
-```bash
-npx wrangler secret put BETTER_AUTH_SECRET
-npx wrangler secret put BETTER_AUTH_URL
-npx wrangler secret put SITE_URL
-npx wrangler secret put MCP_API_KEY
-```
-
-### 4. Build and Deploy
-
-```bash
+npx wrangler d1 migrations apply mixetape-db --remote
 pnpm run deploy
 ```
 
----
-
-## 🛠️ CLI Commands
-
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start local Vite development server with Cloudflare proxy |
-| `pnpm build` | Compile client and SSR edge bundles for production |
-| `pnpm check` | Run TypeScript type checks (`tsc --noEmit`), oxlint, and oxfmt format check |
-| `pnpm fix` | Automatically fix linting and formatting issues |
-| `pnpm test` | Run Vitest unit tests |
-| `pnpm db:generate` | Generate new SQL migration files from Drizzle schema |
-| `pnpm db:migrate` | Apply pending Drizzle migrations |
-| `pnpm cf-typegen` | Regenerate typesafe Cloudflare Worker binding types |
-
----
-
-## 📄 License
-
-MIT. Use this starter kit freely for personal and commercial projects.
+Bindings (`wrangler.jsonc`): D1 `mixetape-db`, KV (OAuth state), R2 `mixetape-media`,
+Workflow `mixetape-publish`, `send_email` for login codes. Secrets: `BETTER_AUTH_SECRET`,
+`CREDENTIALS_KEY` (32 random bytes, base64url — rotating it makes stored credentials and
+tokens unreadable).

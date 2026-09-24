@@ -1,0 +1,420 @@
+import { env } from "cloudflare:workers";
+import { and, asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { db } from "#/database/index";
+import {
+  apiKeys,
+  providerCredentials,
+  socialAccounts,
+  socialPosts,
+  type ProviderCredential,
+  type SocialAccount,
+  type JsonValue,
+  type SocialPost,
+} from "#/database/schema";
+import { decrypt, encrypt, randomToken, sha256 } from "./crypto";
+import { GoogleAuthFlow } from "./oauth/google-oauth";
+import { getProvider, isProvider } from "./providers";
+import type { PlatformMetadata } from "./providers";
+
+/**
+ * Everything mixetape does with credentials, connected accounts, posts and API keys. The
+ * UI's server functions, the REST API and the publishing workflow all go through here, so
+ * ownership checks and encryption live in exactly one place.
+ */
+
+const OAUTH_STATE_TTL = 600; // seconds
+const TOKEN_REFRESH_MARGIN = 5 * 60 * 1000; // refresh when less than 5 min remain
+
+export class ServiceError extends Error {
+  constructor(
+    message: string,
+    readonly status = 400,
+  ) {
+    super(message);
+    this.name = "ServiceError";
+  }
+}
+
+const newId = () => crypto.randomUUID();
+
+export function siteUrl(): string {
+  return (env.SITE_URL || env.BETTER_AUTH_URL || "http://localhost:3001").replace(/\/$/, "");
+}
+
+export function redirectUri(provider: string): string {
+  return `${siteUrl()}/api/connect/${provider}/callback`;
+}
+
+// ── credentials ────────────────────────────────────────────────────────────────
+
+export async function listCredentials(userId: string) {
+  const rows = await db.query.providerCredentials.findMany({
+    where: eq(providerCredentials.userId, userId),
+    orderBy: [asc(providerCredentials.createdAt)],
+  });
+  // The secret never leaves the server; the client id is not secret.
+  return rows.map(({ clientSecret: _secret, ...row }) => ({
+    ...row,
+    redirectUri: redirectUri(row.provider),
+  }));
+}
+
+export async function createCredential(
+  userId: string,
+  input: { provider: string; label: string; clientId: string; clientSecret: string },
+) {
+  if (!isProvider(input.provider))
+    throw new ServiceError(`Unsupported provider: ${input.provider}`);
+  const label = input.label.trim() || `${input.provider} app`;
+  const clientId = input.clientId.trim();
+  const clientSecret = input.clientSecret.trim();
+  if (!clientId || !clientSecret)
+    throw new ServiceError("Client ID and client secret are required");
+
+  const id = newId();
+  await db.insert(providerCredentials).values({
+    id,
+    userId,
+    provider: input.provider,
+    label,
+    clientId,
+    clientSecret: await encrypt(clientSecret),
+  });
+  return { id };
+}
+
+export async function deleteCredential(userId: string, id: string) {
+  await db
+    .delete(providerCredentials)
+    .where(and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)));
+}
+
+async function ownedCredential(userId: string, id: string): Promise<ProviderCredential> {
+  const credential = await db.query.providerCredentials.findFirst({
+    where: and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)),
+  });
+  if (!credential) throw new ServiceError("Credential not found", 404);
+  return credential;
+}
+
+// ── connecting accounts (OAuth) ────────────────────────────────────────────────
+
+type OAuthState = { userId: string; credentialId: string; provider: string };
+
+/** The URL to send the user to; the state that proves the callback is ours sits in KV. */
+export async function startConnect(userId: string, credentialId: string): Promise<string> {
+  const credential = await ownedCredential(userId, credentialId);
+  const state = randomToken(24);
+  const payload: OAuthState = { userId, credentialId, provider: credential.provider };
+  await env.KIT_CACHE.put(`oauth:state:${state}`, JSON.stringify(payload), {
+    expirationTtl: OAUTH_STATE_TTL,
+  });
+
+  if (credential.provider === "youtube") {
+    return new GoogleAuthFlow(credential.clientId, "", redirectUri("youtube"), state).redirect();
+  }
+  throw new ServiceError(`Connecting ${credential.provider} is not supported yet`);
+}
+
+/** Finishes the OAuth dance and stores every channel the signed-in identity owns. */
+export async function completeConnect(provider: string, code: string, state: string) {
+  const key = `oauth:state:${state}`;
+  const saved = await env.KIT_CACHE.get(key);
+  if (!saved) throw new ServiceError("This sign-in link expired — start connecting again", 400);
+  await env.KIT_CACHE.delete(key); // one use only
+  const { userId, credentialId, provider: expected } = JSON.parse(saved) as OAuthState;
+  if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
+
+  const credential = await ownedCredential(userId, credentialId);
+  const secret = await decrypt(credential.clientSecret);
+
+  if (provider !== "youtube") throw new ServiceError(`Connecting ${provider} is not supported yet`);
+
+  const flow = new GoogleAuthFlow(credential.clientId, secret, redirectUri(provider), state, code);
+  await flow.getUserData();
+  const channels = await flow.getChannels();
+  if (!channels.length) {
+    throw new ServiceError(
+      `${flow.user?.email ?? "This Google account"} has no YouTube channel. Create one, or pick the channel's account when signing in.`,
+    );
+  }
+
+  const accessToken = await encrypt(flow.getAccessToken());
+  const refreshToken = flow.refreshToken ? await encrypt(flow.refreshToken) : null;
+  const expiresAt = new Date(Date.now() + flow.getExpiresIn() * 1000);
+  const scopes = flow.grantedScopes?.join(" ") ?? null;
+
+  for (const channel of channels) {
+    const existing = await db.query.socialAccounts.findFirst({
+      where: and(
+        eq(socialAccounts.userId, userId),
+        eq(socialAccounts.provider, provider),
+        eq(socialAccounts.platformAccountId, channel.id),
+      ),
+    });
+    const values = {
+      credentialId,
+      name: channel.title,
+      handle: channel.customUrl ?? null,
+      avatar: channel.thumbnail ?? null,
+      accessToken,
+      // Google omits the refresh token on some re-consents; keep the one we had.
+      refreshToken: refreshToken ?? existing?.refreshToken ?? null,
+      accessTokenExpiresAt: expiresAt,
+      scopes,
+      status: "active",
+      updatedAt: new Date(),
+    };
+    if (existing) {
+      await db.update(socialAccounts).set(values).where(eq(socialAccounts.id, existing.id));
+    } else {
+      await db
+        .insert(socialAccounts)
+        .values({ id: newId(), userId, provider, platformAccountId: channel.id, ...values });
+    }
+  }
+  return { userId, channels: channels.map((channel) => channel.title) };
+}
+
+export async function listAccounts(userId: string) {
+  const rows = await db.query.socialAccounts.findMany({
+    where: eq(socialAccounts.userId, userId),
+    orderBy: [asc(socialAccounts.createdAt)],
+  });
+  return rows.map(({ accessToken: _a, refreshToken: _r, ...row }) => row);
+}
+
+export async function deleteAccount(userId: string, id: string) {
+  await db
+    .delete(socialAccounts)
+    .where(and(eq(socialAccounts.id, id), eq(socialAccounts.userId, userId)));
+}
+
+/**
+ * A usable access token for the account, refreshed and saved when it is close to expiry.
+ * A refresh the platform refuses marks the account for reconnection.
+ */
+export async function accessTokenFor(
+  account: SocialAccount,
+  credential: ProviderCredential,
+): Promise<string> {
+  const expiresAt = account.accessTokenExpiresAt?.getTime() ?? 0;
+  if (expiresAt - Date.now() > TOKEN_REFRESH_MARGIN) return decrypt(account.accessToken);
+
+  if (!account.refreshToken) {
+    await db
+      .update(socialAccounts)
+      .set({ status: "reconnect", updatedAt: new Date() })
+      .where(eq(socialAccounts.id, account.id));
+    throw new ServiceError("The account has no refresh token — reconnect it", 409);
+  }
+
+  const provider = getProvider(account.provider);
+  if (!provider.refreshToken) throw new ServiceError(`${provider.name} tokens cannot be refreshed`);
+  try {
+    const refreshed = await provider.refreshToken(
+      await decrypt(account.refreshToken),
+      credential.clientId,
+      await decrypt(credential.clientSecret),
+    );
+    await db
+      .update(socialAccounts)
+      .set({
+        accessToken: await encrypt(refreshed.accessToken),
+        accessTokenExpiresAt: new Date(Date.now() + refreshed.expiresIn * 1000),
+        status: "active",
+        updatedAt: new Date(),
+      })
+      .where(eq(socialAccounts.id, account.id));
+    return refreshed.accessToken;
+  } catch (error) {
+    if (error instanceof Error && error.message === "RECONNECT_REQUIRED") {
+      await db
+        .update(socialAccounts)
+        .set({ status: "reconnect", updatedAt: new Date() })
+        .where(eq(socialAccounts.id, account.id));
+      throw new ServiceError("Access was revoked or expired — reconnect the account", 409);
+    }
+    throw error;
+  }
+}
+
+// ── posts ──────────────────────────────────────────────────────────────────────
+
+export type CreatePostInput = {
+  accountId: string;
+  mediaUrl: string;
+  caption?: string;
+  /** ISO time; omitted or in the past means "as soon as possible". */
+  scheduledAt?: string;
+  metadata?: Partial<PlatformMetadata>;
+};
+
+export async function createPost(userId: string, input: CreatePostInput) {
+  const account = await db.query.socialAccounts.findFirst({
+    where: and(eq(socialAccounts.id, input.accountId), eq(socialAccounts.userId, userId)),
+  });
+  if (!account) throw new ServiceError("Account not found", 404);
+  if (account.status !== "active")
+    throw new ServiceError("This account needs to be reconnected first", 409);
+
+  const mediaUrl = input.mediaUrl.trim();
+  if (!/^(https:\/\/|r2:\/\/)/.test(mediaUrl))
+    throw new ServiceError("Media must be an https:// URL or an uploaded file");
+  // A file in our bucket must be one this user uploaded (keys live under media/<userId>/).
+  if (mediaUrl.startsWith("r2://") && !mediaUrl.startsWith(`r2://media/${userId}/`)) {
+    throw new ServiceError("That uploaded file belongs to someone else", 403);
+  }
+
+  const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
+  if (Number.isNaN(scheduledAt.getTime()))
+    throw new ServiceError("scheduledAt is not a valid date");
+
+  const metadata = { ...input.metadata } as Record<string, JsonValue>;
+  if (account.provider === "youtube") {
+    const title = String(metadata.title ?? input.caption ?? "").trim();
+    if (!title) throw new ServiceError("A YouTube video needs a title");
+    if (title.length > 100) throw new ServiceError("YouTube titles are limited to 100 characters");
+    metadata.title = title;
+    delete metadata.publishAt; // set by the scheduler from scheduledAt
+  }
+
+  const id = newId();
+  await db.insert(socialPosts).values({
+    id,
+    userId,
+    accountId: account.id,
+    provider: account.provider,
+    mediaUrl,
+    caption: input.caption ?? null,
+    metadata,
+    scheduledAt,
+  });
+
+  // One durable workflow per post: it survives restarts, retries on its own, and sleeps
+  // until the scheduled time when the platform cannot hold the post itself.
+  await env.PUBLISH_WORKFLOW.create({ id, params: { postId: id } });
+  return getPost(userId, id);
+}
+
+export async function getPost(userId: string, id: string) {
+  const post = await db.query.socialPosts.findFirst({
+    where: and(eq(socialPosts.id, id), eq(socialPosts.userId, userId)),
+  });
+  if (!post) throw new ServiceError("Post not found", 404);
+  return post;
+}
+
+export async function listPosts(
+  userId: string,
+  filter: { status?: string[]; from?: Date; to?: Date; limit?: number } = {},
+) {
+  const conditions = [eq(socialPosts.userId, userId)];
+  if (filter.status?.length) conditions.push(inArray(socialPosts.status, filter.status));
+  if (filter.from) conditions.push(gte(socialPosts.scheduledAt, filter.from));
+  if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
+  return db.query.socialPosts.findMany({
+    where: and(...conditions),
+    orderBy: [desc(socialPosts.scheduledAt)],
+    limit: Math.min(filter.limit ?? 100, 500),
+  });
+}
+
+/** Stops a post that has not been published; its workflow sees the status and ends. */
+export async function cancelPost(userId: string, id: string) {
+  const post = await getPost(userId, id);
+  if (post.status !== "scheduled")
+    throw new ServiceError(`A ${post.status} post cannot be cancelled`, 409);
+  await db
+    .update(socialPosts)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(and(eq(socialPosts.id, id), eq(socialPosts.status, "scheduled")));
+  try {
+    const instance = await env.PUBLISH_WORKFLOW.get(id);
+    await instance.terminate();
+  } catch {
+    // already finished, or waiting — it checks the status before doing anything
+  }
+  return getPost(userId, id);
+}
+
+/** Sends a failed post again, now or at its original time if that is still ahead. */
+export async function retryPost(userId: string, id: string) {
+  const post = await getPost(userId, id);
+  if (post.status !== "failed") throw new ServiceError("Only a failed post can be retried", 409);
+  const scheduledAt = post.scheduledAt.getTime() > Date.now() ? post.scheduledAt : new Date();
+  await updatePost(id, { status: "scheduled", scheduledAt, error: null });
+  // Workflow instance ids are single-use, so each retry gets its own.
+  await env.PUBLISH_WORKFLOW.create({
+    id: `${id}-retry-${post.attempts}-${Date.now()}`,
+    params: { postId: id },
+  });
+  return getPost(userId, id);
+}
+
+/** Everything the workflow needs to publish one post. */
+export async function loadForPublishing(postId: string): Promise<{
+  post: SocialPost;
+  account: SocialAccount;
+  credential: ProviderCredential;
+} | null> {
+  const post = await db.query.socialPosts.findFirst({ where: eq(socialPosts.id, postId) });
+  if (!post) return null;
+  const account = await db.query.socialAccounts.findFirst({
+    where: eq(socialAccounts.id, post.accountId),
+  });
+  if (!account) return null;
+  const credential = await db.query.providerCredentials.findFirst({
+    where: eq(providerCredentials.id, account.credentialId),
+  });
+  if (!credential) return null;
+  return { post, account, credential };
+}
+
+export async function updatePost(id: string, values: Partial<typeof socialPosts.$inferInsert>) {
+  await db
+    .update(socialPosts)
+    .set({ ...values, updatedAt: new Date() })
+    .where(eq(socialPosts.id, id));
+}
+
+// ── API keys ───────────────────────────────────────────────────────────────────
+
+const KEY_PREFIX = "mxt_";
+
+export async function createApiKey(userId: string, name: string) {
+  const key = `${KEY_PREFIX}${randomToken(32)}`;
+  const id = newId();
+  await db.insert(apiKeys).values({
+    id,
+    userId,
+    name: name.trim() || "API key",
+    prefix: key.slice(0, KEY_PREFIX.length + 6),
+    hash: await sha256(key),
+  });
+  // The only time the full key exists outside the caller's hands.
+  return { id, key };
+}
+
+export async function listApiKeys(userId: string) {
+  const rows = await db.query.apiKeys.findMany({
+    where: eq(apiKeys.userId, userId),
+    orderBy: [desc(apiKeys.createdAt)],
+  });
+  return rows.map(({ hash: _hash, ...row }) => row);
+}
+
+export async function deleteApiKey(userId: string, id: string) {
+  await db.delete(apiKeys).where(and(eq(apiKeys.id, id), eq(apiKeys.userId, userId)));
+}
+
+/** The user a `Authorization: Bearer mxt_…` header belongs to, or null. */
+export async function userForApiKey(request: Request): Promise<string | null> {
+  const header = request.headers.get("authorization") ?? "";
+  const key = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!key.startsWith(KEY_PREFIX)) return null;
+  const row = await db.query.apiKeys.findFirst({ where: eq(apiKeys.hash, await sha256(key)) });
+  if (!row) return null;
+  await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id));
+  return row.userId;
+}

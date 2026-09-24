@@ -21,5 +21,9 @@ AI_API_KEY=
 AI_BASE_URL=https://api.openai.com/v1
 AI_MODEL=gpt-4o-mini
 
+# Encrypts OAuth client secrets and account tokens (32 random bytes, base64url).
+# Generate: node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
+CREDENTIALS_KEY=
+
 # MCP Server Shared Secret (For programmatic agent access to /api/posts/mcp)
 MCP_API_KEY=your-custom-mcp-bearer-token

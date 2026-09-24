@@ -20,13 +20,22 @@ import { Route as publicBlogSlugRouteImport } from './routes/(public)/blog/$slug
 import { Route as publicBlogNewRouteImport } from './routes/(public)/blog/new'
 import { Route as ApiAiCompleteRouteImport } from './routes/api/ai/complete'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
+import { Route as ApiMediaUploadRouteImport } from './routes/api/media/upload'
 import { Route as ApiPostsMcpRouteImport } from './routes/api/posts/mcp'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
+import { Route as ApiV1AccountsRouteImport } from './routes/api/v1/accounts'
+import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
+import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
+import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
 import { Route as appAppDashboardIndexRouteImport } from './routes/(app)/_app/dashboard/index'
+import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as publicBlogSlugEditRouteImport } from './routes/(public)/blog/$slug_.edit'
+import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
 import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/file/$'
+import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts.$id'
 
 const publicIndexRoute = publicIndexRouteImport.update({
   id: '/(public)/',
@@ -83,6 +92,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConnectProviderRoute = ApiConnectProviderRouteImport.update({
+  id: '/api/connect/$provider',
+  path: '/api/connect/$provider',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMediaUploadRoute = ApiMediaUploadRouteImport.update({
+  id: '/api/media/upload',
+  path: '/api/media/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPostsMcpRoute = ApiPostsMcpRouteImport.update({
   id: '/api/posts/mcp',
   path: '/api/posts/mcp',
@@ -93,9 +112,34 @@ const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
   path: '/api/storage/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AccountsRoute = ApiV1AccountsRouteImport.update({
+  id: '/api/v1/accounts',
+  path: '/api/v1/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
+  id: '/api/v1/posts',
+  path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const appAppApiKeysIndexRoute = appAppApiKeysIndexRouteImport.update({
+  id: '/(app)/_app/api-keys/',
+  path: '/api-keys/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const appAppChannelsIndexRoute = appAppChannelsIndexRouteImport.update({
+  id: '/(app)/_app/channels/',
+  path: '/channels/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const appAppDashboardIndexRoute = appAppDashboardIndexRouteImport.update({
   id: '/(app)/_app/dashboard/',
   path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const appAppPublishIndexRoute = appAppPublishIndexRouteImport.update({
+  id: '/(app)/_app/publish/',
+  path: '/publish/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appAppSettingsAccountRoute = appAppSettingsAccountRouteImport.update({
@@ -113,10 +157,21 @@ const publicBlogSlugEditRoute = publicBlogSlugEditRouteImport.update({
   path: '/blog/$slug/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConnectProviderCallbackRoute =
+  ApiConnectProviderCallbackRouteImport.update({
+    id: '/callback',
+    path: '/callback',
+    getParentRoute: () => ApiConnectProviderRoute,
+  } as any)
 const ApiStorageFileSplatRoute = ApiStorageFileSplatRouteImport.update({
   id: '/api/storage/file/$',
   path: '/api/storage/file/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1PostsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -130,14 +185,23 @@ export interface FileRoutesByFullPath {
   '/blog/new': typeof publicBlogNewRoute
   '/api/ai/complete': typeof ApiAiCompleteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/posts/mcp': typeof ApiPostsMcpRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/blog/': typeof publicBlogIndexRoute
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/blog/$slug/edit': typeof publicBlogSlugEditRoute
+  '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
+  '/api-keys/': typeof appAppApiKeysIndexRoute
+  '/channels/': typeof appAppChannelsIndexRoute
   '/dashboard/': typeof appAppDashboardIndexRoute
+  '/publish/': typeof appAppPublishIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof publicAboutRoute
@@ -150,14 +214,23 @@ export interface FileRoutesByTo {
   '/blog/new': typeof publicBlogNewRoute
   '/api/ai/complete': typeof ApiAiCompleteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/posts/mcp': typeof ApiPostsMcpRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/blog': typeof publicBlogIndexRoute
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/blog/$slug/edit': typeof publicBlogSlugEditRoute
+  '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
+  '/api-keys': typeof appAppApiKeysIndexRoute
+  '/channels': typeof appAppChannelsIndexRoute
   '/dashboard': typeof appAppDashboardIndexRoute
+  '/publish': typeof appAppPublishIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -171,14 +244,23 @@ export interface FileRoutesById {
   '/(public)/blog/new': typeof publicBlogNewRoute
   '/api/ai/complete': typeof ApiAiCompleteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/posts/mcp': typeof ApiPostsMcpRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/(public)/blog/': typeof publicBlogIndexRoute
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
   '/(app)/_app/settings/profile': typeof appAppSettingsProfileRoute
   '/(public)/blog/$slug_/edit': typeof publicBlogSlugEditRoute
+  '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
+  '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
+  '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
   '/(app)/_app/dashboard/': typeof appAppDashboardIndexRoute
+  '/(app)/_app/publish/': typeof appAppPublishIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,14 +275,23 @@ export interface FileRouteTypes {
     | '/blog/new'
     | '/api/ai/complete'
     | '/api/auth/$'
+    | '/api/connect/$provider'
+    | '/api/media/upload'
     | '/api/posts/mcp'
     | '/api/storage/upload'
+    | '/api/v1/accounts'
+    | '/api/v1/posts'
     | '/blog/'
     | '/settings/account'
     | '/settings/profile'
     | '/blog/$slug/edit'
+    | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
+    | '/api/v1/posts/$id'
+    | '/api-keys/'
+    | '/channels/'
     | '/dashboard/'
+    | '/publish/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -213,14 +304,23 @@ export interface FileRouteTypes {
     | '/blog/new'
     | '/api/ai/complete'
     | '/api/auth/$'
+    | '/api/connect/$provider'
+    | '/api/media/upload'
     | '/api/posts/mcp'
     | '/api/storage/upload'
+    | '/api/v1/accounts'
+    | '/api/v1/posts'
     | '/blog'
     | '/settings/account'
     | '/settings/profile'
     | '/blog/$slug/edit'
+    | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
+    | '/api/v1/posts/$id'
+    | '/api-keys'
+    | '/channels'
     | '/dashboard'
+    | '/publish'
   id:
     | '__root__'
     | '/(public)/about'
@@ -233,14 +333,23 @@ export interface FileRouteTypes {
     | '/(public)/blog/new'
     | '/api/ai/complete'
     | '/api/auth/$'
+    | '/api/connect/$provider'
+    | '/api/media/upload'
     | '/api/posts/mcp'
     | '/api/storage/upload'
+    | '/api/v1/accounts'
+    | '/api/v1/posts'
     | '/(public)/blog/'
     | '/(app)/_app/settings/account'
     | '/(app)/_app/settings/profile'
     | '/(public)/blog/$slug_/edit'
+    | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
+    | '/api/v1/posts/$id'
+    | '/(app)/_app/api-keys/'
+    | '/(app)/_app/channels/'
     | '/(app)/_app/dashboard/'
+    | '/(app)/_app/publish/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -254,14 +363,21 @@ export interface RootRouteChildren {
   publicBlogNewRoute: typeof publicBlogNewRoute
   ApiAiCompleteRoute: typeof ApiAiCompleteRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
+  ApiMediaUploadRoute: typeof ApiMediaUploadRoute
   ApiPostsMcpRoute: typeof ApiPostsMcpRoute
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
+  ApiV1AccountsRoute: typeof ApiV1AccountsRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
   publicBlogIndexRoute: typeof publicBlogIndexRoute
   appAppSettingsAccountRoute: typeof appAppSettingsAccountRoute
   appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   publicBlogSlugEditRoute: typeof publicBlogSlugEditRoute
   ApiStorageFileSplatRoute: typeof ApiStorageFileSplatRoute
+  appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
+  appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
   appAppDashboardIndexRoute: typeof appAppDashboardIndexRoute
+  appAppPublishIndexRoute: typeof appAppPublishIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -343,6 +459,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/$provider': {
+      id: '/api/connect/$provider'
+      path: '/api/connect/$provider'
+      fullPath: '/api/connect/$provider'
+      preLoaderRoute: typeof ApiConnectProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/media/upload': {
+      id: '/api/media/upload'
+      path: '/api/media/upload'
+      fullPath: '/api/media/upload'
+      preLoaderRoute: typeof ApiMediaUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/posts/mcp': {
       id: '/api/posts/mcp'
       path: '/api/posts/mcp'
@@ -357,11 +487,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/accounts': {
+      id: '/api/v1/accounts'
+      path: '/api/v1/accounts'
+      fullPath: '/api/v1/accounts'
+      preLoaderRoute: typeof ApiV1AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/posts': {
+      id: '/api/v1/posts'
+      path: '/api/v1/posts'
+      fullPath: '/api/v1/posts'
+      preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(app)/_app/api-keys/': {
+      id: '/(app)/_app/api-keys/'
+      path: '/api-keys'
+      fullPath: '/api-keys/'
+      preLoaderRoute: typeof appAppApiKeysIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(app)/_app/channels/': {
+      id: '/(app)/_app/channels/'
+      path: '/channels'
+      fullPath: '/channels/'
+      preLoaderRoute: typeof appAppChannelsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(app)/_app/dashboard/': {
       id: '/(app)/_app/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof appAppDashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(app)/_app/publish/': {
+      id: '/(app)/_app/publish/'
+      path: '/publish'
+      fullPath: '/publish/'
+      preLoaderRoute: typeof appAppPublishIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/_app/settings/account': {
@@ -385,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof publicBlogSlugEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/connect/$provider/callback': {
+      id: '/api/connect/$provider/callback'
+      path: '/callback'
+      fullPath: '/api/connect/$provider/callback'
+      preLoaderRoute: typeof ApiConnectProviderCallbackRouteImport
+      parentRoute: typeof ApiConnectProviderRoute
+    }
     '/api/storage/file/$': {
       id: '/api/storage/file/$'
       path: '/api/storage/file/$'
@@ -392,8 +564,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageFileSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts/$id': {
+      id: '/api/v1/posts/$id'
+      path: '/$id'
+      fullPath: '/api/v1/posts/$id'
+      preLoaderRoute: typeof ApiV1PostsIdRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
   }
 }
+
+interface ApiConnectProviderRouteChildren {
+  ApiConnectProviderCallbackRoute: typeof ApiConnectProviderCallbackRoute
+}
+
+const ApiConnectProviderRouteChildren: ApiConnectProviderRouteChildren = {
+  ApiConnectProviderCallbackRoute: ApiConnectProviderCallbackRoute,
+}
+
+const ApiConnectProviderRouteWithChildren =
+  ApiConnectProviderRoute._addFileChildren(ApiConnectProviderRouteChildren)
+
+interface ApiV1PostsRouteChildren {
+  ApiV1PostsIdRoute: typeof ApiV1PostsIdRoute
+}
+
+const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
+  ApiV1PostsIdRoute: ApiV1PostsIdRoute,
+}
+
+const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
+  ApiV1PostsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   publicAboutRoute: publicAboutRoute,
@@ -406,14 +608,21 @@ const rootRouteChildren: RootRouteChildren = {
   publicBlogNewRoute: publicBlogNewRoute,
   ApiAiCompleteRoute: ApiAiCompleteRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
+  ApiMediaUploadRoute: ApiMediaUploadRoute,
   ApiPostsMcpRoute: ApiPostsMcpRoute,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
+  ApiV1AccountsRoute: ApiV1AccountsRoute,
+  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
   publicBlogIndexRoute: publicBlogIndexRoute,
   appAppSettingsAccountRoute: appAppSettingsAccountRoute,
   appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   publicBlogSlugEditRoute: publicBlogSlugEditRoute,
   ApiStorageFileSplatRoute: ApiStorageFileSplatRoute,
+  appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
+  appAppChannelsIndexRoute: appAppChannelsIndexRoute,
   appAppDashboardIndexRoute: appAppDashboardIndexRoute,
+  appAppPublishIndexRoute: appAppPublishIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

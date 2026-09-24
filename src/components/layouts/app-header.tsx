@@ -25,22 +25,24 @@ export function AppHeader() {
             <span>{siteConfig.name}</span>
           </Link>
 
-          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-            <Link
-              to="/blog"
-              className="px-2.5 py-1 rounded-full hover:text-foreground hover:bg-muted/40 transition-colors"
-              activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
-            >
-              Blog
-            </Link>
-            <Link
-              to="/about"
-              className="px-2.5 py-1 rounded-full hover:text-foreground hover:bg-muted/40 transition-colors"
-              activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
-            >
-              About
-            </Link>
-          </div>
+          {user && (
+            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Link
+                to="/publish"
+                className="px-2.5 py-1 rounded-full hover:text-foreground hover:bg-muted/40 transition-colors"
+                activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
+              >
+                Publish
+              </Link>
+              <Link
+                to="/channels"
+                className="px-2.5 py-1 rounded-full hover:text-foreground hover:bg-muted/40 transition-colors"
+                activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
+              >
+                Channels
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

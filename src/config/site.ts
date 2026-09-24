@@ -1,8 +1,8 @@
 export const siteConfig = {
-  name: "Kit",
-  title: "Kit | Modern Cloudflare Edge Starter",
+  name: "mixetape",
+  title: "mixetape | Schedule videos to your social channels",
   description:
-    "Production-ready fullstack starter powered by TanStack Start, Better-Auth, Cloudflare D1, Drizzle ORM, and Tailwind CSS v4.",
+    "Upload once, pick a time, and mixetape posts it to your channels — through your own credentials, with an API for your pipelines.",
   url: process.env.SITE_URL || "http://localhost:3000",
   author: {
     name: "Admin",
@@ -17,8 +17,8 @@ export const siteConfig = {
     },
   },
   nav: [
-    { label: "Blog", href: "/blog" },
-    { label: "About", href: "/about" },
+    { label: "Publish", href: "/publish" },
+    { label: "Channels", href: "/channels" },
   ],
 };
 
