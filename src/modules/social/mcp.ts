@@ -66,7 +66,7 @@ const TOOLS: Tool[] = [
   {
     name: "list_posts",
     description:
-      "List posts, newest scheduled time first. Statuses: scheduled, publishing, uploaded (on the platform, goes live at its scheduled time), published, failed, cancelled.",
+      "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable), publishing (uploading), uploaded (on the platform, private until its scheduled time), published (confirmed live), failed, cancelled.",
     inputSchema: {
       type: "object",
       properties: {
@@ -103,14 +103,23 @@ const TOOLS: Tool[] = [
   {
     name: "create_post",
     description:
-      "Schedule a video on a connected channel. mediaUrl must be a public https URL (e.g. a public R2 object) or an r2:// key uploaded to mixetape. Omit scheduledAt to post as soon as possible. YouTube posts more than 15 minutes ahead are uploaded at once and published by YouTube at scheduledAt.",
+      "Schedule a video on a connected channel. Like Buffer, the post waits in mixetape (editable, cancellable) and is uploaded leadMinutes before scheduledAt as private; YouTube processes it and makes it public at scheduledAt. mediaUrl must be a public https URL (e.g. a public R2 object) or an r2:// key uploaded to mixetape.",
     inputSchema: {
       type: "object",
       properties: {
         accountId: { type: "string" },
         mediaUrl: { type: "string" },
         caption: { type: "string" },
-        scheduledAt: { type: "string", description: "ISO 8601 with timezone offset" },
+        scheduledAt: {
+          type: "string",
+          description:
+            "ISO 8601 with timezone offset — when it goes live. Omit to post now (live after leadMinutes).",
+        },
+        leadMinutes: {
+          type: "number",
+          description:
+            "Minutes before go-live that mixetape uploads it (YouTube default 30), so the platform can finish processing HD first. 0 uploads at go-live time.",
+        },
         metadata: youtubeMetadata,
       },
       required: ["accountId", "mediaUrl"],
@@ -120,7 +129,7 @@ const TOOLS: Tool[] = [
   {
     name: "update_post",
     description:
-      "Change a post that is still 'scheduled': its time, media, caption or metadata (metadata fields are merged). Once a post is uploaded or published, change it on the platform instead.",
+      "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (metadata fields are merged). Once it is uploaded or published, change it on the platform instead.",
     inputSchema: {
       type: "object",
       properties: {
@@ -128,6 +137,7 @@ const TOOLS: Tool[] = [
         mediaUrl: { type: "string" },
         caption: { type: "string" },
         scheduledAt: { type: "string", description: "ISO 8601 with timezone offset" },
+        leadMinutes: { type: "number" },
         metadata: youtubeMetadata,
       },
       required: ["id"],

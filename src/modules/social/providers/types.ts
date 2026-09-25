@@ -71,6 +71,11 @@ export interface SocialProvider {
    * scheduled moment.
    */
   readonly schedulesNatively: boolean;
+  /**
+   * For a platform that schedules natively: how long before go-live a post is uploaded by
+   * default, so the platform can finish processing it. Callers may choose another value.
+   */
+  readonly defaultLeadMinutes: number;
 
   upload(
     post: PostWithMedia,

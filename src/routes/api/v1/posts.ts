@@ -8,11 +8,12 @@ import {
 } from "#/modules/social/social.service";
 
 // GET  /api/v1/posts?status=scheduled,failed&from=ISO&to=ISO&limit=50
-// POST /api/v1/posts { accountId, mediaUrl, caption?, scheduledAt?, metadata? }
+// POST /api/v1/posts { accountId, mediaUrl, caption?, scheduledAt?, leadMinutes?, metadata? }
 //
-// For YouTube, metadata is { title, description?, category?, tags?, privacyStatus?,
-// madeForKids?, notifySubscribers? }. A post more than 15 minutes ahead is uploaded at once
-// and published by YouTube at scheduledAt.
+// Like Buffer, a post waits in mixetape until leadMinutes before scheduledAt (YouTube default
+// 30), then goes up as private and YouTube makes it public at scheduledAt. Omitting
+// scheduledAt means "post now": live once the lead has passed. For YouTube, metadata is
+// { title, description?, category?, tags?, privacyStatus?, madeForKids?, notifySubscribers? }.
 export const Route = createFileRoute("/api/v1/posts")({
   server: {
     handlers: {

@@ -37,6 +37,8 @@ export class YoutubeProvider implements SocialProvider {
   readonly id = "youtube";
   readonly name = "YouTube";
   readonly schedulesNatively = true;
+  // Long videos need time for YouTube to build the HD versions; half an hour covers most.
+  readonly defaultLeadMinutes = 30;
 
   async upload(
     post: PostWithMedia,

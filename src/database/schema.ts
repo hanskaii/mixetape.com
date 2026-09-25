@@ -214,6 +214,7 @@ export const socialPosts = sqliteTable(
     error: text("error"),
     attempts: integer("attempts").notNull().default(0),
     workflowId: text("workflow_id"), // the workflow instance allowed to publish this post
+    leadMinutes: integer("lead_minutes"), // uploaded this long before scheduledAt (see timing.ts)
     publishedAt: integer("published_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()

@@ -22,6 +22,7 @@ import {
 } from "#/modules/social/social.fn";
 import { uploadMedia } from "#/modules/social/media-upload";
 import { siteConfig } from "#/config/site";
+import { LEAD_CHOICES } from "#/modules/social/timing";
 
 export const Route = createFileRoute("/(app)/_app/publish/")({
   beforeLoad: ({ context }) => {
@@ -75,6 +76,8 @@ function PublishPage() {
   const [privacy, setPrivacy] = useState<"public" | "unlisted" | "private">("public");
   const [madeForKids, setMadeForKids] = useState(false);
   const [postNow, setPostNow] = useState(false);
+  // Minutes the platform gets to process the video before it goes public (see timing.ts).
+  const [lead, setLead] = useState(30);
   const [when, setWhen] = useState(() => localInput(new Date(Date.now() + 60 * 60 * 1000)));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +108,7 @@ function PublishPage() {
           mediaUrl: media,
           caption: description,
           scheduledAt: postNow ? undefined : new Date(when).toISOString(),
+          leadMinutes: lead,
           metadata: { title, description, category, privacyStatus: privacy, madeForKids },
         },
       });
@@ -244,7 +248,7 @@ function PublishPage() {
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={postNow} onChange={(e) => setPostNow(e.target.checked)} />
-          Post now
+          Post now {lead > 0 && privacy === "public" && `(live in ${lead} min)`}
         </label>
         {!postNow && (
           <Input
@@ -255,6 +259,26 @@ function PublishPage() {
             aria-label="Scheduled time"
           />
         )}
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground md:col-span-2">
+          <span>
+            Upload before going live — the post stays editable in mixetape until then, and YouTube
+            uses the time to process the HD versions.
+          </span>
+          <select
+            className={selectClassName}
+            value={lead}
+            onChange={(e) => setLead(Number(e.target.value))}
+            aria-label="Upload before going live"
+          >
+            {LEAD_CHOICES.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes === 0
+                  ? "At go-live time (no processing window)"
+                  : `${minutes} minutes before`}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="flex items-center gap-2 text-sm md:col-span-2">
           <input
             type="checkbox"
@@ -267,7 +291,7 @@ function PublishPage() {
         <div className="flex items-center gap-3 md:col-span-2">
           <Button type="submit" disabled={busy || !accountId}>
             {busy ? <SpinnerGap className="animate-spin" /> : <CalendarPlus />}
-            {postNow ? "Publish" : "Schedule"}
+            {postNow ? "Post now" : "Schedule"}
           </Button>
           {progress !== null && (
             <span className="text-xs text-muted-foreground">
@@ -311,9 +335,12 @@ function PostList({
                   {metadata.title ?? post.caption ?? "Untitled"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {accountName.get(post.accountId) ?? "—"} ·{" "}
+                  {accountName.get(post.accountId) ?? "—"} · live{" "}
                   {new Date(post.scheduledAt).toLocaleString()}
-                  {post.status === "uploaded" && " · goes live on schedule"}
+                  {post.status === "scheduled" &&
+                    (post.leadMinutes ?? 0) > 0 &&
+                    ` · uploads ${new Date(new Date(post.scheduledAt).getTime() - (post.leadMinutes ?? 0) * 60_000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                  {post.status === "uploaded" && " · on YouTube, goes public at that time"}
                 </p>
                 {post.error && <p className="mt-1 text-xs text-destructive">{post.error}</p>}
               </div>

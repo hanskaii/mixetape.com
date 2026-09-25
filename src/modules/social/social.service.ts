@@ -15,6 +15,7 @@ import { decrypt, encrypt, randomToken, sha256 } from "./crypto";
 import { GoogleAuthFlow } from "./oauth/google-oauth";
 import { getProvider, isProvider } from "./providers";
 import type { PlatformMetadata } from "./providers";
+import { checkLead } from "./timing";
 
 /**
  * Everything mixetape does with credentials, connected accounts, posts and API keys. The
@@ -245,8 +246,13 @@ export type CreatePostInput = {
   accountId: string;
   mediaUrl: string;
   caption?: string;
-  /** ISO time; omitted or in the past means "as soon as possible". */
+  /**
+   * ISO time the post goes live. Omitted means "post now": it goes live once the lead time
+   * has passed, which is when the platform has finished processing it.
+   */
   scheduledAt?: string;
+  /** Minutes before go-live that the post is uploaded; defaults per platform (YouTube 30). */
+  leadMinutes?: number;
   metadata?: Partial<PlatformMetadata>;
 };
 
@@ -261,10 +267,20 @@ function checkMedia(userId: string, url: string): string {
   return mediaUrl;
 }
 
-function checkTime(value: string | undefined): Date {
-  const date = value ? new Date(value) : new Date();
+/** The go-live time: the one asked for, or — for "post now" — once the lead has passed. */
+function checkTime(value: string | undefined, leadMinutes: number): Date {
+  const date = value ? new Date(value) : new Date(Date.now() + leadMinutes * 60_000);
   if (Number.isNaN(date.getTime())) throw new ServiceError("scheduledAt is not a valid date");
   return date;
+}
+
+function leadFor(provider: string, value: unknown): number {
+  const platform = getProvider(provider);
+  try {
+    return platform.schedulesNatively ? checkLead(value, platform.defaultLeadMinutes) : 0;
+  } catch (error) {
+    throw new ServiceError(error instanceof Error ? error.message : "Invalid leadMinutes");
+  }
 }
 
 function checkMetadata(
@@ -312,6 +328,7 @@ export async function createPost(userId: string, input: CreatePostInput) {
     throw new ServiceError("This account needs to be reconnected first", 409);
 
   const id = newId();
+  const leadMinutes = leadFor(account.provider, input.leadMinutes);
   await db.insert(socialPosts).values({
     id,
     userId,
@@ -320,7 +337,8 @@ export async function createPost(userId: string, input: CreatePostInput) {
     mediaUrl: checkMedia(userId, input.mediaUrl),
     caption: input.caption ?? null,
     metadata: checkMetadata(account.provider, input.metadata, input.caption),
-    scheduledAt: checkTime(input.scheduledAt),
+    scheduledAt: checkTime(input.scheduledAt, leadMinutes),
+    leadMinutes,
   });
 
   // One durable workflow per post: it survives restarts, retries on its own, and sleeps
@@ -345,10 +363,15 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
   }
 
   const caption = input.caption !== undefined ? input.caption : post.caption;
+  const leadMinutes =
+    input.leadMinutes !== undefined ? leadFor(post.provider, input.leadMinutes) : post.leadMinutes;
   await updatePost(id, {
+    leadMinutes,
     ...(input.mediaUrl !== undefined && { mediaUrl: checkMedia(userId, input.mediaUrl) }),
     ...(input.caption !== undefined && { caption: input.caption }),
-    ...(input.scheduledAt !== undefined && { scheduledAt: checkTime(input.scheduledAt) }),
+    ...(input.scheduledAt !== undefined && {
+      scheduledAt: checkTime(input.scheduledAt, leadMinutes ?? 0),
+    }),
     ...(input.metadata !== undefined && {
       metadata: checkMetadata(
         post.provider,
@@ -425,6 +448,16 @@ export async function postInsights(userId: string, id: string) {
     provider.fetchAnalytics?.(post.platformPostId, token, loaded.account.platformAccountId) ?? null,
   ]);
   return { post, platform, metrics: metrics ? { ...metrics, raw: undefined } : null };
+}
+
+/** What the platform says about a post now, for the workflow's go-live check. */
+export async function platformStatusFor(postId: string) {
+  const loaded = await loadForPublishing(postId);
+  if (!loaded?.post.platformPostId) return null;
+  const provider = getProvider(loaded.post.provider);
+  if (!provider.fetchStatus) return null;
+  const token = await accessTokenFor(loaded.account, loaded.credential);
+  return provider.fetchStatus(loaded.post.platformPostId, token);
 }
 
 /** Everything the workflow needs to publish one post. */
