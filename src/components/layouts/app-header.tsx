@@ -3,7 +3,6 @@ import { Route as RootRoute } from "#/routes/__root";
 import { siteConfig } from "#/config/site";
 import { HeaderUser } from "./header-user";
 import ThemeToggle from "./theme-toggle";
-import { BookmarkHeaderMenu } from "#/routes/(public)/blog/-components/bookmark-header-menu";
 
 export function AppHeader() {
   const { session } = RootRoute.useRouteContext();
@@ -41,23 +40,18 @@ export function AppHeader() {
               >
                 Channels
               </Link>
+              <Link
+                to="/api-keys"
+                className="px-2.5 py-1 rounded-full hover:text-foreground hover:bg-muted/40 transition-colors"
+                activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
+              >
+                API keys
+              </Link>
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {user && (
-            <Link
-              to="/dashboard"
-              className="px-2.5 py-1 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-              activeProps={{ className: "text-foreground font-semibold bg-muted/60" }}
-            >
-              Dashboard
-            </Link>
-          )}
-
-          {user && <BookmarkHeaderMenu />}
-
           <HeaderUser />
           <ThemeToggle />
         </div>

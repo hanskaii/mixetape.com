@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useState, useCallback, useMemo, memo } from "react";
 import { ConfirmModal, type ConfirmModalProps } from "#/components/modals/confirm-modal";
 import { LoginModal, type LoginModalProps } from "#/components/modals/login-modal";
-import { MediaPickerDialog } from "#/components/modals/media-picker-modal";
 
 export interface ConfirmOptions extends Omit<
   ConfirmModalProps,
@@ -17,10 +16,6 @@ export interface ModalContextType {
   // Login Modal API
   openLogin: (props?: Partial<LoginModalProps>) => void;
   closeLogin: () => void;
-
-  // Media Picker API
-  openMediaPicker: (onSelect: (url: string, alt?: string) => void) => void;
-  closeMediaPicker: () => void;
 
   // Custom generic modal API
   openModal: (content: ReactNode) => void;
@@ -56,15 +51,6 @@ const ModalProviderClient = memo(function ModalProviderClient({
     props: null,
   });
 
-  // Media picker modal state
-  const [mediaPickerState, setMediaPickerState] = useState<{
-    open: boolean;
-    onSelect: ((url: string, alt?: string) => void) | null;
-  }>({
-    open: false,
-    onSelect: null,
-  });
-
   // Generic custom modal state
   const [customModal, setCustomModal] = useState<ReactNode | null>(null);
 
@@ -90,17 +76,6 @@ const ModalProviderClient = memo(function ModalProviderClient({
     setLoginState((prev) => ({ ...prev, open: false }));
   }, []);
 
-  const openMediaPicker = useCallback((onSelect: (url: string, alt?: string) => void) => {
-    setMediaPickerState({
-      open: true,
-      onSelect,
-    });
-  }, []);
-
-  const closeMediaPicker = useCallback(() => {
-    setMediaPickerState((prev) => ({ ...prev, open: false }));
-  }, []);
-
   const openModal = useCallback((content: ReactNode) => {
     setCustomModal(content);
   }, []);
@@ -115,21 +90,10 @@ const ModalProviderClient = memo(function ModalProviderClient({
       closeConfirm,
       openLogin,
       closeLogin,
-      openMediaPicker,
-      closeMediaPicker,
       openModal,
       closeModal,
     }),
-    [
-      confirm,
-      closeConfirm,
-      openLogin,
-      closeLogin,
-      openMediaPicker,
-      closeMediaPicker,
-      openModal,
-      closeModal,
-    ],
+    [confirm, closeConfirm, openLogin, closeLogin, openModal, closeModal],
   );
 
   return (
@@ -168,18 +132,6 @@ const ModalProviderClient = memo(function ModalProviderClient({
         onSuccess={() => {
           loginState.props?.onSuccess?.();
           closeLogin();
-        }}
-      />
-
-      {/* Global Media Picker Modal */}
-      <MediaPickerDialog
-        open={mediaPickerState.open}
-        onOpenChange={(open) => {
-          if (!open) closeMediaPicker();
-        }}
-        onSelectImage={(url, alt) => {
-          mediaPickerState.onSelect?.(url, alt);
-          closeMediaPicker();
         }}
       />
 

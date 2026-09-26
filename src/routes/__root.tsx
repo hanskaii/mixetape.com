@@ -138,12 +138,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: "/favicon.ico",
       },
       {
-        rel: "alternate",
-        type: "application/rss+xml",
-        title: `${siteConfig.name} | Blog RSS Feed`,
-        href: "/rss.xml",
-      },
-      {
         rel: "stylesheet",
         href: appCss,
       },

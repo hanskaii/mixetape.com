@@ -90,45 +90,6 @@ export const twoFactor = sqliteTable("two_factor", {
   lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
 });
 
-export const posts = sqliteTable("posts", {
-  id: integer({ mode: "number" }).primaryKey({
-    autoIncrement: true,
-  }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  slug: text("slug").notNull().unique(),
-  excerpt: text("excerpt"),
-  content: text("content").notNull(), // TipTap HTML
-  author: text("author").notNull().default("Admin"),
-  authorUsername: text("author_username").notNull().default("admin"),
-  tags: text("tags").default("general"),
-  coverImage: text("cover_image"),
-  status: text("status").notNull().default("published"), // 'draft' | 'published'
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
-export const bookmarks = sqliteTable("bookmarks", {
-  id: integer({ mode: "number" }).primaryKey({
-    autoIncrement: true,
-  }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  postId: integer("post_id")
-    .notNull()
-    .references(() => posts.id, { onDelete: "cascade" }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
 // ── Social publishing ──────────────────────────────────────────────────────────
 //
 // A credential is the OAuth app a user brings (their own Google client, say); an account
@@ -249,10 +210,6 @@ export const apiKeys = sqliteTable(
 
 export type User = typeof user.$inferSelect;
 export type InsertUser = typeof user.$inferInsert;
-export type Post = typeof posts.$inferSelect;
-export type InsertPost = typeof posts.$inferInsert;
-export type Bookmark = typeof bookmarks.$inferSelect;
-export type InsertBookmark = typeof bookmarks.$inferInsert;
 export type ProviderCredential = typeof providerCredentials.$inferSelect;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type SocialPost = typeof socialPosts.$inferSelect;

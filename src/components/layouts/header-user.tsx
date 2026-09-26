@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Gear, SignOut, PencilSimple, Shield, SquaresFour } from "@phosphor-icons/react";
+import { Gear, SignOut, Shield, SquaresFour } from "@phosphor-icons/react";
 import { authClient } from "#/modules/auth/auth-client";
 import { Route as RootRoute } from "#/routes/__root";
 import { Button } from "#/components/ui/button";
@@ -61,9 +61,9 @@ export function HeaderUser() {
           <DropdownMenuGroup>
             <DropdownMenuItem
               render={
-                <Link to="/dashboard" className="flex items-center gap-2">
+                <Link to="/publish" className="flex items-center gap-2">
                   <SquaresFour className="size-3.5 text-muted-foreground" />
-                  <span>Dashboard</span>
+                  <span>Publish</span>
                 </Link>
               }
             />
@@ -82,15 +82,6 @@ export function HeaderUser() {
                 <Link to="/settings/account" className="flex items-center gap-2">
                   <Shield className="size-3.5 text-muted-foreground" />
                   <span>Account Settings</span>
-                </Link>
-              }
-            />
-
-            <DropdownMenuItem
-              render={
-                <Link to="/blog/new" className="flex items-center gap-2">
-                  <PencilSimple className="size-3.5 text-muted-foreground" />
-                  <span>Write Article</span>
                 </Link>
               }
             />
