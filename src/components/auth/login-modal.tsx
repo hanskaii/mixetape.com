@@ -206,7 +206,7 @@ export function LoginModal({
               <div className="p-2 text-xs rounded bg-destructive/10 text-destructive">{error}</div>
             )}
             {success && (
-              <div className="p-2 text-xs rounded bg-primary/10 text-primary">{success}</div>
+              <div className="p-2 text-xs rounded bg-primary/10 text-editorial">{success}</div>
             )}
 
             <div className="flex gap-2">

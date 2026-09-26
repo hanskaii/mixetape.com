@@ -1,41 +1,130 @@
+"use client";
+
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as stylex from "@stylexjs/stylex";
+import type { StyleXStyles } from "@stylexjs/stylex";
 
-import { cn } from "#/components/ui/utils.ts";
+import { colors, radius } from "./tokens.stylex";
+import { customClassName } from "./stylex-utils";
 
-const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
-        destructive:
-          "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
-        outline:
-          "border-border bg-input/30 text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
+const styles = stylex.create({
+  badgeBase: {
+    ":is(svg)": {
+      flexShrink: 0,
+      height: "0.75rem",
+      pointerEvents: "none",
+      width: "0.75rem",
     },
-    defaultVariants: {
-      variant: "default",
+    alignItems: "center",
+    borderColor: {
+      ":focus-visible": colors.ring,
+      default: null,
+    },
+    borderRadius: radius.full,
+    borderStyle: "none",
+    borderWidth: 0,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      default: null,
+    },
+    boxSizing: "border-box",
+    display: "inline-flex",
+    flexShrink: 0,
+    fontFamily: "inherit",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    gap: "0.25rem",
+    height: "1.25rem",
+    justifyContent: "center",
+    lineHeight: "1rem",
+    outline: "none",
+    overflow: "hidden",
+    paddingBlock: 0,
+    paddingInline: "0.5rem",
+    transitionDuration: "150ms",
+    transitionProperty:
+      "color, background-color, border-color, text-decoration-color, fill, stroke",
+    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+    whiteSpace: "nowrap",
+    width: "fit-content",
+  },
+  variantDefault: {
+    backgroundColor: colors.primary,
+    color: colors.primaryForeground,
+  },
+  variantDestructive: {
+    backgroundColor: `color-mix(in oklab, ${colors.destructive} 10%, transparent)`,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent)`,
+      default: null,
+    },
+    color: colors.destructive,
+  },
+  variantGhost: {
+    backgroundColor: {
+      ":hover": colors.muted,
+      default: "transparent",
+    },
+    color: {
+      ":hover": colors.mutedForeground,
+      default: "inherit",
     },
   },
-);
+  variantLink: {
+    backgroundColor: "transparent",
+    color: colors.primary,
+    textDecorationLine: {
+      ":hover": "underline",
+      default: "none",
+    },
+    textUnderlineOffset: "4px",
+  },
+  variantOutline: {
+    borderColor: colors.border,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: colors.foreground,
+  },
+  variantSecondary: {
+    backgroundColor: colors.secondary,
+    color: colors.secondaryForeground,
+  },
+});
 
-function Badge({
-  className,
-  variant = "default",
-  render,
-  ...props
-}: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+
+const variantStyles: Record<BadgeVariant, StyleXStyles> = {
+  default: styles.variantDefault,
+  destructive: styles.variantDestructive,
+  ghost: styles.variantGhost,
+  link: styles.variantLink,
+  outline: styles.variantOutline,
+  secondary: styles.variantSecondary,
+};
+
+export type BadgeProps = Omit<useRender.ComponentProps<"span">, "style"> & {
+  variant?: BadgeVariant;
+  className?: string;
+  style?: StyleXStyles;
+};
+
+const Badge = ({ className, variant = "default", render, style, ...props }: BadgeProps) => {
+  const styleProps = stylex.props(
+    styles.badgeBase,
+    variantStyles[variant],
+    customClassName(className),
+    style as StyleXStyles,
+  );
+
   return useRender({
     defaultTagName: "span",
-    props: mergeProps<"span">(
+    props: mergeProps(
       {
-        className: cn(badgeVariants({ variant }), className),
+        className: styleProps.className,
+        "data-slot": "badge",
+        "data-variant": variant,
+        style: styleProps.style,
       },
       props,
     ),
@@ -45,6 +134,6 @@ function Badge({
       variant,
     },
   });
-}
+};
 
-export { Badge, badgeVariants };
+export { Badge, styles as badgeStyles };

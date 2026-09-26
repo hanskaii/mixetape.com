@@ -1,32 +1,131 @@
 "use client";
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+import * as stylex from "@stylexjs/stylex";
+import type { StyleXStyles } from "@stylexjs/stylex";
 
-import { cn } from "#/components/ui/utils.ts";
+import { colors, radius } from "./tokens.stylex";
+import { customClassName } from "./stylex-utils";
 
-function Switch({
-  className,
-  size = "default",
-  ...props
-}: SwitchPrimitive.Root.Props & {
+const styles = stylex.create({
+  root: {
+    "::after": {
+      bottom: "-0.5rem",
+      content: '""',
+      left: "-0.75rem",
+      position: "absolute",
+      right: "-0.75rem",
+      top: "-0.5rem",
+    },
+    alignItems: "center",
+    backgroundColor: {
+      ":disabled": colors.input,
+      default: colors.input,
+    },
+    borderColor: {
+      ":focus-visible": colors.ring,
+      default: "transparent",
+    },
+    borderRadius: radius.full,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      default: null,
+    },
+    cursor: {
+      ":disabled": "not-allowed",
+      default: "pointer",
+    },
+    display: "inline-flex",
+    flexShrink: 0,
+    opacity: {
+      ":disabled": 0.5,
+      default: 1,
+    },
+    outline: "none",
+    position: "relative",
+    transitionDuration: "150ms",
+    transitionProperty: "all",
+  },
+  rootChecked: {
+    backgroundColor: colors.primary,
+  },
+  rootDefault: {
+    height: "18.4px",
+    width: "32px",
+  },
+  rootInvalid: {
+    borderColor: colors.destructive,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent)`,
+      default: null,
+    },
+  },
+  rootSm: {
+    height: "14px",
+    width: "24px",
+  },
+  thumb: {
+    backgroundColor: colors.background,
+    borderRadius: radius.full,
+    boxShadow: "0 0 0 0 transparent",
+    display: "block",
+    pointerEvents: "none",
+    transform: "translateX(0px)",
+    transitionDuration: "150ms",
+    transitionProperty: "transform",
+  },
+  thumbChecked: {
+    transform: "translateX(calc(100% - 2px))",
+  },
+  thumbDefault: {
+    height: "1rem",
+    width: "1rem",
+  },
+  thumbSm: {
+    height: "0.75rem",
+    width: "0.75rem",
+  },
+});
+
+export type SwitchProps = Omit<SwitchPrimitive.Root.Props, "className" | "style"> & {
   size?: "sm" | "default";
-}) {
+  className?: string | ((state: SwitchPrimitive.Root.State) => string | undefined);
+  style?: StyleXStyles;
+};
+
+const Switch = ({ className, style, size = "default", ...props }: SwitchProps) => {
+  const isSm = size === "sm";
+
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
       data-size={size}
-      className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
-        className,
-      )}
+      className={(state) =>
+        stylex.props(
+          styles.root,
+          isSm ? styles.rootSm : styles.rootDefault,
+          state.checked && styles.rootChecked,
+          state.valid === false && styles.rootInvalid,
+          customClassName(typeof className === "function" ? className(state) : className),
+          style,
+        ).className
+      }
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-unchecked:bg-foreground"
+        className={(state) =>
+          stylex.props(
+            styles.thumb,
+            isSm ? styles.thumbSm : styles.thumbDefault,
+            state.checked && styles.thumbChecked,
+          ).className
+        }
       />
     </SwitchPrimitive.Root>
   );
-}
+};
 
-export { Switch };
+export { Switch, styles as switchStyles };

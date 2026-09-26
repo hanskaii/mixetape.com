@@ -1,3 +1,5 @@
+@layer theme, base, components, priority1, priority2, priority3, priority4, priority5, priority6, priority7, utilities;
+
 @import "tailwindcss";
 
 @import "tw-animate-css";
@@ -9,39 +11,43 @@
 :root {
   --font-geist: "Geist Variable", sans-serif;
   --font-geist-mono: "Geist Mono Variable", monospace;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --font-editorial: "Instrument Serif", Georgia, serif;
+  --background: #f7f5f0;
+  --foreground: #0b0b0b;
+  --card: #fffefa;
+  --card-foreground: #0b0b0b;
+  --popover: #fffefa;
+  --popover-foreground: #0b0b0b;
+  --primary: #ffd21f;
+  --primary-foreground: #0b0b0b;
+  --secondary: #f1eee7;
+  --secondary-foreground: #0b0b0b;
+  --muted: #f1eee7;
+  --muted-foreground: #656159;
+  --accent: #fff0ae;
+  --accent-foreground: #0b0b0b;
+  --destructive: #b93f34;
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #e4e0d7;
+  --input: #d2cdc2;
+  --ring: #d7aa00;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 1.25rem;
+  --editorial: #9a6300;
+  --studio: #11110f;
+  --studio-foreground: #f6f4ee;
+  --sidebar: #fffefa;
+  --sidebar-foreground: #0b0b0b;
+  --sidebar-primary: #ffd21f;
+  --sidebar-primary-foreground: #0b0b0b;
+  --sidebar-accent: #fff0ae;
+  --sidebar-accent-foreground: #0b0b0b;
+  --sidebar-border: #e4e0d7;
+  --sidebar-ring: #d7aa00;
 
   /* shadcn typeset tokens */
   --typeset-font-body: inherit;
@@ -53,44 +59,52 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: #141413;
+  --foreground: #f6f4ee;
+  --card: #20201e;
+  --card-foreground: #f6f4ee;
+  --popover: #24231f;
+  --popover-foreground: #f6f4ee;
+  --primary: #ffd21f;
+  --primary-foreground: #0b0b0b;
+  --secondary: #2d2c28;
+  --secondary-foreground: #f6f4ee;
+  --muted: #2d2c28;
+  --muted-foreground: #aaa69d;
+  --accent: #493e20;
+  --accent-foreground: #fff0ae;
+  --destructive: #f28b7b;
+  --destructive-foreground: #141413;
+  --border: #3b3933;
+  --input: #555148;
+  --ring: #ffd21f;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar: #20201e;
+  --sidebar-foreground: #f6f4ee;
+  --sidebar-primary: #ffd21f;
+  --sidebar-primary-foreground: #0b0b0b;
+  --sidebar-accent: #493e20;
+  --sidebar-accent-foreground: #fff0ae;
+  --sidebar-border: #3b3933;
+  --sidebar-ring: #ffd21f;
 
+  --editorial: #f1b94b;
+  --studio: #0b0b0b;
+  --studio-foreground: #f6f4ee;
   --typeset-leading: 1.85;
 }
 
 @theme inline {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: "Instrument Serif", Georgia, serif;
+  --color-editorial: var(--editorial);
+  --color-studio: var(--studio);
+  --color-studio-foreground: var(--studio-foreground);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -139,6 +153,7 @@ body {
   margin: 0;
   color: var(--foreground);
   font-family: var(--font-sans);
+  line-height: 1.55;
   background-color: var(--background);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -156,6 +171,47 @@ body {
   a {
     color: inherit;
     text-decoration: none;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    font-family: var(--font-geist-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    line-height: 1.2;
+  }
+
+  .editorial-serif {
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+
+  .app-page {
+    width: min(100%, 1040px);
+    margin-inline: auto;
+  }
+
+  .record-grooves {
+    background-image: repeating-radial-gradient(
+      circle at center,
+      transparent 0,
+      transparent 7px,
+      rgb(255 255 255 / 7%) 8px,
+      transparent 9px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -26,6 +26,7 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@phosphor-icons/react": "^2.1.10",
+    "@stylexjs/stylex": "^0.19.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "latest",
@@ -52,6 +53,7 @@
     "@cloudflare/vite-plugin": "^1.54.2",
     "@cloudflare/workers-types": "^5.20260901.1",
     "@rolldown/plugin-babel": "^0.2.3",
+    "@stylexjs/unplugin": "^0.19.1",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.167.33",
     "@types/dompurify": "^3.2.0",
@@ -68,6 +70,7 @@
     "react-doctor": "^0.9.13",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
+    "unplugin": "^2.3.11",
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
     "wrangler": "^4.127.1"

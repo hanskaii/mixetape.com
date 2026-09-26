@@ -134,7 +134,7 @@ export function ConnectChannelModal({
             </>
           ) : (
             <>
-              <SpinnerGap className="size-4 shrink-0 animate-spin text-primary" />
+              <SpinnerGap className="size-4 shrink-0 animate-spin text-editorial" />
               <span className="text-muted-foreground">
                 {!state
                   ? "Preparing the sign-in link…"

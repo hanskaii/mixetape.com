@@ -5,6 +5,7 @@ import Footer from "../components/layouts/footer";
 import { AppHeader } from "../components/layouts/app-header";
 import { getAuthSession } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
+import { StyleXDev } from "../components/providers/stylex-dev";
 
 import { TanStackQueryDevtools } from "../components/providers/query-devtools";
 import { siteConfig } from "#/config/site";
@@ -125,7 +126,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap",
       },
       {
         rel: "icon",
@@ -152,10 +153,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
+        <StyleXDev />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
+      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/45">
         <ModalProvider>
-          <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-start md:border-x">
+          <div className="mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-start">
             <AppHeader />
             <div className="flex-1">{children}</div>
             <Footer />

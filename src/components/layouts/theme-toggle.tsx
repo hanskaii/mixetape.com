@@ -72,7 +72,7 @@ export default function ThemeToggle() {
       onClick={toggleMode}
       aria-label={label}
       title={label}
-      className="size-8 rounded-full cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
+      className="size-9 rounded-xl border border-border cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
     >
       {mode === "light" && <Sun className="size-4" />}
       {mode === "dark" && <Moon className="size-4" />}

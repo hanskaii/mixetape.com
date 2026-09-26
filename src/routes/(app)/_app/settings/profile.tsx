@@ -11,6 +11,7 @@ import {
 import { authClient } from "#/modules/auth/auth-client";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
 import { Button } from "#/components/ui/button";
+import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
@@ -119,19 +120,24 @@ function ProfileSettingsPage() {
   };
 
   return (
-    <main className="space-y-6 px-4 py-8 md:py-12">
+    <main className="app-page space-y-7 px-4 py-10 md:py-14">
+      <WorkspaceHeading
+        section="Account / 01"
+        title="Your profile"
+        description="The name and image that represent you in mixetape."
+      />
       {/* Navigation tabs */}
       <div className="flex items-center gap-2 border-b border-border/60 pb-3">
         <Link
           to="/settings/profile"
-          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
         >
           <User className="size-3.5" />
           <span>Profile</span>
         </Link>
         <Link
           to="/settings/account"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
         >
           <Shield className="size-3.5" />
           <span>General Account</span>
@@ -189,7 +195,7 @@ function ProfileSettingsPage() {
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
                   ) : (
-                    <div className="size-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                    <div className="size-full bg-primary/10 text-editorial flex items-center justify-center font-bold text-sm">
                       {(username || user?.email || "U").charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -211,7 +217,7 @@ function ProfileSettingsPage() {
                     variant="outline"
                     disabled={isUploading}
                     onClick={() => fileInputRef.current?.click()}
-                    className="h-8 px-3 text-xs font-medium rounded-full gap-1.5 cursor-pointer"
+                    className="h-8 px-3 text-xs font-medium rounded-xl gap-1.5 cursor-pointer"
                   >
                     {isUploading ? (
                       <>
@@ -255,7 +261,7 @@ function ProfileSettingsPage() {
                     placeholder={siteConfig.author.handle}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="pl-8 h-9 text-xs font-mono rounded-full"
+                    className="pl-8 h-9 text-xs font-mono rounded-xl"
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground">
@@ -298,7 +304,7 @@ function ProfileSettingsPage() {
               type="submit"
               size="sm"
               disabled={isSaving}
-              className="h-8 px-4 text-xs font-semibold rounded-full cursor-pointer gap-1.5"
+              className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer gap-1.5"
             >
               {isSaving ? (
                 <>

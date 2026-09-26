@@ -15,6 +15,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Badge } from "#/components/ui/badge";
 import { PublishingTabs, selectClassName } from "#/components/layouts/publishing-tabs";
+import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import {
   addCredential,
@@ -103,7 +104,12 @@ function ChannelsPage() {
     });
 
   return (
-    <main className="space-y-8 px-4 py-8 md:py-12">
+    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+      <WorkspaceHeading
+        section="Studio / 02"
+        title="Channels"
+        description="Keep your publishing connection in your hands."
+      />
       <PublishingTabs />
 
       {connected && (
@@ -124,7 +130,7 @@ function ChannelsPage() {
             No channel yet. Add an app credential below, then connect a channel with it.
           </p>
         ) : (
-          <ul className="divide-y divide-border/60 rounded-2xl ring-1 ring-foreground/10">
+          <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-card">
             {accounts.map((account) => (
               <li key={account.id} className="flex items-center gap-3 px-4 py-3">
                 {account.avatar ? (
@@ -185,7 +191,7 @@ function ChannelsPage() {
         </button>
 
         {credentials.length > 0 && (
-          <ul className="divide-y divide-border/60 rounded-2xl ring-1 ring-foreground/10">
+          <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-card">
             {credentials.map((credential) => (
               <li key={credential.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
@@ -212,7 +218,7 @@ function ChannelsPage() {
 
         <form
           onSubmit={save}
-          className="grid max-w-2xl gap-3 rounded-2xl p-4 ring-1 ring-foreground/10 sm:grid-cols-2"
+          className="grid max-w-2xl gap-4 rounded-[20px] border border-border bg-card p-5 sm:grid-cols-2 sm:p-6"
         >
           <select
             className={selectClassName}

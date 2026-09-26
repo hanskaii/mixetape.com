@@ -14,6 +14,7 @@ import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { Badge } from "#/components/ui/badge";
 import { PublishingTabs, selectClassName } from "#/components/layouts/publishing-tabs";
+import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import {
   cancelScheduledPost,
   getPublishData,
@@ -134,9 +135,14 @@ function PublishPage() {
 
   if (accounts.length === 0) {
     return (
-      <main className="space-y-6 px-4 py-8 md:py-12">
+      <main className="app-page space-y-7 px-4 py-10 md:py-14">
+        <WorkspaceHeading
+          section="Studio / 01"
+          title="Publish"
+          description="Give your next video a place on the calendar."
+        />
         <PublishingTabs />
-        <p className="text-sm text-muted-foreground">
+        <p className="rounded-[20px] border border-border bg-card p-6 text-sm text-muted-foreground">
           Connect a channel first on the{" "}
           <Link to="/channels" className="text-foreground underline">
             Channels
@@ -148,12 +154,17 @@ function PublishPage() {
   }
 
   return (
-    <main className="space-y-8 px-4 py-8 md:py-12">
+    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+      <WorkspaceHeading
+        section="Studio / 01"
+        title="Publish"
+        description="Set the release, then let mixetape keep the time."
+      />
       <PublishingTabs />
 
       <form
         onSubmit={submit}
-        className="grid gap-3 rounded-2xl p-4 ring-1 ring-foreground/10 md:grid-cols-2"
+        className="grid gap-4 rounded-[20px] border border-border bg-card p-5 shadow-[0_18px_36px_-32px_rgba(23,19,10,.45)] md:grid-cols-2 md:p-7"
       >
         <select
           className={selectClassName}
@@ -325,7 +336,7 @@ function PostList({
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold">{title}</h2>
-      <ul className="divide-y divide-border/60 rounded-2xl ring-1 ring-foreground/10">
+      <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-card">
         {posts.map((post) => {
           const metadata = (post.metadata ?? {}) as { title?: string };
           return (

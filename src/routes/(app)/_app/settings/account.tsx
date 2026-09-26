@@ -16,6 +16,7 @@ import QRCode from "qrcode";
 import { authClient } from "#/modules/auth/auth-client";
 import { getUserLinkedAccounts, unlinkUserAccount } from "#/modules/auth/auth.fn";
 import { Button } from "#/components/ui/button";
+import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { Input } from "#/components/ui/input";
 import { Switch } from "#/components/ui/switch";
 import { Modal, ModalHeader, ModalTitle, ModalDescription } from "#/components/ui/modal";
@@ -420,19 +421,24 @@ function AccountSettingsPage() {
   };
 
   return (
-    <main className="space-y-6 px-4 py-8 md:py-12">
+    <main className="app-page space-y-7 px-4 py-10 md:py-14">
+      <WorkspaceHeading
+        section="Account / 02"
+        title="Account settings"
+        description="Manage access, identity, and security in one place."
+      />
       {/* Navigation tabs */}
       <div className="flex items-center gap-2 border-b border-border/60 pb-3">
         <Link
           to="/settings/profile"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
         >
           <User className="size-3.5" />
           <span>Profile</span>
         </Link>
         <Link
           to="/settings/account"
-          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
         >
           <Shield className="size-3.5" />
           <span>General Account</span>
@@ -704,7 +710,7 @@ function AccountSettingsPage() {
                 Download an authenticator app
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Install <span className="text-primary font-semibold">Google Authenticator</span>,
+                Install <span className="text-editorial font-semibold">Google Authenticator</span>,
                 1Password, Microsoft Authenticator, or Authy on your mobile phone.
               </p>
             </div>
@@ -736,7 +742,7 @@ function AccountSettingsPage() {
                     />
                   ) : (
                     <div className="size-full flex flex-col items-center justify-center gap-1 text-muted-foreground">
-                      <SpinnerGap className="size-5 animate-spin text-primary" />
+                      <SpinnerGap className="size-5 animate-spin text-editorial" />
                       <span className="text-[10px] font-mono text-muted-foreground">
                         Loading...
                       </span>
@@ -980,13 +986,13 @@ function AccountSettingsPage() {
           >
             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 ring-1 ring-primary/20 text-xs">
               <div className="flex items-center gap-2 truncate pr-2">
-                <EnvelopeSimple className="size-4 text-primary shrink-0" />
+                <EnvelopeSimple className="size-4 text-editorial shrink-0" />
                 <span className="text-foreground font-medium truncate font-mono">{newEmail}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setEmailStep("input-email")}
-                className="text-xs text-primary font-semibold hover:underline shrink-0 cursor-pointer"
+                className="text-xs text-editorial font-semibold hover:underline shrink-0 cursor-pointer"
               >
                 Change
               </button>
@@ -1038,7 +1044,7 @@ function AccountSettingsPage() {
                   type="button"
                   onClick={handleSendEmailOtp}
                   disabled={isEmailLoading}
-                  className="text-primary font-semibold hover:underline cursor-pointer"
+                  className="text-editorial font-semibold hover:underline cursor-pointer"
                 >
                   Resend code
                 </button>

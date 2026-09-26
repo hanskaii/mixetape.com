@@ -1,6 +1,74 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { cn } from "./utils";
+import * as stylex from "@stylexjs/stylex";
+
+import { colors, radius } from "./tokens.stylex";
+import { customClassName } from "./stylex-utils";
+
+const styles = stylex.create({
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    backgroundColor: "rgb(0 0 0 / 60%)",
+    backdropFilter: "blur(4px)",
+    opacity: 0,
+    transition: "opacity 150ms ease",
+  },
+  backdropOpen: { opacity: 1 },
+  popup: {
+    position: "fixed",
+    left: "50%",
+    top: "50%",
+    width: "calc(100% - 2rem)",
+    maxWidth: "32rem",
+    transform: "translate(-50%, -50%) scale(.95)",
+    borderRadius: radius["2xl"],
+    backgroundColor: colors.card,
+    boxShadow: "0 25px 50px -12px rgb(0 0 0 / 25%)",
+    outline: "none",
+    padding: "1.5rem",
+    opacity: 0,
+    transition: "opacity 150ms ease, transform 150ms ease",
+  },
+  popupOpen: { opacity: 1, transform: "translate(-50%, -50%) scale(1)" },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: ".375rem",
+    textAlign: "left",
+    paddingBottom: ".5rem",
+  },
+  footer: {
+    display: "flex",
+    flexDirection: "column-reverse",
+    gap: ".5rem",
+    justifyContent: "flex-end",
+    paddingTop: "1rem",
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    borderTopColor: `color-mix(in oklab, ${colors.border} 60%, transparent)`,
+    marginTop: "1rem",
+    "@media (min-width: 640px)": { flexDirection: "row" },
+  },
+  title: {
+    fontWeight: 700,
+    fontSize: "1rem",
+    lineHeight: 1.25,
+    letterSpacing: "-.025em",
+    color: colors.foreground,
+  },
+  description: { color: colors.mutedForeground, fontSize: ".75rem", lineHeight: 1.625 },
+  close: {
+    position: "absolute",
+    top: "1rem",
+    right: "1rem",
+    padding: ".25rem",
+    borderRadius: radius.md,
+    cursor: "pointer",
+    opacity: { ":hover": 1, default: 0.7 },
+    transition: "opacity 150ms ease",
+  },
+});
 
 export interface ModalProps {
   children: React.ReactNode;
@@ -39,9 +107,8 @@ export function Modal({
 
   const handleOpenChange = React.useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen) {
-        handleClose();
-      } else {
+      if (!nextOpen) handleClose();
+      else {
         setShowModal?.(true);
         onOpenChange?.(true);
       }
@@ -57,17 +124,20 @@ export function Modal({
     >
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
-          className={cn(
-            "fixed inset-0 bg-black/60 backdrop-blur-sm data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 duration-150",
-            backdropClassName,
-          )}
+          className={(state) =>
+            stylex.props(
+              styles.backdrop,
+              state.open && styles.backdropOpen,
+              customClassName(backdropClassName),
+            ).className
+          }
           style={{ zIndex }}
         />
         <DialogPrimitive.Popup
-          className={cn(
-            "fixed left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-card ring-1 ring-foreground/10 p-6 shadow-2xl data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 duration-150 focus:outline-none",
-            className,
-          )}
+          className={(state) =>
+            stylex.props(styles.popup, state.open && styles.popupOpen, customClassName(className))
+              .className
+          }
           style={{ zIndex: zIndex + 1 }}
         >
           {children}
@@ -78,27 +148,16 @@ export function Modal({
 }
 
 export function ModalHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col space-y-1.5 text-left pb-2", className)} {...props} />;
+  return <div {...stylex.props(styles.header, customClassName(className))} {...props} />;
 }
 
 export function ModalFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4 border-t border-border/60 mt-4",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <div {...stylex.props(styles.footer, customClassName(className))} {...props} />;
 }
 
 export function ModalTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <DialogPrimitive.Title
-      className={cn("font-bold text-base leading-tight tracking-tight text-foreground", className)}
-      {...props}
-    />
+    <DialogPrimitive.Title {...stylex.props(styles.title, customClassName(className))} {...props} />
   );
 }
 
@@ -108,7 +167,7 @@ export function ModalDescription({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-muted-foreground text-xs leading-relaxed", className)}
+      {...stylex.props(styles.description, customClassName(className))}
       {...props}
     />
   );
@@ -116,12 +175,6 @@ export function ModalDescription({
 
 export function ModalClose({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <DialogPrimitive.Close
-      className={cn(
-        "absolute top-4 right-4 rounded-md opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none p-1 cursor-pointer",
-        className,
-      )}
-      {...props}
-    />
+    <DialogPrimitive.Close {...stylex.props(styles.close, customClassName(className))} {...props} />
   );
 }

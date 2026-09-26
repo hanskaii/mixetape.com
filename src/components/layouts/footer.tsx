@@ -5,12 +5,15 @@ export default function Footer() {
   const year = dayjs().format("YYYY");
 
   return (
-    <footer className="border-t border-border px-4 py-8 text-muted-foreground text-xs">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p className="m-0">
-          &copy; {year} {siteConfig.name}.
+    <footer className="mx-4 mt-auto border-t border-border px-1 py-8 text-sm text-muted-foreground sm:mx-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-semibold tracking-tight text-foreground">{siteConfig.name}</p>
+          <p className="mt-1 text-xs">Publish on your time.</p>
+        </div>
+        <p className="font-mono text-[11px] tracking-wide">
+          &copy; {year} {siteConfig.name} · YouTube today
         </p>
-        <p className="m-0 text-[11px]">Crafted for speed &amp; simplicity</p>
       </div>
     </footer>
   );

@@ -1,8 +1,8 @@
 export const siteConfig = {
   name: "mixetape",
-  title: "mixetape | Schedule videos to your social channels",
+  title: "mixetape | Schedule YouTube videos on your time",
   description:
-    "Upload once, pick a time, and mixetape posts it to your channels — through your own credentials, with an API for your pipelines.",
+    "Queue a YouTube video, choose when it goes live, and track every post. Use your own credentials or connect a scheduling pipeline through the API.",
   url: process.env.SITE_URL || "http://localhost:3000",
   author: {
     name: "Admin",

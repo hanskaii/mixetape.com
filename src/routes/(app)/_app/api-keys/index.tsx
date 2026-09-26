@@ -4,6 +4,7 @@ import { Check, Copy, Key, SpinnerGap, Trash } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { PublishingTabs } from "#/components/layouts/publishing-tabs";
+import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { useConfirmModal } from "#/components/providers/modal-providers";
 import { createApiKey, getApiKeys, removeApiKey } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
@@ -56,7 +57,12 @@ function ApiKeysPage() {
   }'`;
 
   return (
-    <main className="space-y-8 px-4 py-8 md:py-12">
+    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+      <WorkspaceHeading
+        section="Studio / 03"
+        title="API keys"
+        description="Bring publishing into the tools you already use."
+      />
       <PublishingTabs />
 
       <section className="space-y-3">
@@ -97,7 +103,7 @@ function ApiKeysPage() {
         )}
 
         {keys.length > 0 && (
-          <ul className="max-w-2xl divide-y divide-border/60 rounded-2xl ring-1 ring-foreground/10">
+          <ul className="max-w-2xl divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-card">
             {keys.map((key) => (
               <li key={key.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">

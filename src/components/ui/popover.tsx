@@ -1,75 +1,159 @@
-import * as React from "react";
+"use client";
+
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import * as stylex from "@stylexjs/stylex";
+import type { StyleXStyles } from "@stylexjs/stylex";
+import * as React from "react";
 
-import { cn } from "#/components/ui/utils.ts";
+import { colors, radius } from "./tokens.stylex";
+import { customClassName } from "./stylex-utils";
 
-function Popover({ ...props }: PopoverPrimitive.Root.Props) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
-}
+const hidden = (s: string | undefined) => s === "starting" || s === "ending";
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
-}
+const styles = stylex.create({
+  description: {
+    color: colors.mutedForeground,
+    fontFamily: "inherit",
+    margin: 0,
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    fontSize: "0.875rem",
+    gap: "0.125rem",
+  },
+  popup: {
+    backgroundColor: colors.popover,
+    borderRadius: radius.md,
+    boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 0 0 1px color-mix(in oklab, ${colors.foreground} 10%, transparent)`,
+    color: colors.popoverForeground,
+    display: "flex",
+    flexDirection: "column",
+    fontSize: "0.875rem",
+    gap: "0.625rem",
+    opacity: 1,
+    outline: "none",
+    padding: "0.625rem",
+    transform: "scale(1)",
+    transformOrigin: "var(--transform-origin)",
+    transitionDuration: "100ms",
+    transitionProperty: "opacity, transform",
+    transitionTimingFunction: "cubic-bezier(0, 0, 0.2, 1)",
+    width: "18rem",
+    zIndex: 50,
+  },
+  popupHidden: {
+    opacity: 0,
+    transform: "scale(0.95)",
+  },
+  positioner: {
+    isolation: "isolate",
+    zIndex: 50,
+  },
+  title: {
+    fontFamily: "inherit",
+    fontWeight: 500,
+    margin: 0,
+  },
+});
 
-function PopoverContent({
+type PopoverProps = PopoverPrimitive.Root.Props;
+
+const Popover = ({ ...props }: PopoverProps) => (
+  <PopoverPrimitive.Root data-slot="popover" {...props} />
+);
+
+type PopoverTriggerProps = PopoverPrimitive.Trigger.Props;
+
+const PopoverTrigger = ({ ...props }: PopoverTriggerProps) => (
+  <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+);
+
+type PopoverContentProps = Omit<PopoverPrimitive.Popup.Props, "style"> &
+  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset"> & {
+    className?: string;
+    style?: StyleXStyles;
+  };
+
+const PopoverContent = ({
   className,
+  style,
   align = "center",
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
   ...props
-}: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
-  return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Positioner
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-        className="isolate z-50"
-      >
-        <PopoverPrimitive.Popup
-          data-slot="popover-content"
-          className={cn(
-            "z-50 flex w-72 origin-(--transform-origin) flex-col gap-4 rounded-2xl bg-popover p-4 text-sm text-popover-foreground shadow-2xl ring-1 ring-foreground/5 outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-            className,
-          )}
-          {...props}
-        />
-      </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
-  );
-}
+}: PopoverContentProps) => (
+  <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Positioner
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      {...stylex.props(styles.positioner)}
+    >
+      <PopoverPrimitive.Popup
+        data-slot="popover-content"
+        className={(state) =>
+          stylex.props(
+            styles.popup,
+            hidden(state.transitionStatus) && styles.popupHidden,
+            customClassName(className),
+            style,
+          ).className
+        }
+        {...props}
+      />
+    </PopoverPrimitive.Positioner>
+  </PopoverPrimitive.Portal>
+);
 
-function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="popover-header"
-      className={cn("flex flex-col gap-1 text-sm", className)}
-      {...props}
-    />
-  );
-}
+type PopoverHeaderProps = Omit<React.ComponentProps<"div">, "style"> & {
+  className?: string;
+  style?: StyleXStyles;
+};
 
-function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
-  return (
-    <PopoverPrimitive.Title
-      data-slot="popover-title"
-      className={cn("text-base font-medium", className)}
-      {...props}
-    />
-  );
-}
+const PopoverHeader = ({ className, style, ...props }: PopoverHeaderProps) => (
+  <div
+    data-slot="popover-header"
+    {...stylex.props(styles.header, customClassName(className), style)}
+    {...props}
+  />
+);
 
-function PopoverDescription({ className, ...props }: PopoverPrimitive.Description.Props) {
-  return (
-    <PopoverPrimitive.Description
-      data-slot="popover-description"
-      className={cn("text-muted-foreground", className)}
-      {...props}
-    />
-  );
-}
+type PopoverTitleProps = Omit<PopoverPrimitive.Title.Props, "style"> & {
+  className?: string;
+  style?: StyleXStyles;
+};
+
+const PopoverTitle = ({ className, style, ...props }: PopoverTitleProps) => (
+  <PopoverPrimitive.Title
+    data-slot="popover-title"
+    {...stylex.props(styles.title, customClassName(className), style)}
+    {...props}
+  />
+);
+
+type PopoverDescriptionProps = Omit<PopoverPrimitive.Description.Props, "style"> & {
+  className?: string;
+  style?: StyleXStyles;
+};
+
+const PopoverDescription = ({ className, style, ...props }: PopoverDescriptionProps) => (
+  <PopoverPrimitive.Description
+    data-slot="popover-description"
+    {...stylex.props(styles.description, customClassName(className), style)}
+    {...props}
+  />
+);
 
 export { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger };
+
+export type {
+  PopoverProps,
+  PopoverTriggerProps,
+  PopoverContentProps,
+  PopoverHeaderProps,
+  PopoverTitleProps,
+  PopoverDescriptionProps,
+};

@@ -28,16 +28,16 @@ export function HeaderUser() {
           render={
             <button
               type="button"
-              className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-opacity hover:opacity-80 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl outline-none ring-offset-background transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
             >
               {user.image ? (
                 <img
                   src={user.image}
                   alt={user.name || "User avatar"}
-                  className="size-7 rounded-full object-cover border"
+                  className="size-9 rounded-xl border border-border object-cover"
                 />
               ) : (
-                <div className="size-7 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs">
+                <div className="flex size-9 items-center justify-center rounded-xl border border-primary bg-primary text-xs font-bold text-primary-foreground">
                   {(user.name || user.email || "U").charAt(0).toUpperCase()}
                 </div>
               )}
@@ -107,7 +107,8 @@ export function HeaderUser() {
   return (
     <Button
       variant="outline"
-      size="xs"
+      size="sm"
+      className="h-9 rounded-xl px-4 font-semibold"
       onClick={() =>
         openLogin({
           title: `Welcome to ${siteConfig.name}`,

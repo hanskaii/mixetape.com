@@ -6,6 +6,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
+import stylex from "@stylexjs/unplugin";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
 const config = defineConfig({
@@ -18,6 +19,11 @@ const config = defineConfig({
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     tanstackStart(),
+    stylex.vite({
+      useCSSLayers: true,
+      runtimeInjection: false,
+      dev: process.env.NODE_ENV === "development",
+    }),
     viteReact(),
     babel({ presets: [reactCompilerPreset()] }),
   ],
