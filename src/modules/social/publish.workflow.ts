@@ -157,7 +157,7 @@ async function publish(
       platformPostId: result.platformPostId ?? null,
       platformUrl: result.platformUrl ?? null,
       publishedAt: publishAt ? null : new Date(),
-      error: null,
+      error: result.warning ?? null,
     });
     return { status, platformPostId: result.platformPostId, publishAt };
   } catch (error) {

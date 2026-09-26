@@ -60,6 +60,7 @@ describe("mixetape MCP", () => {
       "create_post",
       "update_post",
       "cancel_post",
+      "set_thumbnail",
       "retry_post",
     ]);
   });

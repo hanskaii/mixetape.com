@@ -450,6 +450,32 @@ export async function postInsights(userId: string, id: string) {
   return { post, platform, metrics: metrics ? { ...metrics, raw: undefined } : null };
 }
 
+/**
+ * Sets (or replaces) the custom thumbnail of a post that is already on the platform, and
+ * remembers the URL in its metadata. A post still waiting in mixetape takes the thumbnail
+ * through metadata.thumbnailUrl instead (update_post), and gets it right after upload.
+ */
+export async function setPostThumbnail(userId: string, id: string, imageUrl: string) {
+  const post = await getPost(userId, id);
+  if (!(imageUrl ?? "").startsWith("https://"))
+    throw new ServiceError("imageUrl must be a public https URL");
+  if (!post.platformPostId) {
+    throw new ServiceError(
+      "This post is not on the platform yet — set metadata.thumbnailUrl with update_post instead",
+      409,
+    );
+  }
+  const provider = getProvider(post.provider);
+  if (!provider.setThumbnail)
+    throw new ServiceError(`${provider.name} does not support custom thumbnails`, 409);
+  const loaded = await loadForPublishing(id);
+  if (!loaded) throw new ServiceError("The post's account or credential is gone", 409);
+  const token = await accessTokenFor(loaded.account, loaded.credential);
+  await provider.setThumbnail(post.platformPostId, imageUrl, token);
+  await updatePost(id, { metadata: { ...post.metadata, thumbnailUrl: imageUrl } });
+  return getPost(userId, id);
+}
+
 /** What the platform says about a post now, for the workflow's go-live check. */
 export async function platformStatusFor(postId: string) {
   const loaded = await loadForPublishing(postId);

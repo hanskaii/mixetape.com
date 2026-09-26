@@ -86,13 +86,51 @@ export class YoutubeProvider implements SocialProvider {
     );
     const result = await this.uploadInChunks(uploadUrl, post.url, fileSize, contentType);
 
+    // The video is up either way; a refused thumbnail is reported, not fatal.
+    let warning: string | undefined;
+    if (metadata?.thumbnailUrl) {
+      try {
+        await this.setThumbnail(result.id, metadata.thumbnailUrl, accessToken);
+      } catch (error) {
+        warning = `Thumbnail not set: ${error instanceof Error ? error.message : String(error)}`;
+        console.warn("[YouTube]", warning);
+      }
+    }
+
     return {
       platformPostId: result.id,
       platformUrl: `https://www.youtube.com/watch?v=${result.id}`,
       responseLog: metadata?.publishAt
         ? `Video uploaded; YouTube publishes it at ${metadata.publishAt}`
         : "Video uploaded successfully",
+      warning,
     };
+  }
+
+  /** Sets a custom thumbnail on a video already on YouTube (thumbnails.set, 50 quota units). */
+  async setThumbnail(videoId: string, imageUrl: string, accessToken: string): Promise<void> {
+    const image = await fetch(imageUrl);
+    if (!image.ok) throw new Error(`thumbnail image not reachable (${image.status}): ${imageUrl}`);
+    const bytes = await image.arrayBuffer();
+    if (bytes.byteLength > 2 * 1024 * 1024)
+      throw new Error("thumbnail is larger than YouTube's 2 MB limit");
+    const type = image.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+    if (!/^image\/(jpeg|png)$/.test(type))
+      throw new Error(`thumbnail must be JPEG or PNG, not ${type}`);
+
+    const res = await fetch(
+      `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${encodeURIComponent(videoId)}&uploadType=media`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": type },
+        body: bytes,
+      },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      // 403 here usually means the channel is not verified for custom thumbnails.
+      throw new Error(`YouTube ${res.status}: ${body.slice(0, 300)}`);
+    }
   }
 
   async refreshToken(

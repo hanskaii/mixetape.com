@@ -17,6 +17,11 @@ export type YouTubeVideoMeta = {
    * so processing is finished long before it goes live.
    */
   publishAt?: string;
+  /**
+   * Public URL of a custom thumbnail (JPEG or PNG, ≤ 2 MB, ideally 1280×720), set right
+   * after the upload. The channel must be verified for custom thumbnails.
+   */
+  thumbnailUrl?: string;
 };
 
 export type PlatformMetadata = YouTubeVideoMeta;
@@ -36,6 +41,8 @@ export interface UploadResult {
   platformPostId?: string;
   platformUrl?: string;
   responseLog?: string;
+  /** Something that went wrong without failing the post (e.g. the thumbnail was refused). */
+  warning?: string;
 }
 
 export type PlatformMetrics = {
@@ -98,6 +105,8 @@ export interface SocialProvider {
   ): Promise<PlatformMetrics | null>;
 
   fetchStatus?(platformPostId: string, accessToken: string): Promise<PlatformStatus | null>;
+  /** Replaces the custom thumbnail of a post already on the platform. */
+  setThumbnail?(platformPostId: string, imageUrl: string, accessToken: string): Promise<void>;
 }
 
 /** Errors a retry cannot fix; the scheduler fails the post at once instead of retrying. */

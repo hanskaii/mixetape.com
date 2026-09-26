@@ -33,6 +33,11 @@ const youtubeMetadata = {
     privacyStatus: { type: "string", enum: ["public", "unlisted", "private"] },
     madeForKids: { type: "boolean" },
     notifySubscribers: { type: "boolean" },
+    thumbnailUrl: {
+      type: "string",
+      description:
+        "Public https URL of a custom thumbnail (JPEG/PNG, ≤ 2 MB, 1280×720); set right after upload",
+    },
   },
 };
 
@@ -150,6 +155,17 @@ const TOOLS: Tool[] = [
     inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
     annotations: { destructiveHint: true },
     run: (userId, args) => social.cancelPost(userId, args.id),
+  },
+  {
+    name: "set_thumbnail",
+    description:
+      "Set or replace the custom thumbnail of a post that is already on YouTube (uploaded or published). imageUrl: public https JPEG/PNG, ≤ 2 MB, 1280×720. The channel must be verified for custom thumbnails. For a post still 'scheduled', use update_post with metadata.thumbnailUrl instead.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, imageUrl: { type: "string" } },
+      required: ["id", "imageUrl"],
+    },
+    run: (userId, args) => social.setPostThumbnail(userId, args.id, args.imageUrl),
   },
   {
     name: "retry_post",
