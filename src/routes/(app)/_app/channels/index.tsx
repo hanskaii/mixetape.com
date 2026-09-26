@@ -15,7 +15,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Badge } from "#/components/ui/badge";
 import { PublishingTabs, selectClassName } from "#/components/layouts/publishing-tabs";
-import { useConfirmModal } from "#/components/providers/modal-providers";
+import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import {
   addCredential,
   getChannelsData,
@@ -49,6 +49,21 @@ function ChannelsPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const { openConnectChannel } = useModal();
+  const connect = (credentialId: string, provider: string, channel?: string) =>
+    openConnectChannel({
+      credentialId,
+      credentialLabel: labelOf(credentialId),
+      provider,
+      channel,
+      onConnected: async (channels) => {
+        await router.navigate({ to: "/channels", search: { connected: channels.join(", ") } });
+        await router.invalidate();
+      },
+    });
+  const labelOf = (credentialId: string) =>
+    credentials.find((credential) => credential.id === credentialId)?.label ??
+    "your app credential";
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -130,11 +145,7 @@ function ChannelsPage() {
                   <Button
                     size="xs"
                     variant="outline"
-                    render={
-                      <a
-                        href={`/api/connect/${account.provider}?credential=${account.credentialId}`}
-                      />
-                    }
+                    onClick={() => connect(account.credentialId, account.provider, account.name)}
                   >
                     Reconnect
                   </Button>
@@ -184,12 +195,7 @@ function ChannelsPage() {
                     {credential.provider} · {credential.clientId}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  render={
-                    <a href={`/api/connect/${credential.provider}?credential=${credential.id}`} />
-                  }
-                >
+                <Button size="sm" onClick={() => connect(credential.id, credential.provider)}>
                   <PlugsConnected /> Connect channel
                 </Button>
                 <Button

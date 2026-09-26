@@ -13,6 +13,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as RobotsTxtRouteImport } from './routes/robots.txt'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
+import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
 import { Route as ApiMediaUploadRouteImport } from './routes/api/media/upload'
@@ -46,6 +47,11 @@ const RobotsTxtRoute = RobotsTxtRouteImport.update({
 const SitemapXmlRoute = SitemapXmlRouteImport.update({
   id: '/sitemap/xml',
   path: '/sitemap/xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const publicConnectDoneRoute = publicConnectDoneRouteImport.update({
+  id: '/(public)/connect/done',
+  path: '/connect/done',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
+  '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/media/upload': typeof ApiMediaUploadRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
+  '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/media/upload': typeof ApiMediaUploadRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/(public)/': typeof publicIndexRoute
+  '/(public)/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/media/upload': typeof ApiMediaUploadRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
+    | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/media/upload'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
+    | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/media/upload'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/robots/txt'
     | '/sitemap/xml'
     | '/(public)/'
+    | '/(public)/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/media/upload'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   RobotsTxtRoute: typeof RobotsTxtRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
   publicIndexRoute: typeof publicIndexRoute
+  publicConnectDoneRoute: typeof publicConnectDoneRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
   ApiMediaUploadRoute: typeof ApiMediaUploadRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap/xml'
       fullPath: '/sitemap/xml'
       preLoaderRoute: typeof SitemapXmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(public)/connect/done': {
+      id: '/(public)/connect/done'
+      path: '/connect/done'
+      fullPath: '/connect/done'
+      preLoaderRoute: typeof publicConnectDoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -422,6 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsTxtRoute: RobotsTxtRoute,
   SitemapXmlRoute: SitemapXmlRoute,
   publicIndexRoute: publicIndexRoute,
+  publicConnectDoneRoute: publicConnectDoneRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
   ApiMediaUploadRoute: ApiMediaUploadRoute,

@@ -2,10 +2,19 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useState, useCallback, useMemo, memo } from "react";
 import { ConfirmModal, type ConfirmModalProps } from "#/components/modals/confirm-modal";
 import { LoginModal, type LoginModalProps } from "#/components/modals/login-modal";
+import {
+  ConnectChannelModal,
+  type ConnectChannelModalProps,
+} from "#/components/modals/connect-channel-modal";
 
 export interface ConfirmOptions extends Omit<
   ConfirmModalProps,
   "open" | "onOpenChange" | "showModal" | "setShowModal"
+> {}
+
+export interface ConnectChannelOptions extends Omit<
+  ConnectChannelModalProps,
+  "open" | "onOpenChange" | "showModal" | "setShowModal" | "tab"
 > {}
 
 export interface ModalContextType {
@@ -16,6 +25,10 @@ export interface ModalContextType {
   // Login Modal API
   openLogin: (props?: Partial<LoginModalProps>) => void;
   closeLogin: () => void;
+
+  // Connect Channel Modal API — call from the click handler: it opens the consent tab.
+  openConnectChannel: (options: ConnectChannelOptions) => void;
+  closeConnectChannel: () => void;
 
   // Custom generic modal API
   openModal: (content: ReactNode) => void;
@@ -51,6 +64,19 @@ const ModalProviderClient = memo(function ModalProviderClient({
     props: null,
   });
 
+  // Connect channel modal state; `attempt` remounts the modal fresh for every attempt
+  const [connectState, setConnectState] = useState<{
+    open: boolean;
+    attempt: number;
+    tab: Window | null;
+    options: ConnectChannelOptions | null;
+  }>({
+    open: false,
+    attempt: 0,
+    tab: null,
+    options: null,
+  });
+
   // Generic custom modal state
   const [customModal, setCustomModal] = useState<ReactNode | null>(null);
 
@@ -76,6 +102,16 @@ const ModalProviderClient = memo(function ModalProviderClient({
     setLoginState((prev) => ({ ...prev, open: false }));
   }, []);
 
+  const openConnectChannel = useCallback((options: ConnectChannelOptions) => {
+    // Opened here, synchronously with the click, so popup blockers let it through.
+    const tab = window.open("about:blank", "_blank");
+    setConnectState((prev) => ({ open: true, attempt: prev.attempt + 1, tab, options }));
+  }, []);
+
+  const closeConnectChannel = useCallback(() => {
+    setConnectState((prev) => ({ ...prev, open: false }));
+  }, []);
+
   const openModal = useCallback((content: ReactNode) => {
     setCustomModal(content);
   }, []);
@@ -90,10 +126,21 @@ const ModalProviderClient = memo(function ModalProviderClient({
       closeConfirm,
       openLogin,
       closeLogin,
+      openConnectChannel,
+      closeConnectChannel,
       openModal,
       closeModal,
     }),
-    [confirm, closeConfirm, openLogin, closeLogin, openModal, closeModal],
+    [
+      confirm,
+      closeConfirm,
+      openLogin,
+      closeLogin,
+      openConnectChannel,
+      closeConnectChannel,
+      openModal,
+      closeModal,
+    ],
   );
 
   return (
@@ -134,6 +181,23 @@ const ModalProviderClient = memo(function ModalProviderClient({
           closeLogin();
         }}
       />
+
+      {/* Global Connect Channel Modal */}
+      {connectState.options && (
+        <ConnectChannelModal
+          key={connectState.attempt}
+          {...connectState.options}
+          tab={connectState.tab}
+          open={connectState.open}
+          onOpenChange={(open) => {
+            if (!open) closeConnectChannel();
+          }}
+          onConnected={(channels) => {
+            closeConnectChannel();
+            connectState.options?.onConnected?.(channels);
+          }}
+        />
+      )}
 
       {/* Global Generic Modal Container */}
       {customModal}

@@ -102,8 +102,24 @@ async function ownedCredential(userId: string, id: string): Promise<ProviderCred
 
 type OAuthState = { userId: string; credentialId: string; provider: string };
 
+/** What happened to one connect attempt, kept briefly so the page that started it can ask. */
+export type ConnectResult =
+  | { status: "pending" }
+  | { status: "done"; channels: string[] }
+  | { status: "error"; error: string };
+type StoredResult = Exclude<ConnectResult, { status: "pending" }> & { userId?: string };
+
 /** The URL to send the user to; the state that proves the callback is ours sits in KV. */
 export async function startConnect(userId: string, credentialId: string): Promise<string> {
+  return (await beginConnect(userId, credentialId)).url;
+}
+
+/**
+ * Starts connecting a channel and returns the consent URL together with its state, so the
+ * page can open the URL in a new tab (or show it to be opened anywhere) and then watch the
+ * state until the callback has finished — see connectResult and finishConnect.
+ */
+export async function beginConnect(userId: string, credentialId: string) {
   const credential = await ownedCredential(userId, credentialId);
   const state = randomToken(24);
   const payload: OAuthState = { userId, credentialId, provider: credential.provider };
@@ -112,9 +128,77 @@ export async function startConnect(userId: string, credentialId: string): Promis
   });
 
   if (credential.provider === "youtube") {
-    return new GoogleAuthFlow(credential.clientId, "", redirectUri("youtube"), state).redirect();
+    const url = new GoogleAuthFlow(
+      credential.clientId,
+      "",
+      redirectUri("youtube"),
+      state,
+    ).redirect();
+    return { url, state };
   }
   throw new ServiceError(`Connecting ${credential.provider} is not supported yet`);
+}
+
+/**
+ * Completes a connect attempt from the platform's callback and remembers the outcome for
+ * ten minutes, so whichever page is waiting on this state learns it — even when the
+ * consent screen was opened in another browser.
+ */
+export async function finishConnect(provider: string, code: string, state: string) {
+  const resultKey = `oauth:result:${state}`;
+  try {
+    const { userId, channels } = await completeConnect(provider, code, state);
+    const stored: StoredResult = { status: "done", channels, userId };
+    await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), { expirationTtl: OAUTH_STATE_TTL });
+    return { userId, channels };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not connect the account";
+    // A second use of the same callback (e.g. a pasted URL) keeps the first result.
+    if (!(await env.KIT_CACHE.get(resultKey))) {
+      const stored: StoredResult = { status: "error", error: message };
+      await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), {
+        expirationTtl: OAUTH_STATE_TTL,
+      });
+    }
+    throw error;
+  }
+}
+
+/** Where a connect attempt stands, for the page polling it. */
+export async function connectResult(userId: string, state: string): Promise<ConnectResult> {
+  const saved = await env.KIT_CACHE.get(`oauth:result:${state}`);
+  if (!saved) return { status: "pending" };
+  const { userId: owner, ...result } = JSON.parse(saved) as StoredResult;
+  if (owner && owner !== userId) return { status: "pending" };
+  return result;
+}
+
+/**
+ * Finishes connecting from a callback URL the user pasted (Step 2 of the connect dialog):
+ * the consent screen may have been completed in a browser that could not reach mixetape.
+ */
+export async function finishConnectFromUrl(userId: string, pasted: string): Promise<ConnectResult> {
+  let url: URL;
+  try {
+    url = new URL(pasted.trim());
+  } catch {
+    throw new ServiceError("That is not a URL — paste the whole address from the browser");
+  }
+  const provider = url.pathname.match(/\/api\/connect\/([^/]+)\/callback/)?.[1] ?? "youtube";
+  const state = url.searchParams.get("state");
+  const denied = url.searchParams.get("error");
+  if (denied) throw new ServiceError(`Access was not granted (${denied})`);
+  const code = url.searchParams.get("code");
+  if (!code || !state)
+    throw new ServiceError("The URL has no code or state — copy it after approving access");
+
+  // The callback may already have run (the browser reached mixetape): reuse its result.
+  const earlier = await connectResult(userId, state);
+  if (earlier.status !== "pending") return earlier;
+  const { userId: owner, channels } = await finishConnect(provider, code, state);
+  if (owner !== userId)
+    throw new ServiceError("This sign-in was started by another mixetape account", 403);
+  return { status: "done", channels };
 }
 
 /** Finishes the OAuth dance and stores every channel the signed-in identity owns. */
