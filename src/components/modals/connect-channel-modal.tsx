@@ -3,11 +3,7 @@ import { Check, Copy, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
-import {
-  beginChannelConnect,
-  checkChannelConnect,
-  finishChannelConnect,
-} from "#/modules/social/social.fn";
+import { beginChannelConnect, checkChannelConnect } from "#/modules/social/social.fn";
 
 export interface ConnectChannelModalProps {
   open?: boolean;
@@ -17,7 +13,6 @@ export interface ConnectChannelModalProps {
   /** The app credential (OAuth client) to connect through. */
   credentialId: string;
   credentialLabel: string;
-  provider: string;
   /** Set when reconnecting an existing channel, for the title. */
   channel?: string;
   /**
@@ -31,7 +26,8 @@ export interface ConnectChannelModalProps {
 /**
  * Connecting a channel: the consent screen opens in a new tab straight away and this modal
  * waits for it. The same URL is shown to copy into another browser (the one signed in to
- * the channel's Google account), and a callback URL copied from there can be pasted back.
+ * the channel's Google account): the callback lands on mixetape either way, and this modal
+ * learns the result by watching the attempt.
  * Mounted fresh for every attempt by ModalProvider (openConnectChannel).
  */
 export function ConnectChannelModal({
@@ -41,17 +37,14 @@ export function ConnectChannelModal({
   setShowModal,
   credentialId,
   credentialLabel,
-  provider,
   channel,
   tab,
   onConnected,
 }: ConnectChannelModalProps) {
   const [url, setUrl] = useState("");
   const [state, setState] = useState("");
-  const [pasted, setPasted] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const started = useRef(false);
   // The latest callback, so a parent re-render does not restart the polling below.
@@ -114,20 +107,6 @@ export function ConnectChannelModal({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const finish = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await finishChannelConnect({ data: { url: pasted } });
-      if (result.status === "done") onConnected?.(result.channels);
-      else if (result.status === "error") setError(result.error);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not connect with that URL");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const waiting = !error && Boolean(state);
 
   return (
@@ -160,7 +139,7 @@ export function ConnectChannelModal({
                 {!state
                   ? "Preparing the sign-in link…"
                   : blocked
-                    ? "Your browser blocked the new tab — use Step 1 below."
+                    ? "Your browser blocked the new tab — open the link below."
                     : "Waiting for authorization in the new tab…"}
               </span>
             </>
@@ -168,12 +147,17 @@ export function ConnectChannelModal({
         </div>
 
         <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or paste the callback URL manually
+          <span className="h-px flex-1 bg-border" /> or open it in another browser
           <span className="h-px flex-1 bg-border" />
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-sm font-medium">Step 1: Open this URL in your browser</p>
+          <p className="text-sm font-medium">
+            Open this link in the browser signed in to the channel
+          </p>
+          <p className="text-xs text-muted-foreground">
+            It finishes on its own there — this window updates when access is allowed.
+          </p>
           <div className="flex gap-2">
             <Input readOnly value={url} placeholder="…" className="font-mono text-xs" />
             <Button type="button" variant="outline" onClick={copy} disabled={!url}>
@@ -182,24 +166,8 @@ export function ConnectChannelModal({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <p className="text-sm font-medium">Step 2: Paste the callback URL here</p>
-          <p className="text-xs text-muted-foreground">
-            After allowing access, copy the full address from that browser's address bar.
-          </p>
-          <Input
-            value={pasted}
-            onChange={(event) => setPasted(event.target.value)}
-            placeholder={`${typeof window === "undefined" ? "" : window.location.origin}/api/connect/${provider}/callback?code=…`}
-            className="font-mono text-xs"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button className="flex-1" onClick={finish} disabled={!pasted.trim() || busy}>
-            {busy && <SpinnerGap className="animate-spin" />} Connect
-          </Button>
-          <Button className="flex-1" variant="ghost" onClick={close}>
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={close}>
             {waiting ? "Cancel" : "Close"}
           </Button>
         </div>

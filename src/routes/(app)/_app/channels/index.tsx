@@ -50,11 +50,10 @@ function ChannelsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { openConnectChannel } = useModal();
-  const connect = (credentialId: string, provider: string, channel?: string) =>
+  const connect = (credentialId: string, channel?: string) =>
     openConnectChannel({
       credentialId,
       credentialLabel: labelOf(credentialId),
-      provider,
       channel,
       onConnected: async (channels) => {
         await router.navigate({ to: "/channels", search: { connected: channels.join(", ") } });
@@ -145,7 +144,7 @@ function ChannelsPage() {
                   <Button
                     size="xs"
                     variant="outline"
-                    onClick={() => connect(account.credentialId, account.provider, account.name)}
+                    onClick={() => connect(account.credentialId, account.name)}
                   >
                     Reconnect
                   </Button>
@@ -195,7 +194,7 @@ function ChannelsPage() {
                     {credential.provider} · {credential.clientId}
                   </p>
                 </div>
-                <Button size="sm" onClick={() => connect(credential.id, credential.provider)}>
+                <Button size="sm" onClick={() => connect(credential.id)}>
                   <PlugsConnected /> Connect channel
                 </Button>
                 <Button

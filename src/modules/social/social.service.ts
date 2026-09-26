@@ -153,7 +153,7 @@ export async function finishConnect(provider: string, code: string, state: strin
     return { userId, channels };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not connect the account";
-    // A second use of the same callback (e.g. a pasted URL) keeps the first result.
+    // A second use of the same callback (e.g. a reload) keeps the first result.
     if (!(await env.KIT_CACHE.get(resultKey))) {
       const stored: StoredResult = { status: "error", error: message };
       await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), {
@@ -172,35 +172,6 @@ export async function connectResult(userId: string, state: string): Promise<Conn
   if (owner && owner !== userId) return { status: "pending" };
   return result;
 }
-
-/**
- * Finishes connecting from a callback URL the user pasted (Step 2 of the connect dialog):
- * the consent screen may have been completed in a browser that could not reach mixetape.
- */
-export async function finishConnectFromUrl(userId: string, pasted: string): Promise<ConnectResult> {
-  let url: URL;
-  try {
-    url = new URL(pasted.trim());
-  } catch {
-    throw new ServiceError("That is not a URL — paste the whole address from the browser");
-  }
-  const provider = url.pathname.match(/\/api\/connect\/([^/]+)\/callback/)?.[1] ?? "youtube";
-  const state = url.searchParams.get("state");
-  const denied = url.searchParams.get("error");
-  if (denied) throw new ServiceError(`Access was not granted (${denied})`);
-  const code = url.searchParams.get("code");
-  if (!code || !state)
-    throw new ServiceError("The URL has no code or state — copy it after approving access");
-
-  // The callback may already have run (the browser reached mixetape): reuse its result.
-  const earlier = await connectResult(userId, state);
-  if (earlier.status !== "pending") return earlier;
-  const { userId: owner, channels } = await finishConnect(provider, code, state);
-  if (owner !== userId)
-    throw new ServiceError("This sign-in was started by another mixetape account", 403);
-  return { status: "done", channels };
-}
-
 /** Finishes the OAuth dance and stores every channel the signed-in identity owns. */
 export async function completeConnect(provider: string, code: string, state: string) {
   const key = `oauth:state:${state}`;
