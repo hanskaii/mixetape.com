@@ -6,17 +6,22 @@ import { Button } from "#/components/ui/button";
 import { siteConfig } from "#/config/site";
 
 // Where the tab that ran the consent screen lands. The Channels page that opened it is
-// already watching for the result, so on success this tab closes itself when the browser
-// allows it (a tab opened by a script may be closed by one).
+// already watching for the result — and is where the user picks channels when the consent
+// reached several new ones — so on success this tab closes itself when the browser allows
+// it (a tab opened by a script may be closed by one).
 export const Route = createFileRoute("/(public)/connect/done")({
-  validateSearch: z.object({ connected: z.string().optional(), error: z.string().optional() }),
+  validateSearch: z.object({
+    connected: z.string().optional(),
+    choose: z.string().optional(),
+    error: z.string().optional(),
+  }),
   head: () => ({ meta: [{ title: `Connect | ${siteConfig.name}` }] }),
   component: ConnectDone,
 });
 
 function ConnectDone() {
-  const { connected, error } = Route.useSearch();
-  const ok = connected !== undefined && !error;
+  const { connected, choose, error } = Route.useSearch();
+  const ok = (connected !== undefined || choose !== undefined) && !error;
 
   useEffect(() => {
     if (!ok) return;
@@ -32,11 +37,15 @@ function ConnectDone() {
         ) : (
           <XCircle className="mx-auto size-9 text-destructive" />
         )}
-        <h1 className="text-lg font-semibold">{ok ? "Channel connected" : "Could not connect"}</h1>
+        <h1 className="text-lg font-semibold">
+          {!ok ? "Could not connect" : choose ? "Access allowed" : "Channel connected"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          {ok
-            ? `${connected}. You can close this tab — mixetape has already updated.`
-            : (error ?? "The sign-in did not finish.")}
+          {!ok
+            ? (error ?? "The sign-in did not finish.")
+            : choose
+              ? "Choose which channels to add in the mixetape window you started from."
+              : `${connected}. You can close this tab — mixetape has already updated.`}
         </p>
         <Button variant="outline" size="sm" render={<Link to="/channels" />}>
           Go to Channels

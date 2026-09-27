@@ -16,7 +16,9 @@ import {
   getProvider,
   isProvider,
   type AppCredentials,
+  type ConnectedAccount,
   type Metadata,
+  type TokenGrant,
 } from "./providers";
 import { checkLead } from "./timing";
 
@@ -77,12 +79,30 @@ export async function connectableProviders(): Promise<string[]> {
 
 type OAuthState = { userId: string; provider: string };
 
+/** A channel the consent reached that the user has not connected yet, offered to choose. */
+export type ChannelChoice = {
+  platformAccountId: string;
+  name: string;
+  handle?: string;
+  avatar?: string;
+};
+
 /** What happened to one connect attempt, kept briefly so the page that started it can ask. */
 export type ConnectResult =
   | { status: "pending" }
   | { status: "done"; channels: string[] }
+  | { status: "choose"; refreshed: string[]; choices: ChannelChoice[] }
   | { status: "error"; error: string };
 type StoredResult = Exclude<ConnectResult, { status: "pending" }> & { userId?: string };
+
+/** A consent's new channels, held (encrypted) until the user picks which to add. */
+type Pending = {
+  userId: string;
+  provider: string;
+  grant: TokenGrant;
+  accounts: ConnectedAccount[];
+  at: number;
+};
 
 /** The URL to send the user to; the state that proves the callback is ours sits in KV. */
 export async function startConnect(userId: string, provider: string): Promise<string> {
@@ -118,10 +138,10 @@ export async function beginConnect(userId: string, provider: string) {
 export async function finishConnect(provider: string, code: string, state: string) {
   const resultKey = `oauth:result:${state}`;
   try {
-    const { userId, channels } = await completeConnect(provider, code, state);
-    const stored: StoredResult = { status: "done", channels, userId };
+    const { userId, result } = await completeConnect(provider, code, state);
+    const stored: StoredResult = { ...result, userId };
     await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), { expirationTtl: OAUTH_STATE_TTL });
-    return { userId, channels };
+    return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not connect the account";
     // A second use of the same callback (e.g. a reload) keeps the first result.
@@ -144,8 +164,16 @@ export async function connectResult(userId: string, state: string): Promise<Conn
   return result;
 }
 
-/** Finishes the OAuth dance and stores every account the consent reaches. */
-export async function completeConnect(provider: string, code: string, state: string) {
+/**
+ * Finishes the OAuth dance. Channels the user already has get their new tokens; a single
+ * new channel is added at once; several new ones (a person's Pages, say) are held for the
+ * user to choose from — see chooseChannels.
+ */
+async function completeConnect(
+  provider: string,
+  code: string,
+  state: string,
+): Promise<{ userId: string; result: Exclude<StoredResult, { status: "error" }> }> {
   const key = `oauth:state:${state}`;
   const saved = await env.KIT_CACHE.get(key);
   if (!saved) throw new ServiceError("This sign-in link expired — start connecting again", 400);
@@ -154,17 +182,82 @@ export async function completeConnect(provider: string, code: string, state: str
   if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
 
   const app = await requiredApp(provider);
+  const at = Date.now();
   const { grant, accounts } = await getProvider(provider).connect.exchangeCode(app, {
     code,
     redirectUri: redirectUri(provider),
   });
 
+  const connected = new Set(
+    (
+      await db.query.socialAccounts.findMany({
+        where: and(eq(socialAccounts.userId, userId), eq(socialAccounts.provider, provider)),
+        columns: { platformAccountId: true },
+      })
+    ).map((row) => row.platformAccountId),
+  );
+  const known = accounts.filter((account) => connected.has(account.platformAccountId));
+  const fresh = accounts.filter((account) => !connected.has(account.platformAccountId));
+
+  const refreshed = await saveAccounts(userId, provider, grant, known, at);
+  if (fresh.length <= 1) {
+    const added = await saveAccounts(userId, provider, grant, fresh, at);
+    return { userId, result: { status: "done", channels: [...refreshed, ...added] } };
+  }
+
+  const pending: Pending = { userId, provider, grant, accounts: fresh, at };
+  await env.KIT_CACHE.put(`oauth:pending:${state}`, await encrypt(JSON.stringify(pending)), {
+    expirationTtl: OAUTH_STATE_TTL,
+  });
+  return {
+    userId,
+    result: {
+      status: "choose",
+      refreshed,
+      choices: fresh.map(({ platformAccountId, name, handle, avatar }) => ({
+        platformAccountId,
+        name,
+        handle,
+        avatar,
+      })),
+    },
+  };
+}
+
+/** Adds the channels the user picked from a consent that reached several new ones. */
+export async function chooseChannels(userId: string, state: string, platformAccountIds: string[]) {
+  const key = `oauth:pending:${state}`;
+  const sealed = await env.KIT_CACHE.get(key);
+  if (!sealed) throw new ServiceError("This choice expired — connect again", 410);
+  const pending = JSON.parse(await decrypt(sealed)) as Pending;
+  if (pending.userId !== userId) throw new ServiceError("This choice expired — connect again", 410);
+  await env.KIT_CACHE.delete(key);
+
+  const picked = pending.accounts.filter((account) =>
+    platformAccountIds.includes(account.platformAccountId),
+  );
+  const channels = await saveAccounts(userId, pending.provider, pending.grant, picked, pending.at);
+  const stored: StoredResult = { status: "done", channels, userId };
+  await env.KIT_CACHE.put(`oauth:result:${state}`, JSON.stringify(stored), {
+    expirationTtl: OAUTH_STATE_TTL,
+  });
+  return { channels };
+}
+
+/** Stores the accounts with their tokens (updating any already connected); their names. */
+async function saveAccounts(
+  userId: string,
+  provider: string,
+  grant: TokenGrant,
+  accounts: ConnectedAccount[],
+  at: number,
+): Promise<string[]> {
   for (const account of accounts) {
     // A Facebook Page has its own token; a YouTube channel shares the consent's.
     const own = account.grant ?? grant;
     const accessToken = await encrypt(own.accessToken);
     const refreshToken = own.refreshToken ? await encrypt(own.refreshToken) : null;
-    const expiresAt = new Date(Date.now() + own.expiresIn * 1000);
+    const expiresAt = new Date(at + own.expiresIn * 1000);
     const scopes = own.scopes.join(" ");
     const existing = await db.query.socialAccounts.findFirst({
       where: and(
@@ -197,7 +290,7 @@ export async function completeConnect(provider: string, code: string, state: str
       });
     }
   }
-  return { userId, channels: accounts.map((account) => account.name) };
+  return accounts.map((account) => account.name);
 }
 
 export async function listAccounts(userId: string) {

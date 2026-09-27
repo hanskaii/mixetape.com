@@ -58,6 +58,12 @@ export const checkChannelConnect = createServerFn({ method: "POST" })
   .validator((data: { state: string }) => data)
   .handler(async ({ data }) => social.connectResult(await currentUserId(), data.state));
 
+export const chooseConnectChannels = createServerFn({ method: "POST" })
+  .validator((data: { state: string; platformAccountIds: string[] }) => data)
+  .handler(async ({ data }) =>
+    social.chooseChannels(await currentUserId(), data.state, data.platformAccountIds),
+  );
+
 export const removeAccount = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => social.deleteAccount(await currentUserId(), data.id));

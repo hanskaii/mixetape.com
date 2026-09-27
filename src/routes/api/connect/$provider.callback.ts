@@ -22,8 +22,9 @@ export const Route = createFileRoute("/api/connect/$provider/callback")({
         if (!code || !state) return failed("The sign-in response was incomplete");
 
         try {
-          const { channels } = await finishConnect(params.provider, code, state);
-          return done(`connected=${encodeURIComponent(channels.join(", "))}`);
+          const result = await finishConnect(params.provider, code, state);
+          if (result.status === "choose") return done("choose=1");
+          return done(`connected=${encodeURIComponent(result.channels.join(", "))}`);
         } catch (error) {
           return failed(error instanceof Error ? error.message : "Could not connect the account");
         }

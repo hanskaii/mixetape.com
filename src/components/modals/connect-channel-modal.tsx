@@ -3,7 +3,12 @@ import { Check, Copy, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
-import { beginChannelConnect, checkChannelConnect } from "#/modules/social/social.fn";
+import {
+  beginChannelConnect,
+  checkChannelConnect,
+  chooseConnectChannels,
+} from "#/modules/social/social.fn";
+import type { ChannelChoice } from "#/modules/social/social.service";
 
 export interface ConnectChannelModalProps {
   open?: boolean;
@@ -28,7 +33,8 @@ export interface ConnectChannelModalProps {
  * Connecting a channel: the consent screen opens in a new tab straight away and this modal
  * waits for it. The same URL is shown to copy into another browser (the one signed in to
  * the channel's account): the callback lands on mixetape either way, and this modal
- * learns the result by watching the attempt.
+ * learns the result by watching the attempt. When the consent reached several new channels
+ * (a person's Pages, say), the modal lists them to pick from before any is added.
  * Mounted fresh for every attempt by ModalProvider (openConnectChannel).
  */
 export function ConnectChannelModal({
@@ -47,6 +53,11 @@ export function ConnectChannelModal({
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [choice, setChoice] = useState<{ refreshed: string[]; choices: ChannelChoice[] } | null>(
+    null,
+  );
+  const [picked, setPicked] = useState<string[]>([]);
+  const [adding, setAdding] = useState(false);
   const started = useRef(false);
   // The latest callback, so a parent re-render does not restart the polling below.
   const connected = useRef(onConnected);
@@ -82,6 +93,10 @@ export function ConnectChannelModal({
           stopped = true;
           clearInterval(timer);
           connected.current?.(result.channels);
+        } else if (result.status === "choose") {
+          stopped = true;
+          clearInterval(timer);
+          setChoice({ refreshed: result.refreshed, choices: result.choices });
         } else if (result.status === "error") {
           stopped = true;
           clearInterval(timer);
@@ -108,7 +123,95 @@ export function ConnectChannelModal({
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const toggle = (id: string) =>
+    setPicked((ids) => (ids.includes(id) ? ids.filter((other) => other !== id) : [...ids, id]));
+
+  const add = async () => {
+    if (!choice) return;
+    setAdding(true);
+    setError(null);
+    try {
+      const { channels } = await chooseConnectChannels({
+        data: { state, platformAccountIds: picked },
+      });
+      connected.current?.([...choice.refreshed, ...channels]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add the channels");
+    } finally {
+      setAdding(false);
+    }
+  };
+
   const waiting = !error && Boolean(state);
+
+  if (choice) {
+    return (
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        showModal={showModal}
+        setShowModal={setShowModal}
+        className="max-w-lg"
+      >
+        <div className="flex flex-col gap-4">
+          <ModalHeader className="pb-0">
+            <ModalTitle>Choose {platform} channels</ModalTitle>
+            <ModalDescription>
+              {platform} gave access to these. Pick the ones your agents may post to.
+              {choice.refreshed.length > 0 &&
+                ` Already connected, and updated: ${choice.refreshed.join(", ")}.`}
+            </ModalDescription>
+          </ModalHeader>
+
+          <ul className="-mx-1 flex max-h-80 flex-col gap-0.5 overflow-y-auto">
+            {choice.choices.map((option) => (
+              <li key={option.platformAccountId}>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 hover:bg-muted/60">
+                  <input
+                    type="checkbox"
+                    checked={picked.includes(option.platformAccountId)}
+                    onChange={() => toggle(option.platformAccountId)}
+                    className="size-4 shrink-0 accent-primary"
+                  />
+                  {option.avatar ? (
+                    <img src={option.avatar} alt="" className="size-8 shrink-0 rounded-full" />
+                  ) : (
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
+                      {option.name.slice(0, 1)}
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{option.name}</span>
+                    {option.handle && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {option.handle}
+                      </span>
+                    )}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+
+          {error && (
+            <p className="flex items-center gap-2 text-sm text-destructive">
+              <WarningCircle className="size-4 shrink-0" /> {error}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={close}>
+              Cancel
+            </Button>
+            <Button onClick={add} disabled={!picked.length || adding}>
+              {adding && <SpinnerGap className="animate-spin" />}
+              {picked.length > 1 ? `Add ${picked.length} channels` : "Add channel"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
