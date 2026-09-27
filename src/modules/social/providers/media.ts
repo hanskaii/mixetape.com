@@ -4,8 +4,8 @@ import { env } from "cloudflare:workers";
  * Reads the media of a post in ranges, wherever it lives.
  *
  * Media uploaded through this app sits in its own R2 bucket and is read through the
- * binding (`r2://<key>`, or this site's /api/storage/file/<key> URL) — no public URL and no
- * round trip through the internet. Anything else is fetched over HTTP with Range requests,
+ * binding (`r2://<key>`, its media.mixetape.com URL, or this site's /api/storage/file/<key>
+ * URL) — no round trip through the internet. Anything else is fetched over HTTP with Range requests,
  * which public R2 buckets and most CDNs support.
  */
 
@@ -19,6 +19,8 @@ function bucketKey(url: string): string | null {
     if (site && parsed.host === site.host && parsed.pathname.startsWith(STORAGE_PATH)) {
       return decodeURIComponent(parsed.pathname.slice(STORAGE_PATH.length));
     }
+    const media = env.MEDIA_PUBLIC_URL ? new URL(env.MEDIA_PUBLIC_URL) : null;
+    if (media && parsed.host === media.host) return decodeURIComponent(parsed.pathname.slice(1));
   } catch {
     // not a URL at all; falls through to the HTTP error below
   }

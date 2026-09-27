@@ -6,7 +6,7 @@ import {
   type ApiScope,
   type Caller,
 } from "./api-keys.service";
-import { ServiceError } from "./social.service";
+import { ServiceError } from "#/modules/api/errors";
 
 async function sessionUserId(request: Request): Promise<string | null> {
   const session = await (

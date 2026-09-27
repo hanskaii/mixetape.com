@@ -1,8 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "#/database/index";
 import { apiKeys } from "#/database/schema";
-import { randomToken, sha256 } from "./crypto";
-import { ServiceError } from "./social.service";
+import { randomToken, sha256 } from "#/modules/secrets/crypto";
+import { ServiceError } from "./errors";
 
 /**
  * API keys for agents and scripts. Each key carries permissions, so an agent gets only
@@ -15,6 +15,7 @@ export const API_SCOPES = {
   manage: "Edit videos already on the platform, manage playlists and upload captions",
   comments: "Read, post, reply to and moderate comments",
   analytics: "Read post and channel analytics",
+  storage: "Upload, import, list and delete files in mixetape's storage",
 } as const;
 
 export type ApiScope = keyof typeof API_SCOPES;

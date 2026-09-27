@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { getAuth } from "#/modules/auth/auth.server";
 import { PROVIDER_LIST } from "./providers";
-import * as apiKeys from "./api-keys.service";
+import * as apiKeys from "#/modules/api/api-keys.service";
 import * as social from "./social.service";
 
 /**
@@ -19,9 +19,10 @@ async function currentUserId(): Promise<string> {
   return session.user.id;
 }
 
-// ── publish (queue + composer) ────────────────────────────────────────────────
+// ── queue ─────────────────────────────────────────────────────────────────────
+// Posts arrive from agents (MCP / API); the workspace only watches and steps in.
 
-export const getPublishData = createServerFn({ method: "GET" }).handler(async () => {
+export const getQueueData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
   const [accounts, posts] = await Promise.all([
     social.listAccounts(userId),
@@ -29,10 +30,6 @@ export const getPublishData = createServerFn({ method: "GET" }).handler(async ()
   ]);
   return { accounts, posts };
 });
-
-export const schedulePost = createServerFn({ method: "POST" })
-  .validator((data: social.CreatePostInput) => data)
-  .handler(async ({ data }) => social.createPost(await currentUserId(), data));
 
 export const cancelScheduledPost = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)

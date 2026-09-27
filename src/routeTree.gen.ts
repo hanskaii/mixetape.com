@@ -9,21 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as publicRouteRouteImport } from './routes/(public)/route'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as appAppRouteRouteImport } from './routes/(app)/_app/route'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as RobotsTxtRouteImport } from './routes/robots.txt'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
-import { Route as ApiMediaUploadRouteImport } from './routes/api/media/upload'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiV1AccountsRouteImport } from './routes/api/v1/accounts'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
 import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
-import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
+import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
@@ -31,15 +32,23 @@ import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/fi
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts.$id'
 import { Route as ApiV1ToolsNameRouteImport } from './routes/api/v1/tools.$name'
 
+const publicRouteRoute = publicRouteRouteImport.update({
+  id: '/(public)',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const publicIndexRoute = publicIndexRouteImport.update({
-  id: '/(public)/',
-  path: '/',
+const appAppRouteRoute = appAppRouteRouteImport.update({
+  id: '/(app)/_app',
   getParentRoute: () => rootRouteImport,
+} as any)
+const publicIndexRoute = publicIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => publicRouteRoute,
 } as any)
 const RobotsTxtRoute = RobotsTxtRouteImport.update({
   id: '/robots/txt',
@@ -52,9 +61,9 @@ const SitemapXmlRoute = SitemapXmlRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const publicConnectDoneRoute = publicConnectDoneRouteImport.update({
-  id: '/(public)/connect/done',
+  id: '/connect/done',
   path: '/connect/done',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => publicRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -64,11 +73,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 const ApiConnectProviderRoute = ApiConnectProviderRouteImport.update({
   id: '/api/connect/$provider',
   path: '/api/connect/$provider',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiMediaUploadRoute = ApiMediaUploadRouteImport.update({
-  id: '/api/media/upload',
-  path: '/api/media/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
@@ -92,29 +96,29 @@ const ApiV1ToolsRoute = ApiV1ToolsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const appAppApiKeysIndexRoute = appAppApiKeysIndexRouteImport.update({
-  id: '/(app)/_app/api-keys/',
+  id: '/api-keys/',
   path: '/api-keys/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => appAppRouteRoute,
 } as any)
 const appAppChannelsIndexRoute = appAppChannelsIndexRouteImport.update({
-  id: '/(app)/_app/channels/',
+  id: '/channels/',
   path: '/channels/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => appAppRouteRoute,
 } as any)
-const appAppPublishIndexRoute = appAppPublishIndexRouteImport.update({
-  id: '/(app)/_app/publish/',
-  path: '/publish/',
-  getParentRoute: () => rootRouteImport,
+const appAppQueueIndexRoute = appAppQueueIndexRouteImport.update({
+  id: '/queue/',
+  path: '/queue/',
+  getParentRoute: () => appAppRouteRoute,
 } as any)
 const appAppSettingsAccountRoute = appAppSettingsAccountRouteImport.update({
-  id: '/(app)/_app/settings/account',
+  id: '/settings/account',
   path: '/settings/account',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => appAppRouteRoute,
 } as any)
 const appAppSettingsProfileRoute = appAppSettingsProfileRouteImport.update({
-  id: '/(app)/_app/settings/profile',
+  id: '/settings/profile',
   path: '/settings/profile',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => appAppRouteRoute,
 } as any)
 const ApiConnectProviderCallbackRoute =
   ApiConnectProviderCallbackRouteImport.update({
@@ -146,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -159,7 +162,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
-  '/publish/': typeof appAppPublishIndexRoute
+  '/queue/': typeof appAppQueueIndexRoute
 }
 export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
@@ -169,7 +172,6 @@ export interface FileRoutesByTo {
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -182,18 +184,19 @@ export interface FileRoutesByTo {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
-  '/publish': typeof appAppPublishIndexRoute
+  '/queue': typeof appAppQueueIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/(public)': typeof publicRouteRouteWithChildren
   '/mcp': typeof McpRoute
+  '/(app)/_app': typeof appAppRouteRouteWithChildren
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/(public)/': typeof publicIndexRoute
   '/(public)/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -206,7 +209,7 @@ export interface FileRoutesById {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
-  '/(app)/_app/publish/': typeof appAppPublishIndexRoute
+  '/(app)/_app/queue/': typeof appAppQueueIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -218,7 +221,6 @@ export interface FileRouteTypes {
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/media/upload'
     | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/posts'
@@ -231,7 +233,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys/'
     | '/channels/'
-    | '/publish/'
+    | '/queue/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/mcp'
@@ -241,7 +243,6 @@ export interface FileRouteTypes {
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/media/upload'
     | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/posts'
@@ -254,17 +255,18 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys'
     | '/channels'
-    | '/publish'
+    | '/queue'
   id:
     | '__root__'
+    | '/(public)'
     | '/mcp'
+    | '/(app)/_app'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/(public)/'
     | '/(public)/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/media/upload'
     | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/posts'
@@ -277,32 +279,33 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
-    | '/(app)/_app/publish/'
+    | '/(app)/_app/queue/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  publicRouteRoute: typeof publicRouteRouteWithChildren
   McpRoute: typeof McpRoute
+  appAppRouteRoute: typeof appAppRouteRouteWithChildren
   RobotsTxtRoute: typeof RobotsTxtRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
-  publicIndexRoute: typeof publicIndexRoute
-  publicConnectDoneRoute: typeof publicConnectDoneRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
-  ApiMediaUploadRoute: typeof ApiMediaUploadRoute
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
   ApiV1AccountsRoute: typeof ApiV1AccountsRoute
   ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
   ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
-  appAppSettingsAccountRoute: typeof appAppSettingsAccountRoute
-  appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   ApiStorageFileSplatRoute: typeof ApiStorageFileSplatRoute
-  appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
-  appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
-  appAppPublishIndexRoute: typeof appAppPublishIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/(public)': {
+      id: '/(public)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof publicRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -310,12 +313,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(app)/_app': {
+      id: '/(app)/_app'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof appAppRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(public)/': {
       id: '/(public)/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof publicIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof publicRouteRoute
     }
     '/robots/txt': {
       id: '/robots/txt'
@@ -336,7 +346,7 @@ declare module '@tanstack/react-router' {
       path: '/connect/done'
       fullPath: '/connect/done'
       preLoaderRoute: typeof publicConnectDoneRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof publicRouteRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -350,13 +360,6 @@ declare module '@tanstack/react-router' {
       path: '/api/connect/$provider'
       fullPath: '/api/connect/$provider'
       preLoaderRoute: typeof ApiConnectProviderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/media/upload': {
-      id: '/api/media/upload'
-      path: '/api/media/upload'
-      fullPath: '/api/media/upload'
-      preLoaderRoute: typeof ApiMediaUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/storage/upload': {
@@ -392,35 +395,35 @@ declare module '@tanstack/react-router' {
       path: '/api-keys'
       fullPath: '/api-keys/'
       preLoaderRoute: typeof appAppApiKeysIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof appAppRouteRoute
     }
     '/(app)/_app/channels/': {
       id: '/(app)/_app/channels/'
       path: '/channels'
       fullPath: '/channels/'
       preLoaderRoute: typeof appAppChannelsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof appAppRouteRoute
     }
-    '/(app)/_app/publish/': {
-      id: '/(app)/_app/publish/'
-      path: '/publish'
-      fullPath: '/publish/'
-      preLoaderRoute: typeof appAppPublishIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/(app)/_app/queue/': {
+      id: '/(app)/_app/queue/'
+      path: '/queue'
+      fullPath: '/queue/'
+      preLoaderRoute: typeof appAppQueueIndexRouteImport
+      parentRoute: typeof appAppRouteRoute
     }
     '/(app)/_app/settings/account': {
       id: '/(app)/_app/settings/account'
       path: '/settings/account'
       fullPath: '/settings/account'
       preLoaderRoute: typeof appAppSettingsAccountRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof appAppRouteRoute
     }
     '/(app)/_app/settings/profile': {
       id: '/(app)/_app/settings/profile'
       path: '/settings/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof appAppSettingsProfileRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof appAppRouteRoute
     }
     '/api/connect/$provider/callback': {
       id: '/api/connect/$provider/callback'
@@ -452,6 +455,40 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface publicRouteRouteChildren {
+  publicIndexRoute: typeof publicIndexRoute
+  publicConnectDoneRoute: typeof publicConnectDoneRoute
+}
+
+const publicRouteRouteChildren: publicRouteRouteChildren = {
+  publicIndexRoute: publicIndexRoute,
+  publicConnectDoneRoute: publicConnectDoneRoute,
+}
+
+const publicRouteRouteWithChildren = publicRouteRoute._addFileChildren(
+  publicRouteRouteChildren,
+)
+
+interface appAppRouteRouteChildren {
+  appAppSettingsAccountRoute: typeof appAppSettingsAccountRoute
+  appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
+  appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
+  appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
+  appAppQueueIndexRoute: typeof appAppQueueIndexRoute
+}
+
+const appAppRouteRouteChildren: appAppRouteRouteChildren = {
+  appAppSettingsAccountRoute: appAppSettingsAccountRoute,
+  appAppSettingsProfileRoute: appAppSettingsProfileRoute,
+  appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
+  appAppChannelsIndexRoute: appAppChannelsIndexRoute,
+  appAppQueueIndexRoute: appAppQueueIndexRoute,
+}
+
+const appAppRouteRouteWithChildren = appAppRouteRoute._addFileChildren(
+  appAppRouteRouteChildren,
+)
 
 interface ApiConnectProviderRouteChildren {
   ApiConnectProviderCallbackRoute: typeof ApiConnectProviderCallbackRoute
@@ -489,24 +526,18 @@ const ApiV1ToolsRouteWithChildren = ApiV1ToolsRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  publicRouteRoute: publicRouteRouteWithChildren,
   McpRoute: McpRoute,
+  appAppRouteRoute: appAppRouteRouteWithChildren,
   RobotsTxtRoute: RobotsTxtRoute,
   SitemapXmlRoute: SitemapXmlRoute,
-  publicIndexRoute: publicIndexRoute,
-  publicConnectDoneRoute: publicConnectDoneRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
-  ApiMediaUploadRoute: ApiMediaUploadRoute,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
   ApiV1AccountsRoute: ApiV1AccountsRoute,
   ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
   ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
-  appAppSettingsAccountRoute: appAppSettingsAccountRoute,
-  appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   ApiStorageFileSplatRoute: ApiStorageFileSplatRoute,
-  appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
-  appAppChannelsIndexRoute: appAppChannelsIndexRoute,
-  appAppPublishIndexRoute: appAppPublishIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

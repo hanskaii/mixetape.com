@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleMessage, type JsonRpcMessage } from "#/modules/social/mcp";
-import { callerForApiKey } from "#/modules/social/api-keys.service";
+import { handleMessage, type JsonRpcMessage } from "#/modules/api/mcp";
+import { callerForApiKey } from "#/modules/api/api-keys.service";
 
 // POST https://mixetape.com/mcp — the MCP endpoint (Streamable HTTP, stateless, JSON
 // responses). Authorization: Bearer mxt_… (an API key from /api-keys).

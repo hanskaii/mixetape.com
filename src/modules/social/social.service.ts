@@ -9,7 +9,8 @@ import {
   type SocialAccount,
   type SocialPost,
 } from "#/database/schema";
-import { decrypt, encrypt, randomToken } from "./crypto";
+import { ServiceError } from "#/modules/api/errors";
+import { decrypt, encrypt, randomToken } from "#/modules/secrets/crypto";
 import {
   InvalidInputError,
   ReconnectRequiredError,
@@ -29,16 +30,6 @@ import { checkLead } from "./timing";
 
 const OAUTH_STATE_TTL = 600; // seconds
 const TOKEN_REFRESH_MARGIN = 5 * 60 * 1000; // refresh when less than 5 min remain
-
-export class ServiceError extends Error {
-  constructor(
-    message: string,
-    readonly status = 400,
-  ) {
-    super(message);
-    this.name = "ServiceError";
-  }
-}
 
 const newId = () => crypto.randomUUID();
 

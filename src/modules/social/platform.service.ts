@@ -9,7 +9,6 @@ import {
   type SocialProvider,
 } from "./providers";
 import {
-  ServiceError,
   accessTokenFor,
   getPost,
   loadAccount,
@@ -17,6 +16,7 @@ import {
   missingScopes,
   updatePost,
 } from "./social.service";
+import { ServiceError } from "#/modules/api/errors";
 
 /**
  * Work on what is already on a platform: a post's live details, thumbnail, playlists,

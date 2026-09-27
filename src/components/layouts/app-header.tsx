@@ -47,10 +47,10 @@ export function AppHeader() {
         <div className="flex items-center gap-2">
           {user && (
             <Link
-              to="/publish"
+              to="/queue"
               className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/80 md:inline-flex"
             >
-              New post <ArrowRight className="size-4" />
+              Workspace <ArrowRight className="size-4" />
             </Link>
           )}
           <HeaderUser />

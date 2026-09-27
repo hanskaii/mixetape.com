@@ -1,5 +1,5 @@
 import type { Caller } from "./api-keys.service";
-import { ServiceError } from "./social.service";
+import { ServiceError } from "#/modules/api/errors";
 import { findTool, runTool, toolsFor } from "./tools";
 
 /**

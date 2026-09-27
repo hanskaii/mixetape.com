@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireUser, respond } from "#/modules/social/http";
-import {
-  ServiceError,
-  createPost,
-  listPosts,
-  type CreatePostInput,
-} from "#/modules/social/social.service";
+import { requireUser, respond } from "#/modules/api/http";
+import { createPost, listPosts, type CreatePostInput } from "#/modules/social/social.service";
+import { ServiceError } from "#/modules/api/errors";
 
 // GET  /api/v1/posts?status=scheduled,failed&from=ISO&to=ISO&limit=50
 // POST /api/v1/posts { accountId, mediaUrl, caption?, scheduledAt?, leadMinutes?, metadata? }

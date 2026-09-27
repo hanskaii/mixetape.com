@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireCaller, respond } from "#/modules/social/http";
-import { ServiceError } from "#/modules/social/social.service";
-import { findTool, runTool } from "#/modules/social/tools";
+import { requireCaller, respond } from "#/modules/api/http";
+import { ServiceError } from "#/modules/api/errors";
+import { findTool, runTool } from "#/modules/api/tools";
 
 // POST /api/v1/tools/:name { …arguments } — runs one tool, exactly as MCP's tools/call does:
 //

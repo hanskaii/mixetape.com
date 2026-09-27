@@ -17,7 +17,7 @@ export const siteConfig = {
     },
   },
   nav: [
-    { label: "Publish", href: "/publish" },
+    { label: "Queue", href: "/queue" },
     { label: "Channels", href: "/channels" },
   ],
 };

@@ -11,7 +11,9 @@ export type SecretName =
   | "GITHUB_CLIENT_ID"
   | "GITHUB_CLIENT_SECRET"
   | "GOOGLE_CLIENT_ID"
-  | "GOOGLE_CLIENT_SECRET";
+  | "GOOGLE_CLIENT_SECRET"
+  | "R2_ACCESS_KEY_ID"
+  | "R2_SECRET_ACCESS_KEY";
 
 function sources(name: SecretName): {
   store: SecretsStoreSecret | undefined;
@@ -30,6 +32,10 @@ function sources(name: SecretName): {
       return { store: env.SS_GOOGLE_CLIENT_ID, local: env.GOOGLE_CLIENT_ID };
     case "GOOGLE_CLIENT_SECRET":
       return { store: env.SS_GOOGLE_CLIENT_SECRET, local: env.GOOGLE_CLIENT_SECRET };
+    case "R2_ACCESS_KEY_ID":
+      return { store: env.SS_R2_ACCESS_KEY_ID, local: env.R2_ACCESS_KEY_ID };
+    case "R2_SECRET_ACCESS_KEY":
+      return { store: env.SS_R2_SECRET_ACCESS_KEY, local: env.R2_SECRET_ACCESS_KEY };
   }
 }
 

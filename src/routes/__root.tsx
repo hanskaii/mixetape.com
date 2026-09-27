@@ -1,6 +1,4 @@
 import { HeadContent, Scripts, createRootRouteWithContext, Link } from "@tanstack/react-router";
-import Footer from "../components/layouts/footer";
-import { AppHeader } from "../components/layouts/app-header";
 import { getAuthSession } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
 import { StyleXDev } from "../components/providers/stylex-dev";
@@ -153,13 +151,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <StyleXDev />
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/45">
-        <ModalProvider>
-          <div className="mx-auto flex min-h-screen w-full max-w-[1510px] flex-col justify-start">
-            <AppHeader />
-            <div className="flex-1">{children}</div>
-            <Footer />
-          </div>
-        </ModalProvider>
+        {/* Each area brings its own chrome: (public)/route.tsx and (app)/_app/route.tsx. */}
+        <ModalProvider>{children}</ModalProvider>
         <Scripts />
       </body>
     </html>

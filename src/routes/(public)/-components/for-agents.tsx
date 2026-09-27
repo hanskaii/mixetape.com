@@ -27,6 +27,10 @@ const TOOLS = [
   "moderate_comment",
   "get_post_analytics",
   "get_account_analytics",
+  "create_upload",
+  "import_file",
+  "list_files",
+  "delete_file",
 ];
 
 const MCP = `claude mcp add --transport http mixetape \\

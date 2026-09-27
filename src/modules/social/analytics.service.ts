@@ -3,7 +3,7 @@ import { db } from "#/database/index";
 import { socialPosts } from "#/database/schema";
 import type { DateRange } from "./providers";
 import { onAccount, onPlatform, platformCall } from "./platform.service";
-import { ServiceError } from "./social.service";
+import { ServiceError } from "#/modules/api/errors";
 
 /**
  * How posts and accounts perform, from the platform's own analytics. An agent reads this to

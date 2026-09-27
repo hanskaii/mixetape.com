@@ -82,6 +82,16 @@
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-google-client-secret",
     },
+    {
+      "binding": "SS_R2_ACCESS_KEY_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-r2-access-key-id",
+    },
+    {
+      "binding": "SS_R2_SECRET_ACCESS_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-r2-secret-access-key",
+    },
   ],
   "vars": {
     "APP_ENV": "production",
@@ -89,5 +99,10 @@
     "SITE_URL": "https://mixetape.com",
     "BETTER_AUTH_URL": "https://mixetape.com",
     "EMAIL_FROM": "no-reply@mixetape.com",
+    // Where presigned uploads go (storage/upload.service): the bucket bound as BUCKET.
+    "R2_ACCOUNT_ID": "526998f1dc79660b3b5d57b5fe264a16",
+    "R2_BUCKET_NAME": "mixetape-media",
+    // The bucket's custom domain: every stored file is public at MEDIA_PUBLIC_URL/<key>.
+    "MEDIA_PUBLIC_URL": "https://media.mixetape.com",
   },
 }

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireSession } from "#/modules/social/http";
-import { ServiceError, startConnect } from "#/modules/social/social.service";
+import { requireSession } from "#/modules/api/http";
+import { startConnect } from "#/modules/social/social.service";
+import { ServiceError } from "#/modules/api/errors";
 
 // GET /api/connect/youtube?credential=<id> — sends the signed-in user to the platform's
 // consent screen, using the OAuth app (credential) they chose.

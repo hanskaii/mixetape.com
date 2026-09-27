@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireUser, respond } from "#/modules/social/http";
+import { requireUser, respond } from "#/modules/api/http";
 import { PROVIDER_LIST } from "#/modules/social/providers";
 import { listAccounts } from "#/modules/social/social.service";
 

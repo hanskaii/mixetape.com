@@ -1,29 +1,15 @@
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import {
-  UploadSimple,
-  Check,
-  WarningCircle,
-  User,
-  Shield,
-  SpinnerGap,
-} from "@phosphor-icons/react";
+import { UploadSimple, Check, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
 import { authClient } from "#/modules/auth/auth-client";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
 import { Button } from "#/components/ui/button";
-import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
+import { Page, PageHeader } from "#/components/layouts/workspace-page";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
 
 export const Route = createFileRoute("/(app)/_app/settings/profile")({
-  beforeLoad: ({ context }) => {
-    if (!context.session?.user) {
-      throw redirect({
-        to: "/",
-      });
-    }
-  },
   loader: async () => {
     return await getProfileData();
   },
@@ -120,30 +106,11 @@ function ProfileSettingsPage() {
   };
 
   return (
-    <main className="app-page space-y-7 px-4 py-10 md:py-14">
-      <WorkspaceHeading
-        section="Account / 01"
+    <Page>
+      <PageHeader
         title="Your profile"
         description="The name and image that represent you in mixetape."
       />
-      {/* Navigation tabs */}
-      <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-        <Link
-          to="/settings/profile"
-          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-        >
-          <User className="size-3.5" />
-          <span>Profile</span>
-        </Link>
-        <Link
-          to="/settings/account"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
-        >
-          <Shield className="size-3.5" />
-          <span>General Account</span>
-        </Link>
-      </div>
-
       {message && (
         <div
           className={`flex items-center gap-2 p-3.5 rounded-2xl text-xs font-medium ring-1 ${
@@ -318,6 +285,6 @@ function ProfileSettingsPage() {
           </div>
         </div>
       </form>
-    </main>
+    </Page>
   );
 }

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/robots/txt")({
         const robots = `User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /publish/
+Disallow: /queue/
 Disallow: /channels/
 Disallow: /api-keys/
 Disallow: /settings/

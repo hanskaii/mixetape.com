@@ -36,7 +36,7 @@ export async function listOwnedMedia(
   const list = await env.BUCKET.list({
     prefix: `${MEDIA_PREFIX}${subPrefix}`,
     limit,
-    include: ["customMetadata"],
+    include: ["customMetadata", "httpMetadata"],
   });
 
   return list.objects
@@ -73,4 +73,17 @@ export async function deleteOwnedMedia(keys: string[], userId: string): Promise<
   await Promise.all(deletable.map((key) => env.BUCKET.delete(key)));
 
   return { deleted: deletable.length, refused: keys.length - deletable.length };
+}
+
+/**
+ * Deletes one file from a user's folder (media/<userId>/…). Files uploaded through a
+ * presigned URL carry no owner metadata; their folder is the proof. Returns false when
+ * there was nothing to delete.
+ */
+export async function deleteUserFile(userId: string, key: string): Promise<boolean> {
+  if (!key.startsWith(`${MEDIA_PREFIX}${userId}/`)) return false;
+  const head = await env.BUCKET.head(key);
+  if (!head) return false;
+  await env.BUCKET.delete(key);
+  return true;
 }

@@ -1,73 +1,8 @@
-import type { JsonValue } from "#/database/schema";
-import { requireScope, type ApiScope, type Caller } from "./api-keys.service";
+import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as analytics from "./analytics.service";
 import * as platform from "./platform.service";
-import { PROVIDER_LIST, capabilitiesOf, getProvider, type Metadata } from "./providers";
+import { PROVIDER_LIST, capabilitiesOf, getProvider } from "./providers";
 import * as social from "./social.service";
-
-/**
- * Everything an agent can do in mixetape, in one registry. MCP (/mcp) and REST
- * (/api/v1/tools/:name) both serve it, and each tool needs one API-key permission.
- * A tool is a thin adapter: it reads its arguments and calls a service.
- */
-
-export type Tool = {
-  name: string;
-  description: string;
-  scope: ApiScope;
-  inputSchema: Record<string, unknown>;
-  annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean };
-  run: (userId: string, input: Input) => Promise<unknown>;
-};
-
-/** A tool's arguments, read with the type each one should have. */
-export class Input {
-  constructor(private readonly args: Record<string, unknown>) {}
-
-  private bad(name: string, what: string): never {
-    throw new social.ServiceError(`${name} must be ${what}`);
-  }
-
-  string(name: string): string {
-    const value = this.optionalString(name);
-    if (!value) throw new social.ServiceError(`${name} is required`);
-    return value;
-  }
-
-  optionalString(name: string): string | undefined {
-    const value = this.args[name];
-    if (value === undefined || value === null) return undefined;
-    return typeof value === "string" ? value : this.bad(name, "text");
-  }
-
-  number(name: string): number | undefined {
-    const value = this.args[name];
-    if (value === undefined || value === null) return undefined;
-    return typeof value === "number" && Number.isFinite(value) ? value : this.bad(name, "a number");
-  }
-
-  boolean(name: string): boolean | undefined {
-    const value = this.args[name];
-    if (value === undefined || value === null) return undefined;
-    return typeof value === "boolean" ? value : this.bad(name, "true or false");
-  }
-
-  strings(name: string): string[] | undefined {
-    const value = this.args[name];
-    if (value === undefined || value === null) return undefined;
-    return Array.isArray(value) && value.every((item) => typeof item === "string")
-      ? value
-      : this.bad(name, "a list of text");
-  }
-
-  object(name: string): Metadata | undefined {
-    const value = this.args[name];
-    if (value === undefined || value === null) return undefined;
-    return typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, JsonValue>)
-      : this.bad(name, "an object");
-  }
-}
 
 // ── schemas ──────────────────────────────────────────────────────────────────
 
@@ -75,10 +10,6 @@ const id = (description: string) => ({ type: "string", description });
 const POST_ID = id("mixetape post id (list_posts)");
 const ACCOUNT_ID = id("mixetape account id (list_accounts)");
 const DATE = (what: string) => ({ type: "string", description: `${what}, YYYY-MM-DD` });
-
-function object(properties: Record<string, unknown>, required: string[] = []) {
-  return { type: "object", properties, ...(required.length && { required }) };
-}
 
 /** Each platform's metadata schema; one platform needs no union. */
 function metadataSchema(pick?: (provider: string) => readonly string[] | undefined) {
@@ -100,11 +31,10 @@ function metadataSchema(pick?: (provider: string) => readonly string[] | undefin
 const METADATA = metadataSchema();
 const EDITABLE_METADATA = metadataSchema((providerId) => getProvider(providerId).editing?.fields);
 
-const READ = { readOnlyHint: true };
-
 // ── tools ────────────────────────────────────────────────────────────────────
 
-export const TOOLS: Tool[] = [
+/** Scheduling and managing posts on connected accounts. */
+export const socialTools: Tool[] = [
   // read
   {
     name: "list_accounts",
@@ -112,7 +42,7 @@ export const TOOLS: Tool[] = [
     description:
       "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be reconnected on /channels first (also after mixetape asks for new permissions).",
     inputSchema: object({}),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: async (userId) =>
       (await social.listAccounts(userId)).map((account) => ({
         id: account.id,
@@ -135,7 +65,7 @@ export const TOOLS: Tool[] = [
       to: { type: "string", description: "ISO time; scheduled at or before" },
       limit: { type: "number", description: "Default 50, max 500" },
     }),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) => {
       const date = (name: string) => {
         const value = input.optionalString(name);
@@ -154,7 +84,7 @@ export const TOOLS: Tool[] = [
     scope: "read",
     description: "One post with its status, error, platform link and attempts.",
     inputSchema: object({ id: POST_ID }, ["id"]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) => social.getPost(userId, input.string("id")),
   },
   {
@@ -163,7 +93,7 @@ export const TOOLS: Tool[] = [
     description:
       "How a post that is on the platform stands right now: visibility, processing, scheduled publish time, any rejection, plus lifetime views, likes and comments. For watch time and retention use get_post_analytics.",
     inputSchema: object({ id: POST_ID }, ["id"]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) => platform.postInsights(userId, input.string("id")),
   },
   {
@@ -172,7 +102,7 @@ export const TOOLS: Tool[] = [
     description:
       "List the account's collections — playlists on YouTube — with id, title, visibility and item count. Use an id in metadata.playlistIds or add_to_collection.",
     inputSchema: object({ accountId: ACCOUNT_ID }, ["accountId"]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) => platform.listCollections(userId, input.string("accountId")),
   },
   {
@@ -181,7 +111,7 @@ export const TOOLS: Tool[] = [
     description:
       "List the caption tracks of a post on the platform (language, name, kind; 'asr' is automatic).",
     inputSchema: object({ id: POST_ID }, ["id"]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) => platform.listCaptions(userId, input.string("id")),
   },
 
@@ -190,7 +120,7 @@ export const TOOLS: Tool[] = [
     name: "create_post",
     scope: "publish",
     description:
-      "Schedule a video on a connected account. Like Buffer, the post waits in mixetape (editable, cancellable) and is uploaded leadMinutes before scheduledAt as private; YouTube processes it and makes it public at scheduledAt. Thumbnail, playlists and captions in metadata are applied right after upload; firstComment is posted once it is public. mediaUrl: a public https URL or an r2:// key uploaded to mixetape.",
+      "Schedule a video on a connected account. Like Buffer, the post waits in mixetape (editable, cancellable) and is uploaded leadMinutes before scheduledAt as private; YouTube processes it and makes it public at scheduledAt. Thumbnail, playlists and captions in metadata are applied right after upload; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).",
     inputSchema: object(
       {
         accountId: ACCOUNT_ID,
@@ -366,7 +296,7 @@ export const TOOLS: Tool[] = [
       },
       ["id"],
     ),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) =>
       platform.listComments(userId, input.string("id"), {
         limit: input.number("limit"),
@@ -431,7 +361,7 @@ export const TOOLS: Tool[] = [
     description:
       "A post's analytics: views, watch time, average view duration and percentage, likes, comments, shares, subscribers gained/lost, the audience-retention curve and traffic sources. Defaults to the day it went up through today; the last ~3 days are incomplete.",
     inputSchema: object({ id: POST_ID, from: DATE("First day"), to: DATE("Last day") }, ["id"]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) =>
       analytics.postAnalytics(userId, input.string("id"), {
         from: input.optionalString("from"),
@@ -446,7 +376,7 @@ export const TOOLS: Tool[] = [
     inputSchema: object({ accountId: ACCOUNT_ID, from: DATE("First day"), to: DATE("Last day") }, [
       "accountId",
     ]),
-    annotations: READ,
+    annotations: READ_ONLY,
     run: (userId, input) =>
       analytics.accountAnalytics(userId, input.string("accountId"), {
         from: input.optionalString("from"),
@@ -454,23 +384,3 @@ export const TOOLS: Tool[] = [
       }),
   },
 ];
-
-export const findTool = (name: string) => TOOLS.find((tool) => tool.name === name);
-
-/** The tools a caller may use, as agents see them. */
-export function toolsFor(caller: Caller) {
-  return TOOLS.filter((tool) => caller.scopes.includes(tool.scope)).map(
-    ({ name, description, scope, inputSchema, annotations }) => ({
-      name,
-      description: `${description} [permission: ${scope}]`,
-      inputSchema,
-      ...(annotations && { annotations }),
-    }),
-  );
-}
-
-/** Runs a tool as the caller, after checking the caller's permission for it. */
-export async function runTool(caller: Caller, tool: Tool, args: Record<string, unknown>) {
-  requireScope(caller, tool.scope);
-  return tool.run(caller.userId, new Input(args));
-}

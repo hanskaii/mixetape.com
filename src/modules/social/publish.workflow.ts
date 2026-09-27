@@ -2,13 +2,8 @@ import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloud
 import { NonRetryableError } from "cloudflare:workflows";
 import { postFirstComment } from "./platform.service";
 import { getProvider, PermanentPublishError } from "./providers";
-import {
-  ServiceError,
-  accessTokenFor,
-  loadForPublishing,
-  platformStatusFor,
-  updatePost,
-} from "./social.service";
+import { accessTokenFor, loadForPublishing, platformStatusFor, updatePost } from "./social.service";
+import { ServiceError } from "#/modules/api/errors";
 import { publishTiming } from "./timing";
 
 export type PublishParams = { postId: string };

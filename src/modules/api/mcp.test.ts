@@ -1,29 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./social.service", () => {
-  class ServiceError extends Error {
-    constructor(
-      message: string,
-      readonly status = 400,
-    ) {
-      super(message);
-    }
-  }
-  return {
-    ServiceError,
-    listAccounts: vi.fn(),
-    listPosts: vi.fn(),
-    getPost: vi.fn(),
-    createPost: vi.fn(),
-    editPost: vi.fn(),
-    cancelPost: vi.fn(),
-    retryPost: vi.fn(),
-  };
-});
-vi.mock("./platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
-vi.mock("./analytics.service", () => ({ accountAnalytics: vi.fn() }));
+vi.mock("../social/social.service", () => ({
+  listAccounts: vi.fn(),
+  listPosts: vi.fn(),
+  getPost: vi.fn(),
+  createPost: vi.fn(),
+  editPost: vi.fn(),
+  cancelPost: vi.fn(),
+  retryPost: vi.fn(),
+}));
+vi.mock("../social/platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
+vi.mock("../social/analytics.service", () => ({ accountAnalytics: vi.fn() }));
+vi.mock("../storage/storage.service", () => ({ MEDIA_PREFIX: "media/" }));
+vi.mock("../storage/upload.service", () => ({
+  createUpload: vi.fn(),
+}));
 vi.mock("./api-keys.service", async () => {
-  const { ServiceError } = await import("./social.service");
+  const { ServiceError } = await import("./errors");
   return {
     requireScope: (caller: { scopes: string[] }, scope: string) => {
       if (!caller.scopes.includes(scope)) throw new ServiceError(`lacks "${scope}"`, 403);
@@ -31,14 +24,16 @@ vi.mock("./api-keys.service", async () => {
   };
 });
 
-import * as platform from "./platform.service";
-import * as social from "./social.service";
+import * as platform from "../social/platform.service";
+import * as social from "../social/social.service";
+import * as uploads from "../storage/upload.service";
+import { ServiceError } from "./errors";
 import type { Caller } from "./api-keys.service";
 import { handleMessage } from "./mcp";
 
 const everything: Caller = {
   userId: "user-1",
-  scopes: ["read", "publish", "manage", "comments", "analytics"],
+  scopes: ["read", "publish", "manage", "comments", "analytics", "storage"],
 };
 const publisher: Caller = { userId: "user-1", scopes: ["read", "publish"] };
 
@@ -93,6 +88,10 @@ describe("mixetape MCP", () => {
       "moderate_comment",
       "get_post_analytics",
       "get_account_analytics",
+      "create_upload",
+      "import_file",
+      "list_files",
+      "delete_file",
     ]);
   });
 
@@ -101,6 +100,23 @@ describe("mixetape MCP", () => {
     expect(names).toContain("create_post");
     expect(names).not.toContain("post_comment");
     expect(names).not.toContain("get_account_analytics");
+    expect(names).not.toContain("create_upload");
+  });
+
+  it("starts a storage upload for a key with the storage permission", async () => {
+    vi.mocked(uploads.createUpload).mockResolvedValue({ url: "r2://media/u/ep.mp4" } as never);
+    const reply = (await call("create_upload", {
+      fileName: "ep.mp4",
+      contentType: "video/mp4",
+    })) as {
+      result: { content: { text: string }[] };
+    };
+    expect(uploads.createUpload).toHaveBeenCalledWith("user-1", {
+      fileName: "ep.mp4",
+      contentType: "video/mp4",
+      size: undefined,
+    });
+    expect(JSON.parse(reply.result.content[0].text)).toEqual({ url: "r2://media/u/ep.mp4" });
   });
 
   it("refuses a tool the key has no permission for, as a tool error", async () => {
@@ -145,7 +161,7 @@ describe("mixetape MCP", () => {
 
   it("reports a refused action as a tool error, not a protocol error", async () => {
     vi.mocked(social.cancelPost).mockRejectedValue(
-      new social.ServiceError("A published post cannot be cancelled", 409),
+      new ServiceError("A published post cannot be cancelled", 409),
     );
     const reply = (await call("cancel_post", { id: "p1" })) as { result: unknown };
     expect(reply.result).toEqual({

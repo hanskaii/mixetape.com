@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import {
   EnvelopeSimple,
@@ -7,8 +7,6 @@ import {
   Copy,
   Check,
   SpinnerGap,
-  Shield,
-  User,
   WarningCircle,
   DownloadSimple,
 } from "@phosphor-icons/react";
@@ -16,7 +14,7 @@ import QRCode from "qrcode";
 import { authClient } from "#/modules/auth/auth-client";
 import { getUserLinkedAccounts, unlinkUserAccount } from "#/modules/auth/auth.fn";
 import { Button } from "#/components/ui/button";
-import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
+import { Page, PageHeader } from "#/components/layouts/workspace-page";
 import { Input } from "#/components/ui/input";
 import { Switch } from "#/components/ui/switch";
 import { Modal, ModalHeader, ModalTitle, ModalDescription } from "#/components/ui/modal";
@@ -24,13 +22,6 @@ import { useConfirmModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
 
 export const Route = createFileRoute("/(app)/_app/settings/account")({
-  beforeLoad: ({ context }) => {
-    if (!context.session?.user) {
-      throw redirect({
-        to: "/",
-      });
-    }
-  },
   head: () => ({
     meta: [
       { title: `Account Settings | ${siteConfig.name}` },
@@ -421,30 +412,11 @@ function AccountSettingsPage() {
   };
 
   return (
-    <main className="app-page space-y-7 px-4 py-10 md:py-14">
-      <WorkspaceHeading
-        section="Account / 02"
+    <Page>
+      <PageHeader
         title="Account settings"
         description="Manage access, identity, and security in one place."
       />
-      {/* Navigation tabs */}
-      <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-        <Link
-          to="/settings/profile"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
-        >
-          <User className="size-3.5" />
-          <span>Profile</span>
-        </Link>
-        <Link
-          to="/settings/account"
-          className="text-xs font-semibold text-primary-foreground bg-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-        >
-          <Shield className="size-3.5" />
-          <span>General Account</span>
-        </Link>
-      </div>
-
       <div className="flex flex-col gap-5">
         {/* General Settings Card */}
         <div className="bg-card rounded-2xl ring-1 ring-foreground/10 p-5 sm:p-6 flex flex-col gap-4">
@@ -1074,6 +1046,6 @@ function AccountSettingsPage() {
           </form>
         )}
       </Modal>
-    </main>
+    </Page>
   );
 }
