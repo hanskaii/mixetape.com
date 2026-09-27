@@ -49,6 +49,40 @@
       "name": "EMAIL",
     },
   ],
+  // Production credentials live in the account's Secrets Store (default_secrets_store) and are
+  // read through src/modules/secrets/secrets.service.ts, which falls back to .dev.vars locally.
+  "secrets_store_secrets": [
+    {
+      "binding": "SS_BETTER_AUTH_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-better-auth-secret",
+    },
+    {
+      "binding": "SS_CREDENTIALS_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-credentials-key",
+    },
+    {
+      "binding": "SS_GITHUB_CLIENT_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-github-client-id",
+    },
+    {
+      "binding": "SS_GITHUB_CLIENT_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-github-client-secret",
+    },
+    {
+      "binding": "SS_GOOGLE_CLIENT_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-google-client-id",
+    },
+    {
+      "binding": "SS_GOOGLE_CLIENT_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-google-client-secret",
+    },
+  ],
   "vars": {
     "APP_ENV": "production",
     "APP_NAME": "mixetape",

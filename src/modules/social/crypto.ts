@@ -1,9 +1,9 @@
-import { env } from "cloudflare:workers";
+import { requiredSecret } from "#/modules/secrets/secrets.service";
 
 /**
  * Encryption for everything that would let someone post as the user: OAuth client
  * secrets, access tokens and refresh tokens. AES-GCM with a key held only in the
- * CREDENTIALS_KEY secret, so a copy of the database alone is useless.
+ * CREDENTIALS_KEY secret (Secrets Store), so a copy of the database alone is useless.
  *
  * Stored form: `v1.<iv base64url>.<ciphertext base64url>`.
  */
@@ -14,9 +14,7 @@ let cachedKey: Promise<CryptoKey> | undefined;
 
 function key(): Promise<CryptoKey> {
   cachedKey ??= (async () => {
-    const secret = env.CREDENTIALS_KEY;
-    if (!secret) throw new Error("CREDENTIALS_KEY is not configured");
-    const raw = base64urlDecode(secret);
+    const raw = base64urlDecode(await requiredSecret("CREDENTIALS_KEY"));
     if (raw.byteLength !== 32)
       throw new Error("CREDENTIALS_KEY must be 32 bytes, base64url-encoded");
     return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);

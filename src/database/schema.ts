@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 /** A value that survives JSON — what a JSON column may hold. */
 export type JsonValue =
@@ -200,6 +201,12 @@ export const apiKeys = sqliteTable(
     name: text("name").notNull(),
     prefix: text("prefix").notNull(), // first characters, to recognise a key in the list
     hash: text("hash").notNull().unique(), // SHA-256 of the key; the key itself is never stored
+    // What the key may do (api-keys.service API_SCOPES). Keys made before permissions existed
+    // keep full access.
+    scopes: text("scopes", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'["read","publish","manage","comments","analytics"]'`),
     lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()

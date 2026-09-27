@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/media/upload")({
     handlers: {
       POST: async ({ request }) =>
         respond(async () => {
-          const userId = await requireUser(request);
+          const userId = await requireUser(request, "publish");
           const action = new URL(request.url).searchParams.get("action");
           const body = (await request.json().catch(() => ({}))) as {
             name?: string;
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/media/upload")({
 
       PUT: async ({ request }) =>
         respond(async () => {
-          const userId = await requireUser(request);
+          const userId = await requireUser(request, "publish");
           const params = new URL(request.url).searchParams;
           const key = ownKey(userId, params.get("key"));
           const uploadId = params.get("uploadId");

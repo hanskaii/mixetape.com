@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { YoutubeProvider } from "./youtube";
-import { PermanentPublishError, type PostWithMedia } from "./types";
+import { youtube } from ".";
+import { PermanentPublishError, type PostWithMedia } from "../types";
 
 const MB = 1024 * 1024;
 const MEDIA = "https://media.example.com/video.mp4";
@@ -27,7 +27,7 @@ const bytes = (length: number) => () => new Response(new Uint8Array(length), { s
 
 const post = { id: "post-1", url: MEDIA, caption: null } as unknown as PostWithMedia;
 
-describe("YoutubeProvider.upload", () => {
+describe("youtube.upload", () => {
   beforeEach(() => vi.useFakeTimers({ toFake: ["setTimeout"] }));
   afterEach(() => {
     vi.useRealTimers();
@@ -52,7 +52,7 @@ describe("YoutubeProvider.upload", () => {
       () => Response.json({ id: "vid123", kind: "youtube#video" }),
     ]);
 
-    const result = await new YoutubeProvider().upload(post, "token", "client", "secret", {
+    const result = await youtube.upload(post, "token", {
       title: "A title",
       category: "27",
       publishAt: "2026-10-01T10:00:00.000Z",
@@ -92,9 +92,9 @@ describe("YoutubeProvider.upload", () => {
         ),
     ]);
 
-    await expect(
-      new YoutubeProvider().upload(post, "token", "client", "secret", { title: "t" }),
-    ).rejects.toThrow("YOUTUBE_QUOTA_EXCEEDED");
+    await expect(youtube.upload(post, "token", { title: "t" })).rejects.toThrow(
+      "YOUTUBE_QUOTA_EXCEEDED",
+    );
   });
 
   it("marks a rejected request as permanent", async () => {
@@ -107,8 +107,8 @@ describe("YoutubeProvider.upload", () => {
         ),
     ]);
 
-    await expect(
-      new YoutubeProvider().upload(post, "token", "client", "secret", { title: "t" }),
-    ).rejects.toBeInstanceOf(PermanentPublishError);
+    await expect(youtube.upload(post, "token", { title: "t" })).rejects.toBeInstanceOf(
+      PermanentPublishError,
+    );
   });
 });

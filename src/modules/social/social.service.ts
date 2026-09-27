@@ -2,25 +2,29 @@ import { env } from "cloudflare:workers";
 import { and, asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
-  apiKeys,
   providerCredentials,
   socialAccounts,
   socialPosts,
   type ProviderCredential,
   type SocialAccount,
-  type JsonValue,
   type SocialPost,
 } from "#/database/schema";
-import { decrypt, encrypt, randomToken, sha256 } from "./crypto";
-import { GoogleAuthFlow } from "./oauth/google-oauth";
-import { getProvider, isProvider } from "./providers";
-import type { PlatformMetadata } from "./providers";
+import { decrypt, encrypt, randomToken } from "./crypto";
+import {
+  InvalidInputError,
+  ReconnectRequiredError,
+  getProvider,
+  isProvider,
+  type AppCredentials,
+  type Metadata,
+} from "./providers";
 import { checkLead } from "./timing";
 
 /**
- * Everything mixetape does with credentials, connected accounts, posts and API keys. The
- * UI's server functions, the REST API and the publishing workflow all go through here, so
- * ownership checks and encryption live in exactly one place.
+ * Credentials, connected accounts and posts. The UI's server functions, the REST API, MCP
+ * and the publishing workflow all go through here, so ownership checks and encryption live
+ * in exactly one place. Work on posts already on a platform is in platform.service,
+ * analytics in analytics.service, API keys in api-keys.service.
  */
 
 const OAUTH_STATE_TTL = 600; // seconds
@@ -98,6 +102,30 @@ async function ownedCredential(userId: string, id: string): Promise<ProviderCred
   return credential;
 }
 
+/** The credential's OAuth app, with its secret decrypted. */
+async function appCredentials(credential: ProviderCredential): Promise<AppCredentials> {
+  const clientSecret = await decrypt(credential.clientSecret).catch(() => {
+    throw new ServiceError(
+      `The client secret of "${credential.label}" can no longer be read — update it on Channels`,
+      409,
+    );
+  });
+  return { clientId: credential.clientId, clientSecret };
+}
+
+/**
+ * Replaces a credential's client secret — after rotating it at the provider, or after the
+ * encryption key changed and the stored copy can no longer be read.
+ */
+export async function updateCredentialSecret(userId: string, id: string, clientSecret: string) {
+  await ownedCredential(userId, id);
+  if (!clientSecret.trim()) throw new ServiceError("Enter the client secret");
+  await db
+    .update(providerCredentials)
+    .set({ clientSecret: await encrypt(clientSecret.trim()), updatedAt: new Date() })
+    .where(and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)));
+}
+
 // ── connecting accounts (OAuth) ────────────────────────────────────────────────
 
 type OAuthState = { userId: string; credentialId: string; provider: string };
@@ -121,22 +149,18 @@ export async function startConnect(userId: string, credentialId: string): Promis
  */
 export async function beginConnect(userId: string, credentialId: string) {
   const credential = await ownedCredential(userId, credentialId);
+  const provider = getProvider(credential.provider);
   const state = randomToken(24);
   const payload: OAuthState = { userId, credentialId, provider: credential.provider };
   await env.KIT_CACHE.put(`oauth:state:${state}`, JSON.stringify(payload), {
     expirationTtl: OAUTH_STATE_TTL,
   });
-
-  if (credential.provider === "youtube") {
-    const url = new GoogleAuthFlow(
-      credential.clientId,
-      "",
-      redirectUri("youtube"),
-      state,
-    ).redirect();
-    return { url, state };
-  }
-  throw new ServiceError(`Connecting ${credential.provider} is not supported yet`);
+  const url = provider.connect.authorizeUrl({
+    clientId: credential.clientId,
+    redirectUri: redirectUri(credential.provider),
+    state,
+  });
+  return { url, state };
 }
 
 /**
@@ -172,7 +196,8 @@ export async function connectResult(userId: string, state: string): Promise<Conn
   if (owner && owner !== userId) return { status: "pending" };
   return result;
 }
-/** Finishes the OAuth dance and stores every channel the signed-in identity owns. */
+
+/** Finishes the OAuth dance and stores every account the consent reaches. */
 export async function completeConnect(provider: string, code: string, state: string) {
   const key = `oauth:state:${state}`;
   const saved = await env.KIT_CACHE.get(key);
@@ -182,37 +207,30 @@ export async function completeConnect(provider: string, code: string, state: str
   if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
 
   const credential = await ownedCredential(userId, credentialId);
-  const secret = await decrypt(credential.clientSecret);
+  const app = await appCredentials(credential);
+  const { grant, accounts } = await getProvider(provider).connect.exchangeCode(app, {
+    code,
+    redirectUri: redirectUri(provider),
+  });
 
-  if (provider !== "youtube") throw new ServiceError(`Connecting ${provider} is not supported yet`);
+  const accessToken = await encrypt(grant.accessToken);
+  const refreshToken = grant.refreshToken ? await encrypt(grant.refreshToken) : null;
+  const expiresAt = new Date(Date.now() + grant.expiresIn * 1000);
+  const scopes = grant.scopes.join(" ");
 
-  const flow = new GoogleAuthFlow(credential.clientId, secret, redirectUri(provider), state, code);
-  await flow.getUserData();
-  const channels = await flow.getChannels();
-  if (!channels.length) {
-    throw new ServiceError(
-      `${flow.user?.email ?? "This Google account"} has no YouTube channel. Create one, or pick the channel's account when signing in.`,
-    );
-  }
-
-  const accessToken = await encrypt(flow.getAccessToken());
-  const refreshToken = flow.refreshToken ? await encrypt(flow.refreshToken) : null;
-  const expiresAt = new Date(Date.now() + flow.getExpiresIn() * 1000);
-  const scopes = flow.grantedScopes?.join(" ") ?? null;
-
-  for (const channel of channels) {
+  for (const account of accounts) {
     const existing = await db.query.socialAccounts.findFirst({
       where: and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.provider, provider),
-        eq(socialAccounts.platformAccountId, channel.id),
+        eq(socialAccounts.platformAccountId, account.platformAccountId),
       ),
     });
     const values = {
       credentialId,
-      name: channel.title,
-      handle: channel.customUrl ?? null,
-      avatar: channel.thumbnail ?? null,
+      name: account.name,
+      handle: account.handle ?? null,
+      avatar: account.avatar ?? null,
       accessToken,
       // Google omits the refresh token on some re-consents; keep the one we had.
       refreshToken: refreshToken ?? existing?.refreshToken ?? null,
@@ -224,12 +242,16 @@ export async function completeConnect(provider: string, code: string, state: str
     if (existing) {
       await db.update(socialAccounts).set(values).where(eq(socialAccounts.id, existing.id));
     } else {
-      await db
-        .insert(socialAccounts)
-        .values({ id: newId(), userId, provider, platformAccountId: channel.id, ...values });
+      await db.insert(socialAccounts).values({
+        id: newId(),
+        userId,
+        provider,
+        platformAccountId: account.platformAccountId,
+        ...values,
+      });
     }
   }
-  return { userId, channels: channels.map((channel) => channel.title) };
+  return { userId, channels: accounts.map((account) => account.name) };
 }
 
 export async function listAccounts(userId: string) {
@@ -237,7 +259,11 @@ export async function listAccounts(userId: string) {
     where: eq(socialAccounts.userId, userId),
     orderBy: [asc(socialAccounts.createdAt)],
   });
-  return rows.map(({ accessToken: _a, refreshToken: _r, ...row }) => row);
+  // A channel connected before mixetape asked for more permissions must reconnect too.
+  return rows.map(({ accessToken: _a, refreshToken: _r, ...row }) => ({
+    ...row,
+    status: row.status === "active" && missingScopes(row).length ? "reconnect" : row.status,
+  }));
 }
 
 export async function deleteAccount(userId: string, id: string) {
@@ -254,24 +280,34 @@ export async function accessTokenFor(
   account: SocialAccount,
   credential: ProviderCredential,
 ): Promise<string> {
-  const expiresAt = account.accessTokenExpiresAt?.getTime() ?? 0;
-  if (expiresAt - Date.now() > TOKEN_REFRESH_MARGIN) return decrypt(account.accessToken);
-
-  if (!account.refreshToken) {
-    await db
+  const markReconnect = () =>
+    db
       .update(socialAccounts)
       .set({ status: "reconnect", updatedAt: new Date() })
       .where(eq(socialAccounts.id, account.id));
+  // Tokens sealed with an earlier encryption key cannot be read: the channel must be
+  // connected again, which is what the Reconnect button does.
+  const open = (sealed: string) =>
+    decrypt(sealed).catch(async () => {
+      await markReconnect();
+      throw new ServiceError(
+        "This channel's saved access can no longer be read — reconnect it",
+        409,
+      );
+    });
+
+  const expiresAt = account.accessTokenExpiresAt?.getTime() ?? 0;
+  if (expiresAt - Date.now() > TOKEN_REFRESH_MARGIN) return open(account.accessToken);
+
+  if (!account.refreshToken) {
+    await markReconnect();
     throw new ServiceError("The account has no refresh token — reconnect it", 409);
   }
 
-  const provider = getProvider(account.provider);
-  if (!provider.refreshToken) throw new ServiceError(`${provider.name} tokens cannot be refreshed`);
   try {
-    const refreshed = await provider.refreshToken(
-      await decrypt(account.refreshToken),
-      credential.clientId,
-      await decrypt(credential.clientSecret),
+    const refreshed = await getProvider(account.provider).connect.refresh(
+      await appCredentials(credential),
+      await open(account.refreshToken),
     );
     await db
       .update(socialAccounts)
@@ -284,15 +320,18 @@ export async function accessTokenFor(
       .where(eq(socialAccounts.id, account.id));
     return refreshed.accessToken;
   } catch (error) {
-    if (error instanceof Error && error.message === "RECONNECT_REQUIRED") {
-      await db
-        .update(socialAccounts)
-        .set({ status: "reconnect", updatedAt: new Date() })
-        .where(eq(socialAccounts.id, account.id));
-      throw new ServiceError("Access was revoked or expired — reconnect the account", 409);
+    if (error instanceof ReconnectRequiredError) {
+      await markReconnect();
+      throw new ServiceError(error.message, 409);
     }
     throw error;
   }
+}
+
+/** The permissions the account still has to grant, e.g. after mixetape asked for more. */
+export function missingScopes(account: Pick<SocialAccount, "provider" | "scopes">): string[] {
+  const granted = (account.scopes ?? "").split(" ");
+  return getProvider(account.provider).connect.scopes.filter((scope) => !granted.includes(scope));
 }
 
 // ── posts ──────────────────────────────────────────────────────────────────────
@@ -308,7 +347,8 @@ export type CreatePostInput = {
   scheduledAt?: string;
   /** Minutes before go-live that the post is uploaded; defaults per platform (YouTube 30). */
   leadMinutes?: number;
-  metadata?: Partial<PlatformMetadata>;
+  /** Platform fields; see the provider's metadata schema. */
+  metadata?: Metadata;
 };
 
 function checkMedia(userId: string, url: string): string {
@@ -340,18 +380,15 @@ function leadFor(provider: string, value: unknown): number {
 
 function checkMetadata(
   provider: string,
-  input: Partial<PlatformMetadata> | undefined,
+  input: Metadata | undefined,
   caption: string | null | undefined,
-): Record<string, JsonValue> {
-  const metadata = { ...input } as Record<string, JsonValue>;
-  if (provider === "youtube") {
-    const title = String(metadata.title ?? caption ?? "").trim();
-    if (!title) throw new ServiceError("A YouTube video needs a title");
-    if (title.length > 100) throw new ServiceError("YouTube titles are limited to 100 characters");
-    metadata.title = title;
-    delete metadata.publishAt; // set by the scheduler from scheduledAt
+): Metadata {
+  try {
+    return getProvider(provider).metadata.validate(input ?? {}, caption);
+  } catch (error) {
+    if (error instanceof InvalidInputError) throw new ServiceError(error.message);
+    throw error;
   }
-  return metadata;
 }
 
 /**
@@ -412,7 +449,7 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
   const post = await getPost(userId, id);
   if (post.status !== "scheduled") {
     throw new ServiceError(
-      `A ${post.status} post can no longer be edited here${post.platformUrl ? ` — change it on the platform: ${post.platformUrl}` : ""}`,
+      `A ${post.status} post is already on the platform — change it with edit_published_post (PATCH /api/v1/posts/:id/platform)`,
       409,
     );
   }
@@ -428,11 +465,7 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
       scheduledAt: checkTime(input.scheduledAt, leadMinutes ?? 0),
     }),
     ...(input.metadata !== undefined && {
-      metadata: checkMetadata(
-        post.provider,
-        { ...(post.metadata as Partial<PlatformMetadata>), ...input.metadata },
-        caption,
-      ),
+      metadata: checkMetadata(post.provider, { ...post.metadata, ...input.metadata }, caption),
     }),
   });
   await stopWorkflow(post.workflowId);
@@ -486,59 +519,27 @@ export async function retryPost(userId: string, id: string) {
   return getPost(userId, id);
 }
 
-/**
- * A post together with what the platform says about it now: whether it is processed,
- * public, scheduled, locked or rejected, and its view, like and comment counts.
- */
-export async function postInsights(userId: string, id: string) {
-  const post = await getPost(userId, id);
-  if (!post.platformPostId) return { post, platform: null, metrics: null };
-
-  const loaded = await loadForPublishing(id);
-  if (!loaded) return { post, platform: null, metrics: null };
-  const provider = getProvider(post.provider);
-  const token = await accessTokenFor(loaded.account, loaded.credential);
-  const [platform, metrics] = await Promise.all([
-    provider.fetchStatus?.(post.platformPostId, token) ?? null,
-    provider.fetchAnalytics?.(post.platformPostId, token, loaded.account.platformAccountId) ?? null,
-  ]);
-  return { post, platform, metrics: metrics ? { ...metrics, raw: undefined } : null };
-}
-
-/**
- * Sets (or replaces) the custom thumbnail of a post that is already on the platform, and
- * remembers the URL in its metadata. A post still waiting in mixetape takes the thumbnail
- * through metadata.thumbnailUrl instead (update_post), and gets it right after upload.
- */
-export async function setPostThumbnail(userId: string, id: string, imageUrl: string) {
-  const post = await getPost(userId, id);
-  if (!(imageUrl ?? "").startsWith("https://"))
-    throw new ServiceError("imageUrl must be a public https URL");
-  if (!post.platformPostId) {
-    throw new ServiceError(
-      "This post is not on the platform yet — set metadata.thumbnailUrl with update_post instead",
-      409,
-    );
-  }
-  const provider = getProvider(post.provider);
-  if (!provider.setThumbnail)
-    throw new ServiceError(`${provider.name} does not support custom thumbnails`, 409);
-  const loaded = await loadForPublishing(id);
-  if (!loaded) throw new ServiceError("The post's account or credential is gone", 409);
-  const token = await accessTokenFor(loaded.account, loaded.credential);
-  await provider.setThumbnail(post.platformPostId, imageUrl, token);
-  await updatePost(id, { metadata: { ...post.metadata, thumbnailUrl: imageUrl } });
-  return getPost(userId, id);
-}
-
 /** What the platform says about a post now, for the workflow's go-live check. */
 export async function platformStatusFor(postId: string) {
   const loaded = await loadForPublishing(postId);
   if (!loaded?.post.platformPostId) return null;
-  const provider = getProvider(loaded.post.provider);
-  if (!provider.fetchStatus) return null;
+  const status = getProvider(loaded.post.provider).status;
+  if (!status) return null;
   const token = await accessTokenFor(loaded.account, loaded.credential);
-  return provider.fetchStatus(loaded.post.platformPostId, token);
+  return status.fetch(loaded.post.platformPostId, token);
+}
+
+/** An account the user owns, with the credential it was connected through. */
+export async function loadAccount(userId: string, accountId: string) {
+  const account = await db.query.socialAccounts.findFirst({
+    where: and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)),
+  });
+  if (!account) throw new ServiceError("Account not found", 404);
+  const credential = await db.query.providerCredentials.findFirst({
+    where: eq(providerCredentials.id, account.credentialId),
+  });
+  if (!credential) throw new ServiceError("The account's credential is gone — reconnect it", 409);
+  return { account, credential };
 }
 
 /** Everything the workflow needs to publish one post. */
@@ -565,45 +566,4 @@ export async function updatePost(id: string, values: Partial<typeof socialPosts.
     .update(socialPosts)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(socialPosts.id, id));
-}
-
-// ── API keys ───────────────────────────────────────────────────────────────────
-
-const KEY_PREFIX = "mxt_";
-
-export async function createApiKey(userId: string, name: string) {
-  const key = `${KEY_PREFIX}${randomToken(32)}`;
-  const id = newId();
-  await db.insert(apiKeys).values({
-    id,
-    userId,
-    name: name.trim() || "API key",
-    prefix: key.slice(0, KEY_PREFIX.length + 6),
-    hash: await sha256(key),
-  });
-  // The only time the full key exists outside the caller's hands.
-  return { id, key };
-}
-
-export async function listApiKeys(userId: string) {
-  const rows = await db.query.apiKeys.findMany({
-    where: eq(apiKeys.userId, userId),
-    orderBy: [desc(apiKeys.createdAt)],
-  });
-  return rows.map(({ hash: _hash, ...row }) => row);
-}
-
-export async function deleteApiKey(userId: string, id: string) {
-  await db.delete(apiKeys).where(and(eq(apiKeys.id, id), eq(apiKeys.userId, userId)));
-}
-
-/** The user a `Authorization: Bearer mxt_…` header belongs to, or null. */
-export async function userForApiKey(request: Request): Promise<string | null> {
-  const header = request.headers.get("authorization") ?? "";
-  const key = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (!key.startsWith(KEY_PREFIX)) return null;
-  const row = await db.query.apiKeys.findFirst({ where: eq(apiKeys.hash, await sha256(key)) });
-  if (!row) return null;
-  await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id));
-  return row.userId;
 }

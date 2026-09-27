@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { auth } from "#/modules/auth/auth.server";
+import { getAuth } from "#/modules/auth/auth.server";
 import { PROVIDER_LIST } from "./providers";
+import * as apiKeys from "./api-keys.service";
 import * as social from "./social.service";
 
 /**
@@ -11,7 +12,9 @@ import * as social from "./social.service";
 
 async function currentUserId(): Promise<string> {
   const headers = getRequestHeaders();
-  const session = headers ? await auth.api.getSession({ headers }).catch(() => null) : null;
+  const session = headers
+    ? await (await getAuth()).api.getSession({ headers }).catch(() => null)
+    : null;
   if (!session?.user) throw new Error("Unauthorized");
   return session.user.id;
 }
@@ -61,6 +64,12 @@ export const addCredential = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => social.createCredential(await currentUserId(), data));
 
+export const replaceCredentialSecret = createServerFn({ method: "POST" })
+  .validator((data: { id: string; clientSecret: string }) => data)
+  .handler(async ({ data }) =>
+    social.updateCredentialSecret(await currentUserId(), data.id, data.clientSecret),
+  );
+
 export const removeCredential = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => social.deleteCredential(await currentUserId(), data.id));
@@ -80,13 +89,17 @@ export const removeAccount = createServerFn({ method: "POST" })
 // ── API keys ──────────────────────────────────────────────────────────────────
 
 export const getApiKeys = createServerFn({ method: "GET" }).handler(async () => {
-  return { keys: await social.listApiKeys(await currentUserId()), baseUrl: social.siteUrl() };
+  return {
+    keys: await apiKeys.listApiKeys(await currentUserId()),
+    scopes: apiKeys.API_SCOPES,
+    baseUrl: social.siteUrl(),
+  };
 });
 
 export const createApiKey = createServerFn({ method: "POST" })
-  .validator((data: { name: string }) => data)
-  .handler(async ({ data }) => social.createApiKey(await currentUserId(), data.name));
+  .validator((data: { name: string; scopes: string[] }) => data)
+  .handler(async ({ data }) => apiKeys.createApiKey(await currentUserId(), data.name, data.scopes));
 
 export const removeApiKey = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
-  .handler(async ({ data }) => social.deleteApiKey(await currentUserId(), data.id));
+  .handler(async ({ data }) => apiKeys.deleteApiKey(await currentUserId(), data.id));

@@ -20,6 +20,29 @@ function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...props}>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.94l3.66-2.84Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1 11 11 0 0 0 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52Z"
+      />
+    </svg>
+  );
+}
+
 export interface LoginModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -36,7 +59,7 @@ export function LoginModal({
   showModal,
   setShowModal,
   title = `Sign in to ${siteConfig.name}`,
-  description = "We will email you a 6-digit code — no password needed.",
+  description = "Continue with Google or GitHub, or get a 6-digit code by email — no password needed.",
   onSuccess,
 }: LoginModalProps) {
   const router = useRouter();
@@ -47,19 +70,18 @@ export function LoginModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [isGithubLoading, setIsGithubLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"github" | "google" | null>(null);
 
-  const handleGithubSignIn = async () => {
-    setIsGithubLoading(true);
+  const handleSocialSignIn = async (provider: "github" | "google") => {
+    setSocialLoading(provider);
     setError("");
+    const name = provider === "github" ? "GitHub" : "Google";
     try {
-      await authClient.signIn.social({
-        provider: "github",
-        callbackURL: window.location.href,
-      });
-    } catch (err: any) {
-      setError(err?.message || "Failed to sign in with GitHub.");
-      setIsGithubLoading(false);
+      const res = await authClient.signIn.social({ provider, callbackURL: window.location.href });
+      if (res.error) throw new Error(res.error.message || `Could not sign in with ${name}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Could not sign in with ${name}.`);
+      setSocialLoading(null);
     }
   };
 
@@ -132,22 +154,39 @@ export function LoginModal({
 
       {step === "email" ? (
         <div className="space-y-4 pt-2">
-          {/* One-click GitHub Sign In */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isGithubLoading || loading}
-            onClick={handleGithubSignIn}
-            className="w-full flex items-center justify-center gap-2 h-9 text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white cursor-pointer"
-          >
-            {isGithubLoading ? (
-              <SpinnerGap className="size-3.5 animate-spin" />
-            ) : (
-              <GithubIcon className="size-3.5" />
-            )}
-            <span>Continue with GitHub</span>
-          </Button>
+          {/* One-click sign in with Google or GitHub */}
+          <div className="grid gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={socialLoading !== null || loading}
+              onClick={() => handleSocialSignIn("google")}
+              className="w-full flex items-center justify-center gap-2 h-9 text-xs font-semibold cursor-pointer"
+            >
+              {socialLoading === "google" ? (
+                <SpinnerGap className="size-3.5 animate-spin" />
+              ) : (
+                <GoogleIcon className="size-3.5" />
+              )}
+              <span>Continue with Google</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={socialLoading !== null || loading}
+              onClick={() => handleSocialSignIn("github")}
+              className="w-full flex items-center justify-center gap-2 h-9 text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white cursor-pointer"
+            >
+              {socialLoading === "github" ? (
+                <SpinnerGap className="size-3.5 animate-spin" />
+              ) : (
+                <GithubIcon className="size-3.5" />
+              )}
+              <span>Continue with GitHub</span>
+            </Button>
+          </div>
 
           <div className="relative flex items-center justify-center">
             <div className="border-t border-border w-full" />
@@ -179,7 +218,7 @@ export function LoginModal({
             <Button
               type="submit"
               size="sm"
-              disabled={loading || isGithubLoading}
+              disabled={loading || socialLoading !== null}
               className="w-full cursor-pointer"
             >
               {loading ? "Sending Code..." : "Send Verification Code"}

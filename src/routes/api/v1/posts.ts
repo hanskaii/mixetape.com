@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/v1/posts")({
     handlers: {
       GET: async ({ request }) =>
         respond(async () => {
-          const userId = await requireUser(request);
+          const userId = await requireUser(request, "read");
           const params = new URL(request.url).searchParams;
           const date = (name: string) => {
             const value = params.get(name);
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/v1/posts")({
 
       POST: async ({ request }) =>
         respond(async () => {
-          const userId = await requireUser(request);
+          const userId = await requireUser(request, "publish");
           const body = (await request.json().catch(() => null)) as CreatePostInput | null;
           if (!body?.accountId || !body.mediaUrl)
             throw new ServiceError("accountId and mediaUrl are required");

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { auth } from "#/modules/auth/auth.server";
+import { getAuth } from "#/modules/auth/auth.server";
 import { MEDIA_PREFIX, deleteOwnedMedia, listOwnedMedia } from "#/modules/storage/storage.service";
 
 export const Route = createFileRoute("/api/storage/upload")({
@@ -8,7 +8,11 @@ export const Route = createFileRoute("/api/storage/upload")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+          const session = await (
+            await getAuth()
+          ).api
+            .getSession({ headers: request.headers })
+            .catch(() => null);
           if (!session?.user) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
@@ -32,7 +36,11 @@ export const Route = createFileRoute("/api/storage/upload")({
       },
       POST: async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+          const session = await (
+            await getAuth()
+          ).api
+            .getSession({ headers: request.headers })
+            .catch(() => null);
           if (!session?.user) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
@@ -78,7 +86,11 @@ export const Route = createFileRoute("/api/storage/upload")({
       },
       DELETE: async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+          const session = await (
+            await getAuth()
+          ).api
+            .getSession({ headers: request.headers })
+            .catch(() => null);
           if (!session?.user) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }

@@ -1,8 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { decrypt } from "./crypto";
+import { postFirstComment } from "./platform.service";
 import { getProvider, PermanentPublishError } from "./providers";
-import type { PlatformMetadata } from "./providers";
 import {
   ServiceError,
   accessTokenFor,
@@ -25,6 +24,7 @@ export type PublishParams = { postId: string };
  *   publish — refresh the token and upload; a platform that can hold it (YouTube) gets
  *             publishAt, and processes the high-quality versions while it waits
  *   confirm — after go-live, check the platform really made it public
+ *   comment — post metadata.firstComment, which needs the post to be public
  */
 export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
   async run(event: WorkflowEvent<PublishParams>, step: WorkflowStep) {
@@ -93,6 +93,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
             await updatePost(postId, { status: "published", publishedAt: new Date(), error: null });
           },
         );
+        await firstComment(step, postId);
       } catch (error) {
         // The video is on the platform either way; say why it is not live rather than fail.
         const message = error instanceof Error ? error.message : String(error);
@@ -103,7 +104,24 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         });
       }
     }
+    if (result.status === "published") await firstComment(step, postId);
     return result;
+  }
+}
+
+/** Posts the first comment; a refusal is noted on the post, since the post itself is live. */
+async function firstComment(step: WorkflowStep, postId: string) {
+  try {
+    await step.do("first comment", { retries: { limit: 3, delay: "2 minutes" } }, async () => {
+      await postFirstComment(postId);
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await step.do("record comment failure", async () => {
+      await updatePost(postId, {
+        error: `Published, but the first comment failed: ${message}`.slice(0, 1000),
+      });
+    });
   }
 }
 
@@ -136,7 +154,6 @@ async function publish(
 
   try {
     const accessToken = await accessTokenFor(account, credential);
-    const metadata = { ...post.metadata, ...(publishAt ? { publishAt } : {}) } as PlatformMetadata;
     const result = await provider.upload(
       {
         ...post,
@@ -145,9 +162,7 @@ async function publish(
         platformAccountId: account.platformAccountId,
       },
       accessToken,
-      credential.clientId,
-      await decrypt(credential.clientSecret),
-      metadata,
+      { ...post.metadata, ...(publishAt ? { publishAt } : {}) },
     );
 
     const status = publishAt ? "uploaded" : "published";

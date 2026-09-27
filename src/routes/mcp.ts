@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { handleMessage, type JsonRpcMessage } from "#/modules/social/mcp";
-import { userForApiKey } from "#/modules/social/social.service";
+import { callerForApiKey } from "#/modules/social/api-keys.service";
 
 // POST https://mixetape.com/mcp — the MCP endpoint (Streamable HTTP, stateless, JSON
 // responses). Authorization: Bearer mxt_… (an API key from /api-keys).
@@ -11,8 +11,8 @@ export const Route = createFileRoute("/mcp")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const userId = await userForApiKey(request);
-        if (!userId) {
+        const caller = await callerForApiKey(request);
+        if (!caller) {
           return Response.json(
             {
               jsonrpc: "2.0",
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/mcp")({
 
         const messages = Array.isArray(body) ? body : [body];
         const replies = (
-          await Promise.all(messages.map((message) => handleMessage(userId, message)))
+          await Promise.all(messages.map((message) => handleMessage(caller, message)))
         ).filter((reply) => reply !== null);
         // Only notifications: acknowledged with no body, as the transport expects.
         if (replies.length === 0) return new Response(null, { status: 202 });

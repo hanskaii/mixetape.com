@@ -1,12 +1,12 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "#/modules/auth/auth.server";
+import { getAuth } from "#/modules/auth/auth.server";
 
 export const Route = createFileRoute("/api/auth/$")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const res = await auth.handler(request);
+          const res = await (await getAuth()).handler(request);
           return res;
         } catch (err: any) {
           console.error("[Better-Auth GET Error]:", err?.stack || err);
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/auth/$")({
       },
       POST: async ({ request }) => {
         try {
-          const res = await auth.handler(request);
+          const res = await (await getAuth()).handler(request);
           return res;
         } catch (err: any) {
           console.error("[Better-Auth POST Error]:", err?.stack || err);

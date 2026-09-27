@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { auth } from "#/modules/auth/auth.server";
+import { getAuth } from "#/modules/auth/auth.server";
 import { db } from "#/database/index";
 import { user } from "#/database/schema";
 import { eq } from "drizzle-orm";
@@ -15,7 +15,7 @@ export const getProfileData = createServerFn({ method: "GET" }).handler(async ()
   const headers = getRequestHeaders();
   if (!headers) throw new Error("Unauthorized");
 
-  const session = await auth.api.getSession({ headers });
+  const session = await (await getAuth()).api.getSession({ headers });
   if (!session?.user) throw new Error("Unauthorized");
 
   const [currentUser] = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
@@ -33,7 +33,7 @@ export const updateProfileData = createServerFn({ method: "POST" })
     const headers = getRequestHeaders();
     if (!headers) throw new Error("Unauthorized");
 
-    const session = await auth.api.getSession({ headers });
+    const session = await (await getAuth()).api.getSession({ headers });
     if (!session?.user) throw new Error("Unauthorized");
 
     const updateData: Partial<typeof user.$inferInsert> = {

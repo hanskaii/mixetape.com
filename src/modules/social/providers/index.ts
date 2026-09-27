@@ -1,15 +1,13 @@
-import type { SocialProvider } from "./types";
-import { YoutubeProvider } from "./youtube";
+import { CAPABILITIES, type Capability, type SocialProvider } from "./types";
+import { youtube } from "./youtube";
 
 /**
- * Every platform mixetape can post to. Adding one is a new file implementing
- * SocialProvider, an entry here, and its OAuth flow in modules/social/oauth.
+ * Every platform mixetape can post to. Adding one is a folder implementing SocialProvider
+ * (see youtube/) and an entry here; the service, REST API and MCP tools pick it up.
  */
 const PROVIDERS: Record<string, SocialProvider> = {
-  youtube: new YoutubeProvider(),
+  youtube,
 };
-
-export type ProviderId = keyof typeof PROVIDERS;
 
 export function getProvider(id: string): SocialProvider {
   const provider = PROVIDERS[id];
@@ -21,10 +19,21 @@ export function isProvider(id: string): boolean {
   return id in PROVIDERS;
 }
 
+/** The optional capabilities a provider has, e.g. ["status", "comments", "analytics"]. */
+export function capabilitiesOf(provider: SocialProvider): Capability[] {
+  return CAPABILITIES.filter((capability) => provider[capability] !== undefined);
+}
+
 export const PROVIDER_LIST = Object.values(PROVIDERS).map((provider) => ({
   id: provider.id,
   name: provider.name,
+  capabilities: capabilitiesOf(provider),
 }));
 
 export type * from "./types";
-export { PermanentPublishError } from "./types";
+export {
+  CAPABILITIES,
+  InvalidInputError,
+  PermanentPublishError,
+  ReconnectRequiredError,
+} from "./types";

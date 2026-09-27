@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   Check,
   Copy,
+  Key,
   Plus,
   PlugsConnected,
   SpinnerGap,
@@ -14,9 +15,10 @@ import {
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Badge } from "#/components/ui/badge";
-import { PublishingTabs, selectClassName } from "#/components/layouts/publishing-tabs";
+import { WorkspaceShell, selectClassName } from "#/components/layouts/publishing-tabs";
 import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
+import { CredentialSecretModal } from "#/components/modals/credential-secret-modal";
 import {
   addCredential,
   getChannelsData,
@@ -50,7 +52,16 @@ function ChannelsPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { openConnectChannel } = useModal();
+  const { openConnectChannel, openModal, closeModal } = useModal();
+  const updateSecret = (credentialId: string, label: string) =>
+    openModal(
+      <CredentialSecretModal
+        credentialId={credentialId}
+        label={label}
+        onClose={closeModal}
+        onSaved={() => router.invalidate()}
+      />,
+    );
   const connect = (credentialId: string, channel?: string) =>
     openConnectChannel({
       credentialId,
@@ -104,13 +115,12 @@ function ChannelsPage() {
     });
 
   return (
-    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+    <WorkspaceShell>
       <WorkspaceHeading
         section="Studio / 02"
         title="Channels"
         description="Keep your publishing connection in your hands."
       />
-      <PublishingTabs />
 
       {connected && (
         <p className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
@@ -124,7 +134,7 @@ function ChannelsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Connected channels</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-.04em]">Connected channels</h2>
         {accounts.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No channel yet. Add an app credential below, then connect a channel with it.
@@ -170,7 +180,7 @@ function ChannelsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold">App credentials</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-.04em]">App credentials</h2>
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
           mixetape posts through your own OAuth app, so the quota and the approval are yours. For
           YouTube: in Google Cloud, enable <b>YouTube Data API v3</b>, set up the OAuth consent
@@ -200,6 +210,13 @@ function ChannelsPage() {
                     {credential.provider} · {credential.clientId}
                   </p>
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => updateSecret(credential.id, credential.label)}
+                >
+                  <Key /> Update secret
+                </Button>
                 <Button size="sm" onClick={() => connect(credential.id)}>
                   <PlugsConnected /> Connect channel
                 </Button>
@@ -218,39 +235,51 @@ function ChannelsPage() {
 
         <form
           onSubmit={save}
-          className="grid max-w-2xl gap-4 rounded-[20px] border border-border bg-card p-5 sm:grid-cols-2 sm:p-6"
+          className="grid max-w-2xl gap-4 border-t border-border pt-6 sm:grid-cols-2"
         >
-          <select
-            className={selectClassName}
-            value={form.provider}
-            onChange={(e) => setForm({ ...form, provider: e.target.value })}
-            aria-label="Platform"
-          >
-            {providers.map((provider) => (
-              <option key={provider.id} value={provider.id}>
-                {provider.name}
-              </option>
-            ))}
-          </select>
-          <Input
-            placeholder="Label (e.g. My Google app)"
-            value={form.label}
-            onChange={(e) => setForm({ ...form, label: e.target.value })}
-          />
-          <Input
-            placeholder="Client ID"
-            value={form.clientId}
-            onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Client secret"
-            autoComplete="off"
-            value={form.clientSecret}
-            onChange={(e) => setForm({ ...form, clientSecret: e.target.value })}
-            required
-          />
+          <label className="grid gap-1.5 text-sm font-medium">
+            Platform
+            <select
+              className={selectClassName}
+              value={form.provider}
+              onChange={(e) => setForm({ ...form, provider: e.target.value })}
+              aria-label="Platform"
+            >
+              {providers.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium">
+            App label
+            <Input
+              placeholder="Label (e.g. My Google app)"
+              value={form.label}
+              onChange={(e) => setForm({ ...form, label: e.target.value })}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium">
+            Client ID
+            <Input
+              placeholder="Client ID"
+              value={form.clientId}
+              onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              required
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium">
+            Client secret
+            <Input
+              type="password"
+              placeholder="Client secret"
+              autoComplete="off"
+              value={form.clientSecret}
+              onChange={(e) => setForm({ ...form, clientSecret: e.target.value })}
+              required
+            />
+          </label>
           <div className="flex items-center gap-3 sm:col-span-2">
             <Button type="submit" disabled={saving}>
               {saving ? <SpinnerGap className="animate-spin" /> : <Plus />} Save credential
@@ -260,6 +289,6 @@ function ChannelsPage() {
           </div>
         </form>
       </section>
-    </main>
+    </WorkspaceShell>
   );
 }

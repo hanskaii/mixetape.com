@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { auth } from "./auth.server";
+import { getAuth } from "./auth.server";
 import { db, schema } from "#/database/index";
 import { eq, and } from "drizzle-orm";
 
@@ -9,7 +9,9 @@ export const getAuthSession = createServerFn({ method: "GET" }).handler(async ()
     const headers = getRequestHeaders();
     if (!headers) return null;
 
-    const session = await auth.api.getSession({
+    const session = await (
+      await getAuth()
+    ).api.getSession({
       headers,
     });
     return session;
@@ -24,7 +26,7 @@ export const getUserLinkedAccounts = createServerFn({ method: "GET" }).handler(a
     const headers = getRequestHeaders();
     if (!headers) return [];
 
-    const session = await auth.api.getSession({ headers });
+    const session = await (await getAuth()).api.getSession({ headers });
     if (!session?.user) return [];
 
     const accounts = await db.query.account.findMany({
@@ -49,7 +51,7 @@ export const unlinkUserAccount = createServerFn({ method: "POST" })
     const headers = getRequestHeaders();
     if (!headers) throw new Error("Unauthorized");
 
-    const session = await auth.api.getSession({ headers });
+    const session = await (await getAuth()).api.getSession({ headers });
     if (!session?.user) throw new Error("Unauthorized");
 
     await db

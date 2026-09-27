@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Check, Copy, Key, SpinnerGap, Trash } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
-import { PublishingTabs } from "#/components/layouts/publishing-tabs";
+import { WorkspaceShell } from "#/components/layouts/publishing-tabs";
 import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import { useConfirmModal } from "#/components/providers/modal-providers";
 import { createApiKey, getApiKeys, removeApiKey } from "#/modules/social/social.fn";
@@ -20,9 +20,10 @@ export const Route = createFileRoute("/(app)/_app/api-keys/")({
 
 function ApiKeysPage() {
   const router = useRouter();
-  const { keys, baseUrl } = Route.useLoaderData();
+  const { keys, scopes: scopeLabels, baseUrl } = Route.useLoaderData();
   const { confirm } = useConfirmModal();
   const [name, setName] = useState("");
+  const [scopes, setScopes] = useState<string[]>(["read", "publish"]);
   const [created, setCreated] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -31,7 +32,7 @@ function ApiKeysPage() {
     event.preventDefault();
     setBusy(true);
     try {
-      const { key } = await createApiKey({ data: { name } });
+      const { key } = await createApiKey({ data: { name, scopes } });
       setCreated(key);
       setName("");
       await router.invalidate();
@@ -39,6 +40,11 @@ function ApiKeysPage() {
       setBusy(false);
     }
   };
+
+  const toggleScope = (scope: string) =>
+    setScopes((current) =>
+      current.includes(scope) ? current.filter((item) => item !== scope) : [...current, scope],
+    );
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -57,29 +63,49 @@ function ApiKeysPage() {
   }'`;
 
   return (
-    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+    <WorkspaceShell>
       <WorkspaceHeading
         section="Studio / 03"
         title="API keys"
         description="Bring publishing into the tools you already use."
       />
-      <PublishingTabs />
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold">API keys</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-.04em]">API keys</h2>
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          Let scripts and pipelines schedule posts: <code>GET /api/v1/accounts</code>,{" "}
-          <code>POST /api/v1/posts</code>, <code>GET|DELETE /api/v1/posts/:id</code>,{" "}
-          <code>POST /api/v1/posts/:id</code> to retry a failed one.
+          Let agents and pipelines work through MCP (<code>{baseUrl}/mcp</code>) or REST:{" "}
+          <code>GET /api/v1/accounts</code>, <code>POST /api/v1/posts</code>, and every other tool
+          at <code>GET /api/v1/tools</code> and <code>POST /api/v1/tools/:name</code>. Give each key
+          only the permissions its job needs.
         </p>
 
-        <form onSubmit={create} className="flex max-w-xl gap-2">
-          <Input
-            placeholder="Key name (e.g. daily pipeline)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button type="submit" disabled={busy}>
+        <form onSubmit={create} className="flex max-w-xl flex-wrap items-end gap-2">
+          <fieldset className="grid w-full gap-2 pb-2">
+            <legend className="pb-1.5 text-sm font-medium">Permissions</legend>
+            {Object.entries(scopeLabels).map(([scope, label]) => (
+              <label key={scope} className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-primary"
+                  checked={scopes.includes(scope)}
+                  onChange={() => toggleScope(scope)}
+                />
+                <span>
+                  <span className="font-mono text-xs font-semibold">{scope}</span>
+                  <span className="text-muted-foreground"> — {label}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="grid min-w-[220px] flex-1 gap-1.5 text-sm font-medium">
+            Key name
+            <Input
+              placeholder="Key name (e.g. daily pipeline)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <Button type="submit" disabled={busy || scopes.length === 0}>
             {busy ? <SpinnerGap className="animate-spin" /> : <Key />} Create
           </Button>
         </form>
@@ -114,6 +140,9 @@ function ApiKeysPage() {
                       ? `used ${new Date(key.lastUsedAt).toLocaleString()}`
                       : "never used"}
                   </p>
+                  <p className="truncate font-mono text-xs text-muted-foreground">
+                    {key.scopes.join(" · ")}
+                  </p>
                 </div>
                 <Button
                   size="icon-sm"
@@ -141,11 +170,11 @@ function ApiKeysPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold">Example</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-.04em]">Example</h2>
         <pre className="max-w-3xl overflow-x-auto rounded-2xl bg-muted/50 p-4 text-xs">
           {example}
         </pre>
       </section>
-    </main>
+    </WorkspaceShell>
   );
 }
