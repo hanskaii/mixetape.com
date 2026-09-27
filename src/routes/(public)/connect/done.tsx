@@ -10,10 +10,11 @@ import { siteConfig } from "#/config/site";
 // reached several new ones — so on success this tab closes itself when the browser allows
 // it (a tab opened by a script may be closed by one).
 export const Route = createFileRoute("/(public)/connect/done")({
+  // The router parses "?choose=1" into a number, so each value is read back as a string.
   validateSearch: z.object({
-    connected: z.string().optional(),
-    choose: z.string().optional(),
-    error: z.string().optional(),
+    connected: z.coerce.string().optional(),
+    choose: z.coerce.string().optional(),
+    error: z.coerce.string().optional(),
   }),
   head: () => ({ meta: [{ title: `Connect | ${siteConfig.name}` }] }),
   component: ConnectDone,
