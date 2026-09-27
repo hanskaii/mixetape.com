@@ -7,7 +7,7 @@ import {
   TiktokLogo,
   YoutubeLogo,
 } from "@phosphor-icons/react";
-import { colors } from "#/components/ui/tokens.stylex";
+import { colors } from "../../../../../components/ui/tokens.stylex";
 
 const styles = stylex.create({
   logo: { flexShrink: 0 },
