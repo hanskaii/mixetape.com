@@ -5,7 +5,8 @@ import {
   type PostWithMedia,
   type StatusCapability,
 } from "../types";
-import { GraphApiError, graph } from "../meta/graph";
+import { GraphApiError } from "../meta/graph";
+import { ig } from "./api";
 import type { InstagramReelMeta } from "./metadata";
 
 /**
@@ -35,7 +36,7 @@ function refused(error: unknown): Error {
 async function ready(container: string, token: string) {
   const until = Date.now() + MAX_WAIT_MS;
   while (true) {
-    const state = await graph<{ status_code?: string; status?: string }>(token, container, {
+    const state = await ig<{ status_code?: string; status?: string }>(token, container, {
       params: { fields: "status_code,status" },
     });
     if (state.status_code === "FINISHED" || state.status_code === "PUBLISHED") return;
@@ -53,11 +54,11 @@ async function ready(container: string, token: string) {
 export async function publishContainer(container: string, token: string, igUserId: string) {
   await ready(container, token);
   try {
-    const media = await graph<{ id: string }>(token, `${igUserId}/media_publish`, {
+    const media = await ig<{ id: string }>(token, `${igUserId}/media_publish`, {
       method: "POST",
       params: { creation_id: container },
     });
-    const link = await graph<{ permalink?: string }>(token, media.id, {
+    const link = await ig<{ permalink?: string }>(token, media.id, {
       params: { fields: "permalink" },
     }).catch(() => ({ permalink: undefined }));
     return { platformPostId: media.id, platformUrl: link.permalink };
@@ -73,7 +74,7 @@ export async function uploadReel(post: PostWithMedia, token: string, metadata: M
 
   let container: string;
   try {
-    const created = await graph<{ id: string }>(token, `${igUserId}/media`, {
+    const created = await ig<{ id: string }>(token, `${igUserId}/media`, {
       method: "POST",
       params: {
         media_type: "REELS",
@@ -106,7 +107,7 @@ type MediaNode = { permalink?: string; like_count?: number; comments_count?: num
 export const instagramStatus: StatusCapability = {
   async fetch(id, token) {
     try {
-      const media = await graph<MediaNode>(token, id, {
+      const media = await ig<MediaNode>(token, id, {
         params: { fields: "permalink,like_count,comments_count" },
       });
       return {
@@ -121,7 +122,7 @@ export const instagramStatus: StatusCapability = {
         return { uploadStatus: "deleted", problem: "The Reel is no longer on Instagram" };
     }
     // Not a published media: a container still waiting for its go-live time.
-    const container = await graph<{ status_code?: string; status?: string }>(token, id, {
+    const container = await ig<{ status_code?: string; status?: string }>(token, id, {
       params: { fields: "status_code,status" },
     });
     return {

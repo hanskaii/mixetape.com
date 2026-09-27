@@ -1,5 +1,5 @@
 import type { AnalyticsCapability, Metrics } from "../types";
-import { graph } from "../meta/graph";
+import { ig } from "./api";
 
 /**
  * Reel insights: lifetime totals (Instagram does not break them down by day), so the
@@ -21,7 +21,7 @@ export const instagramAnalytics: AnalyticsCapability = {
   delayDays: 1,
 
   async post(mediaId, token, range) {
-    const data = await graph<{ data?: { name: string; values?: { value?: number }[] }[] }>(
+    const data = await ig<{ data?: { name: string; values?: { value?: number }[] }[] }>(
       token,
       `${mediaId}/insights`,
       { params: { metric: METRICS.join(",") } },

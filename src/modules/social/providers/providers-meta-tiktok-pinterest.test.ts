@@ -39,7 +39,9 @@ describe("instagram", () => {
       caption: "Hello #reel",
       publishAt: "2026-10-02T10:00:00Z",
     });
-    expect(calls[0].url.pathname).toBe("/v25.0/ig-1/media");
+    expect(calls[0].url.origin + calls[0].url.pathname).toBe(
+      "https://graph.instagram.com/v25.0/ig-1/media",
+    );
     expect(form(calls[0]).get("media_type")).toBe("REELS");
     expect(form(calls[0]).get("video_url")).toBe("https://media.example.com/ep.mp4");
     expect(prepared.platformPostId).toBe("container-1");
@@ -67,6 +69,60 @@ describe("instagram", () => {
     await expect(instagram.upload(post("ig-1"), "t", {})).rejects.toBeInstanceOf(
       PermanentPublishError,
     );
+  });
+
+  it("connects with Instagram Login and a 60-day token", async () => {
+    const calls = scriptFetch([
+      Response.json({
+        data: [
+          {
+            access_token: "short",
+            user_id: "901",
+            permissions:
+              "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_comments,instagram_business_manage_insights",
+          },
+        ],
+      }),
+      Response.json({ access_token: "long", expires_in: 5_184_000 }),
+      Response.json({ user_id: "17841400000000001", username: "hans", name: "Hans" }),
+    ]);
+    const app = { clientId: "ig-app", clientSecret: "ig-secret" };
+    const { grant, accounts } = await instagram.connect.exchangeCode(app, {
+      code: "c",
+      redirectUri: "https://mixetape.com/api/connect/instagram/callback",
+    });
+    expect(calls[0].url.href).toBe("https://api.instagram.com/oauth/access_token");
+    expect(form(calls[0]).get("grant_type")).toBe("authorization_code");
+    expect(calls[1].url.searchParams.get("grant_type")).toBe("ig_exchange_token");
+    expect(calls[2].url.origin + calls[2].url.pathname).toBe(
+      "https://graph.instagram.com/v25.0/me",
+    );
+    expect(accounts).toEqual([
+      {
+        platformAccountId: "17841400000000001",
+        name: "Hans",
+        handle: "@hans",
+        avatar: undefined,
+      },
+    ]);
+    expect(grant).toMatchObject({ accessToken: "long", refreshToken: "long" });
+    expect(grant.expiresIn).toBe(5_184_000 - 7 * 24 * 60 * 60);
+  });
+
+  it("refuses a consent that left a permission out", async () => {
+    scriptFetch([
+      Response.json({
+        access_token: "short",
+        user_id: "1",
+        permissions: "instagram_business_basic",
+      }),
+    ]);
+    await expect(
+      instagram.connect.exchangeCode(
+        { clientId: "a", clientSecret: "b" },
+        { code: "c", redirectUri: "https://x" },
+      ),
+    ).rejects.toThrow("publish to Instagram");
   });
 
   it("limits hashtags as Instagram does", () => {

@@ -21,7 +21,7 @@ The scheduling layer for AI-made and pipeline-made content. Where other schedule
 - **Today:** YouTube (long videos and Shorts). Every channel connects through mixetape's own app for its platform (client id and secret in the Cloudflare Secrets Store); users set nothing up.
 - **Built, awaiting their first live post** (labelled "Soon" on the landing page until one has gone out):
   - **Facebook Pages** — Page videos and Reels, scheduled natively; thumbnails, SRT captions, comments (reply, hide), video insights. Pages only, never personal profiles.
-  - **Instagram** (Business/Creator linked to a Page, same Meta app) — Reels prepared ahead and published by mixetape on the minute (the API cannot schedule); cover, comments, Reel insights. 100 API posts a day.
+  - **Instagram** (Business/Creator, Instagram Login — no Facebook Page needed) — Reels prepared ahead and published by mixetape on the minute (the API cannot schedule); cover, comments, Reel insights. 100 API posts a day.
   - **Threads** — video posts prepared ahead and released on the minute; replies, hide, insights. 250 posts a day.
   - **TikTok** — Direct Post uploaded at the scheduled time (no API scheduling); private only until TikTok audits the app.
   - **Pinterest** (business accounts) — video and image Pins created at the scheduled time; boards as collections; Pin and account analytics.

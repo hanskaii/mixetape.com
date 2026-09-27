@@ -2,8 +2,8 @@ import type { AppCredentials, TokenGrant } from "../types";
 import { GRAPH, GRAPH_VERSION, graph } from "./graph";
 
 /**
- * Facebook Login, shared by the Facebook and Instagram providers (one Meta app can serve
- * both). The code becomes a long-lived user token, which makes the Page tokens listed by
+ * Facebook Login, for Facebook Pages (Instagram signs in with Instagram Login instead). The
+ * code becomes a long-lived user token, which makes the Page tokens listed by
  * /me/accounts non-expiring; they stop working only when the person revokes the app,
  * changes their password or loses the Page role, and the account is then reconnected.
  */

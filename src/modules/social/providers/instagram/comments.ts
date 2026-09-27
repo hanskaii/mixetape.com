@@ -1,5 +1,5 @@
 import { InvalidInputError, type Comment, type CommentsCapability } from "../types";
-import { graph } from "../meta/graph";
+import { ig } from "./api";
 
 /**
  * Comments on the account's Reels, as the account. Instagram moderates by hiding a
@@ -31,7 +31,7 @@ const FIELDS = "id,text,username,timestamp,like_count,hidden";
 
 export const instagramComments: CommentsCapability = {
   async list(mediaId, token, { limit, held }) {
-    const data = await graph<{ data?: IgComment[] }>(token, `${mediaId}/comments`, {
+    const data = await ig<{ data?: IgComment[] }>(token, `${mediaId}/comments`, {
       params: {
         fields: `${FIELDS},replies{${FIELDS}}`,
         limit: Math.min(Math.max(limit, 1), 50),
@@ -42,7 +42,7 @@ export const instagramComments: CommentsCapability = {
   },
 
   async post(mediaId, text, token) {
-    const created = await graph<{ id: string }>(token, `${mediaId}/comments`, {
+    const created = await ig<{ id: string }>(token, `${mediaId}/comments`, {
       method: "POST",
       params: { message: text },
     });
@@ -50,7 +50,7 @@ export const instagramComments: CommentsCapability = {
   },
 
   async reply(commentId, text, token) {
-    const created = await graph<{ id: string }>(token, `${commentId}/replies`, {
+    const created = await ig<{ id: string }>(token, `${commentId}/replies`, {
       method: "POST",
       params: { message: text },
     });
@@ -63,6 +63,6 @@ export const instagramComments: CommentsCapability = {
         'Instagram has no review queue: use "rejected" to hide a comment',
       );
     if (banAuthor) throw new InvalidInputError("Instagram cannot ban from a comment");
-    await graph(token, commentId, { method: "POST", params: { hide: status === "rejected" } });
+    await ig(token, commentId, { method: "POST", params: { hide: status === "rejected" } });
   },
 };

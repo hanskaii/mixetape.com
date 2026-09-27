@@ -17,7 +17,9 @@ export type SecretName =
   | "YOUTUBE_CLIENT_ID"
   | "YOUTUBE_CLIENT_SECRET"
   | "FACEBOOK_APP_ID"
-  | "FACEBOOK_APP_SECRET";
+  | "FACEBOOK_APP_SECRET"
+  | "INSTAGRAM_APP_ID"
+  | "INSTAGRAM_APP_SECRET";
 
 function sources(name: SecretName): {
   store: SecretsStoreSecret | undefined;
@@ -48,6 +50,10 @@ function sources(name: SecretName): {
       return { store: env.SS_FACEBOOK_APP_ID, local: env.FACEBOOK_APP_ID };
     case "FACEBOOK_APP_SECRET":
       return { store: env.SS_FACEBOOK_APP_SECRET, local: env.FACEBOOK_APP_SECRET };
+    case "INSTAGRAM_APP_ID":
+      return { store: env.SS_INSTAGRAM_APP_ID, local: env.INSTAGRAM_APP_ID };
+    case "INSTAGRAM_APP_SECRET":
+      return { store: env.SS_INSTAGRAM_APP_SECRET, local: env.INSTAGRAM_APP_SECRET };
   }
 }
 

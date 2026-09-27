@@ -45,13 +45,14 @@ export function redirectUri(provider: string): string {
 // ── platform apps ────────────────────────────────────────────────────────────
 //
 // Every channel connects through mixetape's own OAuth app for its platform; the app's client
-// id and secret are in the Secrets Store (secrets.service). Facebook and Instagram share one
-// Meta app. A platform whose app does not exist yet cannot be connected.
+// id and secret are in the Secrets Store (secrets.service). Instagram has its own app id and
+// secret (Instagram Login), separate from the Facebook app's. A platform whose app does not
+// exist yet cannot be connected.
 
 const APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
   youtube: { id: "YOUTUBE_CLIENT_ID", secret: "YOUTUBE_CLIENT_SECRET" },
   facebook: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
-  instagram: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
+  instagram: { id: "INSTAGRAM_APP_ID", secret: "INSTAGRAM_APP_SECRET" },
 };
 
 async function platformApp(provider: string): Promise<AppCredentials | null> {

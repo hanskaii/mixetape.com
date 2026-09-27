@@ -8,7 +8,7 @@ import { PlatformLogo } from "./platform-logo";
 const REACHES: Record<string, string> = {
   youtube: "Your YouTube channels",
   facebook: "Pages you manage",
-  instagram: "A Business or Creator account linked to a Page",
+  instagram: "A Business or Creator account",
   threads: "Your Threads profile",
   tiktok: "Your TikTok account",
   pinterest: "A Pinterest business account",

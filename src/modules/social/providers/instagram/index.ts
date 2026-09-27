@@ -8,7 +8,7 @@ import { instagramMetadata } from "./metadata";
 export type { InstagramReelMeta } from "./metadata";
 
 /**
- * Instagram professional accounts: videos post as Reels, prepared ahead and published by
+ * Instagram professional accounts, connected with Instagram Login: videos post as Reels, prepared ahead and published by
  * mixetape at go-live (the API cannot schedule), with comments and Reel insights. The cover
  * is set at creation; captions cannot be edited through the API afterwards.
  */

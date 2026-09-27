@@ -93,7 +93,7 @@
       "secret_name": "mixetape-r2-secret-access-key",
     },
     // mixetape's own app on each platform, which every channel connects through
-    // (social.service#APPS). Facebook and Instagram share one Meta app.
+    // (social.service#APPS).
     {
       "binding": "SS_YOUTUBE_CLIENT_ID",
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
@@ -113,6 +113,16 @@
       "binding": "SS_FACEBOOK_APP_SECRET",
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-facebook-app-secret",
+    },
+    {
+      "binding": "SS_INSTAGRAM_APP_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-instagram-app-id",
+    },
+    {
+      "binding": "SS_INSTAGRAM_APP_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-instagram-app-secret",
     },
   ],
   "vars": {
