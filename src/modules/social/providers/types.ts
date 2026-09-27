@@ -40,7 +40,7 @@ export class ReconnectRequiredError extends Error {
 
 // ── Connecting accounts ──────────────────────────────────────────────────────
 
-/** The user's own OAuth app at the platform (a provider credential, decrypted). */
+/** mixetape's OAuth app at the platform, from the Secrets Store. */
 export type AppCredentials = { clientId: string; clientSecret: string };
 
 /** An account the consent gave access to — a YouTube channel, a Page, a profile. */

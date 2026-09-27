@@ -175,11 +175,14 @@ export function PageHeader({
 }
 
 export function Panel({
+  icon,
   title,
   count,
   actions,
   children,
 }: {
+  /** A mark before the title, e.g. the platform's logo. */
+  icon?: ReactNode;
   title?: string;
   count?: number;
   actions?: ReactNode;
@@ -189,6 +192,7 @@ export function Panel({
     <section {...stylex.props(styles.panel)}>
       {title && (
         <div {...stylex.props(styles.panelHeader)}>
+          {icon}
           <h2 {...stylex.props(styles.panelTitle)}>{title}</h2>
           {count !== undefined && <span {...stylex.props(styles.count)}>{count}</span>}
           {actions}

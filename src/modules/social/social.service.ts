@@ -2,10 +2,8 @@ import { env } from "cloudflare:workers";
 import { and, asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
-  providerCredentials,
   socialAccounts,
   socialPosts,
-  type ProviderCredential,
   type SocialAccount,
   type SocialPost,
 } from "#/database/schema";
@@ -23,7 +21,7 @@ import {
 import { checkLead } from "./timing";
 
 /**
- * Credentials, connected accounts and posts. The UI's server functions, the REST API, MCP
+ * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
  * and the publishing workflow all go through here, so ownership checks and encryption live
  * in exactly one place. Work on posts already on a platform is in platform.service,
  * analytics in analytics.service, API keys in api-keys.service.
@@ -42,129 +40,42 @@ export function redirectUri(provider: string): string {
   return `${siteUrl()}/api/connect/${provider}/callback`;
 }
 
-// ── credentials ────────────────────────────────────────────────────────────────
+// ── platform apps ────────────────────────────────────────────────────────────
+//
+// Every channel connects through mixetape's own OAuth app for its platform; the app's client
+// id and secret are in the Secrets Store (secrets.service). Facebook and Instagram share one
+// Meta app. A platform whose app does not exist yet cannot be connected.
 
-export async function listCredentials(userId: string) {
-  const rows = await db.query.providerCredentials.findMany({
-    where: eq(providerCredentials.userId, userId),
-    orderBy: [asc(providerCredentials.createdAt)],
-  });
-  // The secret never leaves the server; the client id is not secret.
-  return rows.map(({ clientSecret: _secret, ...row }) => ({
-    ...row,
-    redirectUri: redirectUri(row.provider),
-  }));
-}
-
-export async function createCredential(
-  userId: string,
-  input: { provider: string; label: string; clientId: string; clientSecret: string },
-) {
-  if (!isProvider(input.provider))
-    throw new ServiceError(`Unsupported provider: ${input.provider}`);
-  const label = input.label.trim() || `${input.provider} app`;
-  const clientId = input.clientId.trim();
-  const clientSecret = input.clientSecret.trim();
-  if (!clientId || !clientSecret)
-    throw new ServiceError("Client ID and client secret are required");
-
-  const id = newId();
-  await db.insert(providerCredentials).values({
-    id,
-    userId,
-    provider: input.provider,
-    label,
-    clientId,
-    clientSecret: await encrypt(clientSecret),
-  });
-  return { id };
-}
-
-// A mixetape-owned app a user can connect through with no setup of their own — see
-// secrets.service. Facebook and Instagram share one Meta app; add an entry here as each
-// new platform's app is created and stored in the Secrets Store.
-const MANAGED_APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
+const APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
+  youtube: { id: "YOUTUBE_CLIENT_ID", secret: "YOUTUBE_CLIENT_SECRET" },
   facebook: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
   instagram: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
 };
-const MANAGED_LABEL = "mixetape";
 
-/**
- * The user's credential for a managed provider, creating it from the platform's own app the
- * first time this user connects through it. Returns null for a provider with no managed app
- * (the user brings their own, via createCredential).
- */
-export async function ensureManagedCredential(
-  userId: string,
-  provider: string,
-): Promise<{ id: string } | null> {
-  const names = MANAGED_APPS[provider];
+async function platformApp(provider: string): Promise<AppCredentials | null> {
+  const names = APPS[provider];
   if (!names) return null;
   const [clientId, clientSecret] = await Promise.all([secret(names.id), secret(names.secret)]);
-  if (!clientId || !clientSecret) return null;
-
-  const existing = await db.query.providerCredentials.findFirst({
-    where: and(
-      eq(providerCredentials.userId, userId),
-      eq(providerCredentials.provider, provider),
-      eq(providerCredentials.label, MANAGED_LABEL),
-    ),
-  });
-  if (existing) return { id: existing.id };
-
-  const id = newId();
-  await db.insert(providerCredentials).values({
-    id,
-    userId,
-    provider,
-    label: MANAGED_LABEL,
-    clientId,
-    clientSecret: await encrypt(clientSecret),
-  });
-  return { id };
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
 }
 
-export async function deleteCredential(userId: string, id: string) {
-  await db
-    .delete(providerCredentials)
-    .where(and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)));
+async function requiredApp(provider: string): Promise<AppCredentials> {
+  const app = await platformApp(provider);
+  if (!app) throw new ServiceError(`${getProvider(provider).name} cannot be connected yet`, 503);
+  return app;
 }
 
-async function ownedCredential(userId: string, id: string): Promise<ProviderCredential> {
-  const credential = await db.query.providerCredentials.findFirst({
-    where: and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)),
-  });
-  if (!credential) throw new ServiceError("Credential not found", 404);
-  return credential;
-}
-
-/** The credential's OAuth app, with its secret decrypted. */
-async function appCredentials(credential: ProviderCredential): Promise<AppCredentials> {
-  const clientSecret = await decrypt(credential.clientSecret).catch(() => {
-    throw new ServiceError(
-      `The client secret of "${credential.label}" can no longer be read — update it on Channels`,
-      409,
-    );
-  });
-  return { clientId: credential.clientId, clientSecret };
-}
-
-/**
- * Replaces a credential's client secret — after rotating it at the provider, or after the
- * encryption key changed and the stored copy can no longer be read.
- */
-export async function updateCredentialSecret(userId: string, id: string, clientSecret: string) {
-  await ownedCredential(userId, id);
-  if (!clientSecret.trim()) throw new ServiceError("Enter the client secret");
-  await db
-    .update(providerCredentials)
-    .set({ clientSecret: await encrypt(clientSecret.trim()), updatedAt: new Date() })
-    .where(and(eq(providerCredentials.id, id), eq(providerCredentials.userId, userId)));
+/** The platforms a channel can be connected on right now. */
+export async function connectableProviders(): Promise<string[]> {
+  const ready = await Promise.all(
+    Object.keys(APPS).map(async (provider) => ((await platformApp(provider)) ? provider : null)),
+  );
+  return ready.filter((provider): provider is string => provider !== null);
 }
 
 // ── connecting accounts (OAuth) ────────────────────────────────────────────────
 
-type OAuthState = { userId: string; credentialId: string; provider: string };
+type OAuthState = { userId: string; provider: string };
 
 /** What happened to one connect attempt, kept briefly so the page that started it can ask. */
 export type ConnectResult =
@@ -174,8 +85,8 @@ export type ConnectResult =
 type StoredResult = Exclude<ConnectResult, { status: "pending" }> & { userId?: string };
 
 /** The URL to send the user to; the state that proves the callback is ours sits in KV. */
-export async function startConnect(userId: string, credentialId: string): Promise<string> {
-  return (await beginConnect(userId, credentialId)).url;
+export async function startConnect(userId: string, provider: string): Promise<string> {
+  return (await beginConnect(userId, provider)).url;
 }
 
 /**
@@ -183,17 +94,17 @@ export async function startConnect(userId: string, credentialId: string): Promis
  * page can open the URL in a new tab (or show it to be opened anywhere) and then watch the
  * state until the callback has finished — see connectResult and finishConnect.
  */
-export async function beginConnect(userId: string, credentialId: string) {
-  const credential = await ownedCredential(userId, credentialId);
-  const provider = getProvider(credential.provider);
+export async function beginConnect(userId: string, provider: string) {
+  if (!isProvider(provider)) throw new ServiceError(`Unsupported provider: ${provider}`);
+  const app = await requiredApp(provider);
   const state = randomToken(24);
-  const payload: OAuthState = { userId, credentialId, provider: credential.provider };
+  const payload: OAuthState = { userId, provider };
   await env.KIT_CACHE.put(`oauth:state:${state}`, JSON.stringify(payload), {
     expirationTtl: OAUTH_STATE_TTL,
   });
-  const url = provider.connect.authorizeUrl({
-    clientId: credential.clientId,
-    redirectUri: redirectUri(credential.provider),
+  const url = getProvider(provider).connect.authorizeUrl({
+    clientId: app.clientId,
+    redirectUri: redirectUri(provider),
     state,
   });
   return { url, state };
@@ -239,11 +150,10 @@ export async function completeConnect(provider: string, code: string, state: str
   const saved = await env.KIT_CACHE.get(key);
   if (!saved) throw new ServiceError("This sign-in link expired — start connecting again", 400);
   await env.KIT_CACHE.delete(key); // one use only
-  const { userId, credentialId, provider: expected } = JSON.parse(saved) as OAuthState;
+  const { userId, provider: expected } = JSON.parse(saved) as OAuthState;
   if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
 
-  const credential = await ownedCredential(userId, credentialId);
-  const app = await appCredentials(credential);
+  const app = await requiredApp(provider);
   const { grant, accounts } = await getProvider(provider).connect.exchangeCode(app, {
     code,
     redirectUri: redirectUri(provider),
@@ -264,7 +174,6 @@ export async function completeConnect(provider: string, code: string, state: str
       ),
     });
     const values = {
-      credentialId,
       name: account.name,
       handle: account.handle ?? null,
       avatar: account.avatar ?? null,
@@ -313,10 +222,7 @@ export async function deleteAccount(userId: string, id: string) {
  * A usable access token for the account, refreshed and saved when it is close to expiry.
  * A refresh the platform refuses marks the account for reconnection.
  */
-export async function accessTokenFor(
-  account: SocialAccount,
-  credential: ProviderCredential,
-): Promise<string> {
+export async function accessTokenFor(account: SocialAccount): Promise<string> {
   const markReconnect = () =>
     db
       .update(socialAccounts)
@@ -343,7 +249,7 @@ export async function accessTokenFor(
 
   try {
     const refreshed = await getProvider(account.provider).connect.refresh(
-      await appCredentials(credential),
+      await requiredApp(account.provider),
       await open(account.refreshToken),
     );
     await db
@@ -571,28 +477,23 @@ export async function platformStatusFor(postId: string) {
   if (!loaded?.post.platformPostId) return null;
   const status = getProvider(loaded.post.provider).status;
   if (!status) return null;
-  const token = await accessTokenFor(loaded.account, loaded.credential);
+  const token = await accessTokenFor(loaded.account);
   return status.fetch(loaded.post.platformPostId, token);
 }
 
-/** An account the user owns, with the credential it was connected through. */
+/** An account the user owns. */
 export async function loadAccount(userId: string, accountId: string) {
   const account = await db.query.socialAccounts.findFirst({
     where: and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)),
   });
   if (!account) throw new ServiceError("Account not found", 404);
-  const credential = await db.query.providerCredentials.findFirst({
-    where: eq(providerCredentials.id, account.credentialId),
-  });
-  if (!credential) throw new ServiceError("The account's credential is gone — reconnect it", 409);
-  return { account, credential };
+  return account;
 }
 
 /** Everything the workflow needs to publish one post. */
 export async function loadForPublishing(postId: string): Promise<{
   post: SocialPost;
   account: SocialAccount;
-  credential: ProviderCredential;
 } | null> {
   const post = await db.query.socialPosts.findFirst({ where: eq(socialPosts.id, postId) });
   if (!post) return null;
@@ -600,11 +501,7 @@ export async function loadForPublishing(postId: string): Promise<{
     where: eq(socialAccounts.id, post.accountId),
   });
   if (!account) return null;
-  const credential = await db.query.providerCredentials.findFirst({
-    where: eq(providerCredentials.id, account.credentialId),
-  });
-  if (!credential) return null;
-  return { post, account, credential };
+  return { post, account };
 }
 
 export async function updatePost(id: string, values: Partial<typeof socialPosts.$inferInsert>) {

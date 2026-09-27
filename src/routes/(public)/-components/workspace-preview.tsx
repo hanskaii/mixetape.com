@@ -14,7 +14,6 @@ const created = new Date("2026-09-20T09:00:00Z");
 const account = (id: string, name: string, handle: string): QueueData["accounts"][number] => ({
   id,
   userId: "sample",
-  credentialId: "sample-credential",
   provider: "youtube",
   platformAccountId: `UC-${id}`,
   name,

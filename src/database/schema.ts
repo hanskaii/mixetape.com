@@ -93,30 +93,9 @@ export const twoFactor = sqliteTable("two_factor", {
 
 // ── Social publishing ──────────────────────────────────────────────────────────
 //
-// A credential is the OAuth app a user brings (their own Google client, say); an account
-// is a channel connected through it; a post is one piece of media scheduled for one
-// account. Secrets and tokens are stored encrypted (see modules/social/crypto.ts).
-
-export const providerCredentials = sqliteTable(
-  "provider_credentials",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(), // 'youtube'
-    label: text("label").notNull(),
-    clientId: text("client_id").notNull(),
-    clientSecret: text("client_secret").notNull(), // encrypted
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date()),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date()),
-  },
-  (table) => [index("provider_credentials_user_idx").on(table.userId)],
-);
+// An account is a channel connected through mixetape's own app for its platform (the app's
+// client id and secret live in the Secrets Store, see social.service); a post is one piece
+// of media scheduled for one account. Tokens are stored encrypted (see secrets/crypto.ts).
 
 export const socialAccounts = sqliteTable(
   "social_accounts",
@@ -125,9 +104,6 @@ export const socialAccounts = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    credentialId: text("credential_id")
-      .notNull()
-      .references(() => providerCredentials.id, { onDelete: "cascade" }),
     provider: text("provider").notNull(),
     platformAccountId: text("platform_account_id").notNull(), // YouTube channel id
     name: text("name").notNull(),
@@ -217,7 +193,6 @@ export const apiKeys = sqliteTable(
 
 export type User = typeof user.$inferSelect;
 export type InsertUser = typeof user.$inferInsert;
-export type ProviderCredential = typeof providerCredentials.$inferSelect;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type SocialPost = typeof socialPosts.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;

@@ -149,8 +149,8 @@ async function publish(
   instanceId: string,
 ): Promise<{ status: string; platformPostId?: string; publishAt?: string; releases?: boolean }> {
   const loaded = await loadForPublishing(postId);
-  if (!loaded) throw new NonRetryableError("The post, its account or its credential was deleted");
-  const { post, account, credential } = loaded;
+  if (!loaded) throw new NonRetryableError("The post or its account was deleted");
+  const { post, account } = loaded;
   // A retry after a success must not upload the video twice, and an instance that is no
   // longer the post's owner (it was rescheduled or retried) must not upload it at all.
   if (post.workflowId && post.workflowId !== instanceId) return { status: "superseded" };
@@ -172,7 +172,7 @@ async function publish(
   await updatePost(postId, { status: "publishing", attempts: post.attempts + 1, error: null });
 
   try {
-    const accessToken = await accessTokenFor(account, credential);
+    const accessToken = await accessTokenFor(account);
     const result = await provider.upload(
       {
         ...post,

@@ -10,9 +10,10 @@ export interface ConnectChannelModalProps {
   onOpenChange?: (open: boolean) => void;
   showModal?: boolean;
   setShowModal?: React.Dispatch<React.SetStateAction<boolean>>;
-  /** The app credential (OAuth client) to connect through. */
-  credentialId: string;
-  credentialLabel: string;
+  /** The platform to connect, e.g. "facebook". */
+  provider: string;
+  /** The platform's name, e.g. "Facebook". */
+  platform: string;
   /** Set when reconnecting an existing channel, for the title. */
   channel?: string;
   /**
@@ -26,7 +27,7 @@ export interface ConnectChannelModalProps {
 /**
  * Connecting a channel: the consent screen opens in a new tab straight away and this modal
  * waits for it. The same URL is shown to copy into another browser (the one signed in to
- * the channel's Google account): the callback lands on mixetape either way, and this modal
+ * the channel's account): the callback lands on mixetape either way, and this modal
  * learns the result by watching the attempt.
  * Mounted fresh for every attempt by ModalProvider (openConnectChannel).
  */
@@ -35,8 +36,8 @@ export function ConnectChannelModal({
   onOpenChange,
   showModal,
   setShowModal,
-  credentialId,
-  credentialLabel,
+  provider,
+  platform,
   channel,
   tab,
   onConnected,
@@ -56,7 +57,7 @@ export function ConnectChannelModal({
     if (started.current) return;
     started.current = true;
     setBlocked(!tab);
-    beginChannelConnect({ data: { credentialId } })
+    beginChannelConnect({ data: { provider } })
       .then((started) => {
         setUrl(started.url);
         setState(started.state);
@@ -66,7 +67,7 @@ export function ConnectChannelModal({
         tab?.close();
         setError(err instanceof Error ? err.message : "Could not start connecting");
       });
-  }, [credentialId, tab]);
+  }, [provider, tab]);
 
   // Watch the attempt: the callback stores its outcome under the state.
   useEffect(() => {
@@ -119,10 +120,9 @@ export function ConnectChannelModal({
     >
       <div className="flex flex-col gap-4">
         <ModalHeader className="pb-0">
-          <ModalTitle>{channel ? `Reconnect ${channel}` : "Connect a channel"}</ModalTitle>
+          <ModalTitle>{channel ? `Reconnect ${channel}` : `Connect ${platform}`}</ModalTitle>
           <ModalDescription>
-            Through <b>{credentialLabel}</b>. Sign in with the Google account that owns the channel
-            and allow access.
+            Sign in to {platform} with the account that owns the channel and allow access.
           </ModalDescription>
         </ModalHeader>
 

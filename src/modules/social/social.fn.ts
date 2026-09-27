@@ -39,44 +39,20 @@ export const retryFailedPost = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => social.retryPost(await currentUserId(), data.id));
 
-// ── channels (credentials + connected accounts) ──────────────────────────────
+// ── channels ──────────────────────────────────────────────────────────────────
 
 export const getChannelsData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
-  // Providers mixetape has its own app for get a credential automatically, so the user
-  // never has to add one. See social.service#ensureManagedCredential.
-  await Promise.all(PROVIDER_LIST.map((p) => social.ensureManagedCredential(userId, p.id)));
-  const [credentials, accounts] = await Promise.all([
-    social.listCredentials(userId),
+  const [accounts, connectable] = await Promise.all([
     social.listAccounts(userId),
+    social.connectableProviders(),
   ]);
-  return {
-    providers: PROVIDER_LIST,
-    credentials,
-    accounts,
-    redirectUris: Object.fromEntries(PROVIDER_LIST.map((p) => [p.id, social.redirectUri(p.id)])),
-  };
+  return { providers: PROVIDER_LIST, connectable, accounts };
 });
 
-export const addCredential = createServerFn({ method: "POST" })
-  .validator(
-    (data: { provider: string; label: string; clientId: string; clientSecret: string }) => data,
-  )
-  .handler(async ({ data }) => social.createCredential(await currentUserId(), data));
-
-export const replaceCredentialSecret = createServerFn({ method: "POST" })
-  .validator((data: { id: string; clientSecret: string }) => data)
-  .handler(async ({ data }) =>
-    social.updateCredentialSecret(await currentUserId(), data.id, data.clientSecret),
-  );
-
-export const removeCredential = createServerFn({ method: "POST" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data }) => social.deleteCredential(await currentUserId(), data.id));
-
 export const beginChannelConnect = createServerFn({ method: "POST" })
-  .validator((data: { credentialId: string }) => data)
-  .handler(async ({ data }) => social.beginConnect(await currentUserId(), data.credentialId));
+  .validator((data: { provider: string }) => data)
+  .handler(async ({ data }) => social.beginConnect(await currentUserId(), data.provider));
 
 export const checkChannelConnect = createServerFn({ method: "POST" })
   .validator((data: { state: string }) => data)

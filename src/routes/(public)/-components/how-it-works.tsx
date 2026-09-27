@@ -6,7 +6,7 @@ const MONO = '"Geist Mono Variable", ui-monospace, monospace';
 const STEPS = [
   {
     title: "Connect your channels",
-    text: "Through your own OAuth app, so the platform quota and approval stay yours. A new tab opens, you allow access, and the channel appears.",
+    text: "Pick the platform and a new tab opens there. Sign in, allow access, and the channel appears. Nothing to set up on your side.",
   },
   {
     title: "Give your agent a key",

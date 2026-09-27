@@ -37,15 +37,11 @@ function Privacy() {
             us.
           </li>
           <li>
-            <strong className="text-foreground">Platform credentials:</strong> the OAuth client ID
-            and secret of the app you register with each platform (Google, Meta, TikTok, Pinterest),
-            stored encrypted (AES-GCM). We never see your platform account password.
-          </li>
-          <li>
             <strong className="text-foreground">Channel access:</strong> for each channel you
             connect (a YouTube channel, Facebook Page, Instagram account, Threads profile, TikTok
             account or Pinterest account), the access and refresh tokens that platform issues,
-            stored encrypted, plus its name, handle and public avatar.
+            stored encrypted (AES-GCM), plus its name, handle and public avatar. We never see your
+            platform account password.
           </li>
           <li>
             <strong className="text-foreground">Posts:</strong> the media, caption and metadata you

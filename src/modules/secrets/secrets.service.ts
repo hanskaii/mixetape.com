@@ -14,6 +14,8 @@ export type SecretName =
   | "GOOGLE_CLIENT_SECRET"
   | "R2_ACCESS_KEY_ID"
   | "R2_SECRET_ACCESS_KEY"
+  | "YOUTUBE_CLIENT_ID"
+  | "YOUTUBE_CLIENT_SECRET"
   | "FACEBOOK_APP_ID"
   | "FACEBOOK_APP_SECRET";
 
@@ -38,6 +40,10 @@ function sources(name: SecretName): {
       return { store: env.SS_R2_ACCESS_KEY_ID, local: env.R2_ACCESS_KEY_ID };
     case "R2_SECRET_ACCESS_KEY":
       return { store: env.SS_R2_SECRET_ACCESS_KEY, local: env.R2_SECRET_ACCESS_KEY };
+    case "YOUTUBE_CLIENT_ID":
+      return { store: env.SS_YOUTUBE_CLIENT_ID, local: env.YOUTUBE_CLIENT_ID };
+    case "YOUTUBE_CLIENT_SECRET":
+      return { store: env.SS_YOUTUBE_CLIENT_SECRET, local: env.YOUTUBE_CLIENT_SECRET };
     case "FACEBOOK_APP_ID":
       return { store: env.SS_FACEBOOK_APP_ID, local: env.FACEBOOK_APP_ID };
     case "FACEBOOK_APP_SECRET":

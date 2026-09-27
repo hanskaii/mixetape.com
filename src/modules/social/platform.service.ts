@@ -64,10 +64,10 @@ function ensureScopes(account: SocialAccount) {
 
 /** An owned account, a capability of its platform, and a token to use it with. */
 export async function onAccount<C extends Capability>(userId: string, accountId: string, name: C) {
-  const { account, credential } = await loadAccount(userId, accountId);
+  const account = await loadAccount(userId, accountId);
   const use = capability(getProvider(account.provider), name);
   ensureScopes(account);
-  return { account, use, token: await accessTokenFor(account, credential) };
+  return { account, use, token: await accessTokenFor(account) };
 }
 
 /** An owned post that is on its platform, a capability, and a token to use it with. */
@@ -80,14 +80,14 @@ export async function onPlatform<C extends Capability>(userId: string, postId: s
     );
   }
   const loaded = await loadForPublishing(postId);
-  if (!loaded) throw new ServiceError("The post's account or credential is gone", 409);
+  if (!loaded) throw new ServiceError("The post's account is gone", 409);
   const use = capability(getProvider(post.provider), name);
   ensureScopes(loaded.account);
   return {
     post,
     platformPostId: post.platformPostId,
     use,
-    token: await accessTokenFor(loaded.account, loaded.credential),
+    token: await accessTokenFor(loaded.account),
   };
 }
 
@@ -258,7 +258,7 @@ export async function releasePrepared(postId: string) {
   if (loaded.post.status === "published") return;
   const provider = getProvider(loaded.post.provider);
   if (!provider.release) throw new Error(`${provider.name} does not release prepared posts`);
-  const token = await accessTokenFor(loaded.account, loaded.credential);
+  const token = await accessTokenFor(loaded.account);
   const live = await provider.release(
     loaded.post.platformPostId,
     token,
@@ -284,7 +284,7 @@ export async function postFirstComment(postId: string): Promise<string | null> {
   if (loaded.post.metadata?.firstCommentId) return null;
   const comments = getProvider(loaded.post.provider).comments;
   if (!comments) return null;
-  const token = await accessTokenFor(loaded.account, loaded.credential);
+  const token = await accessTokenFor(loaded.account);
   const comment = await comments.post(loaded.post.platformPostId, text, token);
   await updatePost(postId, { metadata: { ...loaded.post.metadata, firstCommentId: comment.id } });
   return comment.id;
