@@ -43,6 +43,9 @@ export const retryFailedPost = createServerFn({ method: "POST" })
 
 export const getChannelsData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
+  // Providers mixetape has its own app for get a credential automatically, so the user
+  // never has to add one. See social.service#ensureManagedCredential.
+  await Promise.all(PROVIDER_LIST.map((p) => social.ensureManagedCredential(userId, p.id)));
   const [credentials, accounts] = await Promise.all([
     social.listCredentials(userId),
     social.listAccounts(userId),

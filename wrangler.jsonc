@@ -92,6 +92,18 @@
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-r2-secret-access-key",
     },
+    // The mixetape-owned Meta app (Facebook + Instagram share one app) — a managed
+    // credential every user connects through, instead of bringing their own.
+    {
+      "binding": "SS_FACEBOOK_APP_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-facebook-app-id",
+    },
+    {
+      "binding": "SS_FACEBOOK_APP_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-facebook-app-secret",
+    },
   ],
   "vars": {
     "APP_ENV": "production",

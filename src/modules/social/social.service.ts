@@ -11,6 +11,7 @@ import {
 } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
 import { decrypt, encrypt, randomToken } from "#/modules/secrets/crypto";
+import { secret, type SecretName } from "#/modules/secrets/secrets.service";
 import {
   InvalidInputError,
   ReconnectRequiredError,
@@ -73,6 +74,50 @@ export async function createCredential(
     userId,
     provider: input.provider,
     label,
+    clientId,
+    clientSecret: await encrypt(clientSecret),
+  });
+  return { id };
+}
+
+// A mixetape-owned app a user can connect through with no setup of their own — see
+// secrets.service. Facebook and Instagram share one Meta app; add an entry here as each
+// new platform's app is created and stored in the Secrets Store.
+const MANAGED_APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
+  facebook: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
+  instagram: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
+};
+const MANAGED_LABEL = "mixetape";
+
+/**
+ * The user's credential for a managed provider, creating it from the platform's own app the
+ * first time this user connects through it. Returns null for a provider with no managed app
+ * (the user brings their own, via createCredential).
+ */
+export async function ensureManagedCredential(
+  userId: string,
+  provider: string,
+): Promise<{ id: string } | null> {
+  const names = MANAGED_APPS[provider];
+  if (!names) return null;
+  const [clientId, clientSecret] = await Promise.all([secret(names.id), secret(names.secret)]);
+  if (!clientId || !clientSecret) return null;
+
+  const existing = await db.query.providerCredentials.findFirst({
+    where: and(
+      eq(providerCredentials.userId, userId),
+      eq(providerCredentials.provider, provider),
+      eq(providerCredentials.label, MANAGED_LABEL),
+    ),
+  });
+  if (existing) return { id: existing.id };
+
+  const id = newId();
+  await db.insert(providerCredentials).values({
+    id,
+    userId,
+    provider,
+    label: MANAGED_LABEL,
     clientId,
     clientSecret: await encrypt(clientSecret),
   });
