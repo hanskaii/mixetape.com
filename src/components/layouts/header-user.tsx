@@ -61,7 +61,7 @@ export function HeaderUser() {
           <DropdownMenuGroup>
             <DropdownMenuItem
               render={
-                <Link to="/queue" className="flex items-center gap-2">
+                <Link to="/publish" className="flex items-center gap-2">
                   <SquaresFour className="size-3.5 text-muted-foreground" />
                   <span>Workspace</span>
                 </Link>

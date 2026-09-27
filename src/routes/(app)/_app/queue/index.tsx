@@ -1,14 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { getQueueData } from "#/modules/social/social.fn";
-import { siteConfig } from "#/config/site";
-import { QueueView } from "./-components/queue-view";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// The Queue page is now Publish; old links and bookmarks land there.
 export const Route = createFileRoute("/(app)/_app/queue/")({
-  loader: () => getQueueData(),
-  head: () => ({ meta: [{ title: `Queue | ${siteConfig.name}` }] }),
-  component: QueuePage,
+  beforeLoad: () => {
+    throw redirect({ to: "/publish", statusCode: 301 });
+  },
 });
-
-function QueuePage() {
-  return <QueueView {...Route.useLoaderData()} />;
-}

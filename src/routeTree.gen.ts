@@ -25,6 +25,7 @@ import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
 import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
+import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
 import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
@@ -111,6 +112,11 @@ const appAppChannelsIndexRoute = appAppChannelsIndexRouteImport.update({
   path: '/channels/',
   getParentRoute: () => appAppRouteRoute,
 } as any)
+const appAppPublishIndexRoute = appAppPublishIndexRouteImport.update({
+  id: '/publish/',
+  path: '/publish/',
+  getParentRoute: () => appAppRouteRoute,
+} as any)
 const appAppQueueIndexRoute = appAppQueueIndexRouteImport.update({
   id: '/queue/',
   path: '/queue/',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
+  '/publish/': typeof appAppPublishIndexRoute
   '/queue/': typeof appAppQueueIndexRoute
 }
 export interface FileRoutesByTo {
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
+  '/publish': typeof appAppPublishIndexRoute
   '/queue': typeof appAppQueueIndexRoute
 }
 export interface FileRoutesById {
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
+  '/(app)/_app/publish/': typeof appAppPublishIndexRoute
   '/(app)/_app/queue/': typeof appAppQueueIndexRoute
 }
 export interface FileRouteTypes {
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys/'
     | '/channels/'
+    | '/publish/'
     | '/queue/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys'
     | '/channels'
+    | '/publish'
     | '/queue'
   id:
     | '__root__'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
+    | '/(app)/_app/publish/'
     | '/(app)/_app/queue/'
   fileRoutesById: FileRoutesById
 }
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appAppChannelsIndexRouteImport
       parentRoute: typeof appAppRouteRoute
     }
+    '/(app)/_app/publish/': {
+      id: '/(app)/_app/publish/'
+      path: '/publish'
+      fullPath: '/publish/'
+      preLoaderRoute: typeof appAppPublishIndexRouteImport
+      parentRoute: typeof appAppRouteRoute
+    }
     '/(app)/_app/queue/': {
       id: '/(app)/_app/queue/'
       path: '/queue'
@@ -496,6 +515,7 @@ interface appAppRouteRouteChildren {
   appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
   appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
+  appAppPublishIndexRoute: typeof appAppPublishIndexRoute
   appAppQueueIndexRoute: typeof appAppQueueIndexRoute
 }
 
@@ -504,6 +524,7 @@ const appAppRouteRouteChildren: appAppRouteRouteChildren = {
   appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
   appAppChannelsIndexRoute: appAppChannelsIndexRoute,
+  appAppPublishIndexRoute: appAppPublishIndexRoute,
   appAppQueueIndexRoute: appAppQueueIndexRoute,
 }
 

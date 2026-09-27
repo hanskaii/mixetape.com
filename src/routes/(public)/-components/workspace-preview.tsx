@@ -1,17 +1,17 @@
 import * as stylex from "@stylexjs/stylex";
 import { WorkspaceLayout } from "#/components/layouts/workspace-layout";
-import { QueueView, type QueueData } from "../../(app)/_app/queue/-components/queue-view";
+import { PublishView, type PublishData } from "../../(app)/_app/publish/-components/publish-view";
 import { colors } from "../../../components/ui/tokens.stylex";
 
 /**
- * The real workspace — the same layout and Queue view people use — rendered with sample
+ * The real workspace — the same layout and Publish view people use — rendered with sample
  * data. It is a picture: `inert` keeps it out of the tab order and the accessibility tree,
  * and the caption below says it is an example.
  */
 
 const created = new Date("2026-09-20T09:00:00Z");
 
-const account = (id: string, name: string, handle: string): QueueData["accounts"][number] => ({
+const account = (id: string, name: string, handle: string): PublishData["accounts"][number] => ({
   id,
   userId: "sample",
   provider: "youtube",
@@ -33,7 +33,7 @@ const post = (
   scheduledAt: string,
   status: string,
   error: string | null = null,
-): QueueData["posts"][number] => ({
+): PublishData["posts"][number] => ({
   id,
   userId: "sample",
   accountId,
@@ -54,7 +54,7 @@ const post = (
   updatedAt: created,
 });
 
-const SAMPLE: QueueData = {
+const SAMPLE: PublishData = {
   accounts: [
     account("hans", "Hans Explainer", "@hansexplainer"),
     account("nowhere", "Now Where", "@nowwhere"),
@@ -130,8 +130,8 @@ export function WorkspacePreview() {
     <figure {...stylex.props(styles.figure)}>
       <div {...stylex.props(styles.frame)}>
         <div inert {...stylex.props(styles.window)}>
-          <WorkspaceLayout defaultOpen activePath="/queue" preview>
-            <QueueView {...SAMPLE} />
+          <WorkspaceLayout defaultOpen activePath="/publish" preview>
+            <PublishView {...SAMPLE} />
           </WorkspaceLayout>
         </div>
       </div>

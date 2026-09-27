@@ -44,7 +44,7 @@ import ThemeToggle from "./theme-toggle";
  */
 
 const WORKSPACE = [
-  { to: "/queue", label: "Queue", icon: CalendarDots },
+  { to: "/publish", label: "Publish", icon: CalendarDots },
   { to: "/channels", label: "Channels", icon: PlugsConnected },
   { to: "/api-keys", label: "API keys", icon: Key },
 ] as const;

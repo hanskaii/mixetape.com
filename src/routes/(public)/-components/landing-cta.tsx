@@ -51,13 +51,13 @@ export function LandingCta({
   signedIn,
   signedInLabel,
   signedOutLabel,
-  to = "/queue",
+  to = "/publish",
   compact = false,
 }: {
   signedIn: boolean;
   signedInLabel: string;
   signedOutLabel: string;
-  to?: "/queue" | "/api-keys" | "/channels";
+  to?: "/publish" | "/api-keys" | "/channels";
   compact?: boolean;
 }) {
   const { openLogin } = useModal();

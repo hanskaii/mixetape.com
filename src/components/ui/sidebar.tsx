@@ -343,7 +343,7 @@ export type SidebarMenuButtonProps = Omit<
   size?: "default" | "lg";
   /** Shown as a tooltip while the sidebar is collapsed to icons. */
   tooltip?: string;
-  /** Render as another element, e.g. <Link to="/queue" />. */
+  /** Render as another element, e.g. <Link to="/publish" />. */
   render?: useRender.RenderProp;
 };
 
