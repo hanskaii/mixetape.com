@@ -13,7 +13,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { Badge } from "#/components/ui/badge";
-import { PublishingTabs, selectClassName } from "#/components/layouts/publishing-tabs";
+import { WorkspaceShell, selectClassName } from "#/components/layouts/publishing-tabs";
 import { WorkspaceHeading } from "#/components/layouts/workspace-heading";
 import {
   cancelScheduledPost,
@@ -135,13 +135,12 @@ function PublishPage() {
 
   if (accounts.length === 0) {
     return (
-      <main className="app-page space-y-7 px-4 py-10 md:py-14">
+      <WorkspaceShell>
         <WorkspaceHeading
           section="Studio / 01"
           title="Publish"
           description="Give your next video a place on the calendar."
         />
-        <PublishingTabs />
         <p className="rounded-[20px] border border-border bg-card p-6 text-sm text-muted-foreground">
           Connect a channel first on the{" "}
           <Link to="/channels" className="text-foreground underline">
@@ -149,126 +148,167 @@ function PublishPage() {
           </Link>{" "}
           page.
         </p>
-      </main>
+      </WorkspaceShell>
     );
   }
 
   return (
-    <main className="app-page space-y-8 px-4 py-10 md:py-14">
+    <WorkspaceShell>
       <WorkspaceHeading
         section="Studio / 01"
         title="Publish"
-        description="Set the release, then let mixetape keep the time."
+        description="Everything scheduled for your YouTube channels."
       />
-      <PublishingTabs />
+      <div className="flex items-center justify-between border-b border-border pb-3">
+        <h2 className="text-[22px] font-semibold tracking-[-.04em]">Content queue</h2>
+        <a
+          href="#new-post"
+          className="rounded-lg bg-[#11110f] px-4 py-2 text-sm font-semibold text-white dark:bg-primary dark:text-primary-foreground"
+        >
+          + Schedule
+        </a>
+      </div>
+      <PostList title="Upcoming" posts={upcoming} accountName={accountName} onAct={act} />
+      {history.length > 0 && (
+        <PostList title="History" posts={history} accountName={accountName} onAct={act} />
+      )}
 
       <form
+        id="new-post"
         onSubmit={submit}
-        className="grid gap-4 rounded-[20px] border border-border bg-card p-5 shadow-[0_18px_36px_-32px_rgba(23,19,10,.45)] md:grid-cols-2 md:p-7"
+        className="grid gap-5 border-t border-border pt-7 md:grid-cols-2"
       >
-        <select
-          className={selectClassName}
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
-          aria-label="Channel"
-          required
-        >
-          {active.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name} ({account.provider})
-            </option>
-          ))}
-        </select>
+        <div className="md:col-span-2">
+          <h2 className="text-[22px] font-semibold tracking-[-.04em]">New post</h2>
+          <p className="text-sm text-muted-foreground">
+            Choose a video, then set its go-live time.
+          </p>
+        </div>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Channel
+          <select
+            className={selectClassName}
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            required
+          >
+            {active.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} ({account.provider})
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={source === "url" ? "default" : "outline"}
-            onClick={() => setSource("url")}
-          >
-            <LinkSimple /> URL
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={source === "file" ? "default" : "outline"}
-            onClick={() => setSource("file")}
-          >
-            <UploadSimple /> Upload
-          </Button>
+        <div className="grid content-start gap-1.5">
+          <span className="text-sm font-medium">Video source</span>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={source === "url" ? "default" : "outline"}
+              onClick={() => setSource("url")}
+            >
+              <LinkSimple /> URL
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={source === "file" ? "default" : "outline"}
+              onClick={() => setSource("file")}
+            >
+              <UploadSimple /> Upload
+            </Button>
+          </div>
         </div>
 
         {source === "url" ? (
-          <Input
-            className="md:col-span-2"
-            type="url"
-            placeholder="https://… video URL (e.g. a public R2 object)"
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-            required
-          />
+          <label className="grid gap-1.5 text-sm font-medium md:col-span-2">
+            Video URL
+            <Input
+              type="url"
+              placeholder="https://… video URL (e.g. a public R2 object)"
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+              required
+            />
+          </label>
         ) : (
-          <Input
-            className="md:col-span-2"
-            type="file"
-            accept="video/*"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            required
-          />
+          <label className="grid gap-1.5 text-sm font-medium md:col-span-2">
+            Video file
+            <Input
+              type="file"
+              accept="video/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              required
+            />
+          </label>
         )}
 
-        <Input
-          className="md:col-span-2"
-          placeholder="Title"
-          maxLength={100}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <Textarea
-          className="md:col-span-2 min-h-28"
-          placeholder="Description"
-          maxLength={5000}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        <label className="grid gap-1.5 text-sm font-medium md:col-span-2">
+          Title
+          <Input
+            placeholder="Title"
+            maxLength={100}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium md:col-span-2">
+          Description
+          <Textarea
+            className="min-h-28"
+            placeholder="Description"
+            maxLength={5000}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </label>
 
-        <select
-          className={selectClassName}
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          aria-label="Category"
-        >
-          {YOUTUBE_CATEGORIES.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClassName}
-          value={privacy}
-          onChange={(e) => setPrivacy(e.target.value as typeof privacy)}
-          aria-label="Visibility"
-        >
-          <option value="public">Public</option>
-          <option value="unlisted">Unlisted</option>
-          <option value="private">Private</option>
-        </select>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Category
+          <select
+            className={selectClassName}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            aria-label="Category"
+          >
+            {YOUTUBE_CATEGORIES.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Visibility
+          <select
+            className={selectClassName}
+            value={privacy}
+            onChange={(e) => setPrivacy(e.target.value as typeof privacy)}
+            aria-label="Visibility"
+          >
+            <option value="public">Public</option>
+            <option value="unlisted">Unlisted</option>
+            <option value="private">Private</option>
+          </select>
+        </label>
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={postNow} onChange={(e) => setPostNow(e.target.checked)} />
           Post now {lead > 0 && privacy === "public" && `(live in ${lead} min)`}
         </label>
         {!postNow && (
-          <Input
-            type="datetime-local"
-            value={when}
-            onChange={(e) => setWhen(e.target.value)}
-            required
-            aria-label="Scheduled time"
-          />
+          <label className="grid gap-1.5 text-sm font-medium">
+            Go-live time
+            <Input
+              type="datetime-local"
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+              required
+            />
+          </label>
         )}
         <label className="flex flex-col gap-1 text-xs text-muted-foreground md:col-span-2">
           <span>
@@ -312,10 +352,7 @@ function PublishPage() {
           {error && <span className="text-xs text-destructive">{error}</span>}
         </div>
       </form>
-
-      <PostList title="Upcoming" posts={upcoming} accountName={accountName} onAct={act} />
-      <PostList title="History" posts={history} accountName={accountName} onAct={act} />
-    </main>
+    </WorkspaceShell>
   );
 }
 
@@ -332,7 +369,16 @@ function PostList({
   accountName: Map<string, string>;
   onAct: (action: "cancel" | "retry", id: string) => void;
 }) {
-  if (posts.length === 0) return null;
+  if (posts.length === 0) {
+    return (
+      <section>
+        <h2 className="mb-3 text-sm font-semibold">{title}</h2>
+        <p className="rounded-xl border border-dashed border-border px-5 py-8 text-sm text-muted-foreground">
+          Nothing queued yet. Schedule a video to see it here.
+        </p>
+      </section>
+    );
+  }
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold">{title}</h2>

@@ -1,67 +1,45 @@
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "@phosphor-icons/react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ArrowRight } from "@phosphor-icons/react";
 import { Route as RootRoute } from "#/routes/__root";
 import { siteConfig } from "#/config/site";
 import { HeaderUser } from "./header-user";
 import ThemeToggle from "./theme-toggle";
 
-const workspaceLinks = [
-  { to: "/publish", label: "Publish" },
-  { to: "/channels", label: "Channels" },
-  { to: "/api-keys", label: "API keys" },
-] as const;
-
 export function AppHeader() {
   const { session } = RootRoute.useRouteContext();
   const user = session?.user;
+  const isLanding = useLocation().pathname === "/";
 
   return (
-    <header className="sticky top-3 z-50 mx-4 mt-3 rounded-[20px] border border-border bg-card/90 px-3 py-2 shadow-[0_14px_32px_-24px_rgba(23,19,10,0.55)] backdrop-blur-xl backdrop-saturate-150 sm:mx-6 sm:px-4">
+    <header className="sticky top-0 z-50 mx-4 bg-background/90 px-1 py-3 backdrop-blur-xl sm:mx-8">
       <nav
         aria-label="Main navigation"
-        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+        className={
+          isLanding
+            ? "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 lg:translate-x-[48px]"
+            : "flex items-center justify-between gap-4"
+        }
       >
         <Link
           to="/"
-          className="group flex shrink-0 items-center gap-2.5 text-[19px] font-bold tracking-[-0.045em] text-foreground"
+          className="group flex shrink-0 items-center text-[23px] font-bold tracking-[-0.07em] text-foreground"
         >
-          <img
-            src={siteConfig.author.avatar}
-            alt=""
-            className="size-9 rounded-[10px] transition-transform duration-200 group-hover:-rotate-6"
-          />
           <span>{siteConfig.name}</span>
-          <span className="hidden rounded-md border border-border px-1.5 py-0.5 font-mono text-[9px] font-medium tracking-[0.14em] text-muted-foreground uppercase md:inline-flex">
-            Studio
-          </span>
         </Link>
 
-        {user ? (
-          <div className="order-3 flex w-full items-center gap-1 overflow-x-auto pt-1 sm:order-none sm:w-auto sm:pt-0">
-            {workspaceLinks.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className="shrink-0 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "!bg-primary !text-primary-foreground font-semibold" }}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="hidden items-center gap-1 sm:flex">
+        {isLanding && (
+          <div className="hidden items-center gap-2 sm:flex">
             <a
               href="/#how"
-              className="rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-muted"
             >
               How it works
             </a>
             <a
-              href="/#features"
-              className="rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              href="/#agents"
+              className="rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-muted"
             >
-              Features
+              For agents
             </a>
           </div>
         )}
@@ -70,9 +48,9 @@ export function AppHeader() {
           {user && (
             <Link
               to="/publish"
-              className="hidden items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-[13px] font-semibold text-primary-foreground transition-transform hover:-translate-y-px md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/80 md:inline-flex"
             >
-              New post <ArrowUpRight className="size-4" />
+              New post <ArrowRight className="size-4" />
             </Link>
           )}
           <HeaderUser />

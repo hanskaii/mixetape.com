@@ -12,7 +12,8 @@ The interface has two modes of density. The public page is spacious and editoria
 - People can provide a video URL or upload a file, choose metadata and visibility, then post now or schedule a time.
 - Scheduled work shows upcoming and historical status, with retry and cancel actions where available.
 - API keys allow scripts to schedule through the same service.
-- Other platform marks from the reference are inspiration only. Do not show them as supported destinations.
+- mixetape is agent-first: MCP and the REST API are primary interfaces, and the workspace supervises the same queue (see PRODUCT.md).
+- The roadmap platforms (X, Instagram, LinkedIn, Facebook, TikTok, Bluesky, Threads, Pinterest, Google Business) may appear only with a clear "Soon" label, never as supported destinations. Their logos live in `public/icons/platforms/` and sit on a small white tile so dark marks stay legible in both themes.
 
 ## Palette
 

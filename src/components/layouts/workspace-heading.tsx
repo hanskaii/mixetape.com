@@ -4,7 +4,7 @@ import { colors } from "../ui/tokens.stylex";
 const styles = stylex.create({
   root: {
     display: "grid",
-    gap: "0.75rem",
+    gap: "0.35rem",
     paddingBlockEnd: "0.5rem",
   },
   section: {
@@ -20,7 +20,7 @@ const styles = stylex.create({
     color: colors.foreground,
     fontFamily: '"Figtree", ui-sans-serif, system-ui, sans-serif',
     fontSize: { "@media (min-width: 640px)": "2.75rem", default: "2.2rem" },
-    fontWeight: 500,
+    fontWeight: 600,
     letterSpacing: "-0.055em",
     lineHeight: 1.06,
   },
@@ -42,8 +42,7 @@ export function WorkspaceHeading({
   description: string;
 }) {
   return (
-    <div {...stylex.props(styles.root)}>
-      <p {...stylex.props(styles.section)}>{section}</p>
+    <div {...stylex.props(styles.root)} aria-label={section}>
       <h1 {...stylex.props(styles.title)}>{title}</h1>
       <p {...stylex.props(styles.description)}>{description}</p>
     </div>

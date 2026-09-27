@@ -1,13 +1,10 @@
 import { HeadContent, Scripts, createRootRouteWithContext, Link } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import Footer from "../components/layouts/footer";
 import { AppHeader } from "../components/layouts/app-header";
 import { getAuthSession } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
 import { StyleXDev } from "../components/providers/stylex-dev";
 
-import { TanStackQueryDevtools } from "../components/providers/query-devtools";
 import { siteConfig } from "#/config/site";
 
 import appCss from "../styles.css?url";
@@ -157,23 +154,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/45">
         <ModalProvider>
-          <div className="mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-start">
+          <div className="mx-auto flex min-h-screen w-full max-w-[1510px] flex-col justify-start">
             <AppHeader />
             <div className="flex-1">{children}</div>
             <Footer />
           </div>
-          <TanStackDevtools
-            config={{
-              position: "bottom-right",
-            }}
-            plugins={[
-              {
-                name: "Tanstack Router",
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              TanStackQueryDevtools,
-            ]}
-          />
         </ModalProvider>
         <Scripts />
       </body>

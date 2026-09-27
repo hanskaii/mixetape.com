@@ -1,8 +1,8 @@
 export const siteConfig = {
   name: "mixetape",
-  title: "mixetape | Schedule YouTube videos on your time",
+  title: "mixetape | Agent-first social media scheduling",
   description:
-    "Queue a YouTube video, choose when it goes live, and track every post. Use your own credentials or connect a scheduling pipeline through the API.",
+    "Let AI agents and pipelines schedule social posts through MCP or the API. mixetape holds each post, keeps it editable until it goes out, and reports back when it is live. YouTube today; X, Instagram, LinkedIn, TikTok and more coming.",
   url: process.env.SITE_URL || "http://localhost:3000",
   author: {
     name: "Admin",
