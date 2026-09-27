@@ -19,6 +19,12 @@ The scheduling layer for AI-made and pipeline-made content. Where other schedule
 
 ## Operating Context
 - **Today:** YouTube (long videos and Shorts), through the user's own Google OAuth app, so the quota and the approval belong to them.
+- **Built, awaiting their first live post** (labelled "Soon" on the landing page until one has gone out):
+  - **Facebook Pages** — Page videos and Reels, scheduled natively; thumbnails, SRT captions, comments (reply, hide), video insights. Pages only, never personal profiles.
+  - **Instagram** (Business/Creator linked to a Page, same Meta app) — Reels prepared ahead and published by mixetape on the minute (the API cannot schedule); cover, comments, Reel insights. 100 API posts a day.
+  - **Threads** — video posts prepared ahead and released on the minute; replies, hide, insights. 250 posts a day.
+  - **TikTok** — Direct Post uploaded at the scheduled time (no API scheduling); private only until TikTok audits the app.
+  - **Pinterest** (business accounts) — video and image Pins created at the scheduled time; boards as collections; Pin and account analytics.
 - **Roadmap** (not yet available — never shown as supported): Twitter/X, Instagram, LinkedIn, Facebook, TikTok, Bluesky, Threads, Pinterest and Google Business Profile. Each arrives as a provider behind the same post model, API and MCP tools, so agents do not change how they work when a platform is added.
 - **How work arrives:** mostly from agents and scripts on a schedule (e.g. a weekly content routine that renders a video and queues its long form plus four Shorts); occasionally a person schedules or fixes something by hand.
 - **Buffer-like holding:** a post waits in mixetape — still editable, movable and cancellable — until shortly before its time (`leadMinutes`, 30 by default for YouTube), then goes up private with a publish time, so the platform finishes processing HD before it goes live.
@@ -31,7 +37,7 @@ The scheduling layer for AI-made and pipeline-made content. Where other schedule
 - **People:** sign-in with Google, GitHub or an email code; API keys (hashed, shown once) with per-key permissions; a workspace for Publish, Channels and API keys.
 - **Stack:** TanStack Start (React 19) on Cloudflare Workers; D1 (Drizzle), R2, KV, Workflows; Base UI primitives styled with StyleX; Better Auth.
 - **Providers:** each platform is a module of optional capabilities (status, thumbnails, editing, collections, captions, comments, analytics); mixetape offers exactly what a provider implements, so a new platform brings its features to the UI, REST and MCP at once.
-- **Constraints:** platform quotas belong to the user's own app (YouTube: 10,000 Data API units a day per Google project — an upload is 1,600, a caption 400); YouTube's API cannot pin comments or set a Short's related video; one platform live today; no analytics warehouse — numbers come live from YouTube Analytics and lag two to three days.
+- **Constraints:** platform quotas belong to the user's own app (YouTube, per Google project per day: 100 video uploads, plus 10,000 units for everything else — a thumbnail or an edit is 50, a caption 400); YouTube's API cannot pin comments or set a Short's related video; one platform live today; no analytics warehouse — numbers come live from YouTube Analytics and lag two to three days.
 
 ## Brand Commitments
 - **Name:** mixetape, always lowercase.

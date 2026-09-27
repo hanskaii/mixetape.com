@@ -56,7 +56,14 @@ export async function accountAnalytics(
 ) {
   const { account, use, token } = await onAccount(userId, accountId, "analytics");
   const dates = range(input, new Date(Date.now() - DEFAULT_ACCOUNT_DAYS * DAY));
-  const report = await platformCall(() => use.account(account.platformAccountId, token, dates));
+  const reportAccount = use.account;
+  if (!reportAccount) {
+    throw new ServiceError(
+      "This platform has no account-level analytics; use get_post_analytics per post",
+      409,
+    );
+  }
+  const report = await platformCall(() => reportAccount(account.platformAccountId, token, dates));
 
   const ids = report.topPosts.map((top) => top.platformPostId);
   const known = ids.length

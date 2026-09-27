@@ -49,6 +49,8 @@ export type ConnectedAccount = {
   name: string;
   handle?: string;
   avatar?: string;
+  /** This account's own tokens, when they differ from the consent's (a Facebook Page's). */
+  grant?: TokenGrant;
 };
 
 export type TokenGrant = {
@@ -69,11 +71,14 @@ export interface ConnectCapability {
     app: AppCredentials,
     input: { code: string; redirectUri: string },
   ): Promise<{ grant: TokenGrant; accounts: ConnectedAccount[] }>;
-  /** A fresh access token; throws ReconnectRequiredError when the platform refuses. */
+  /**
+   * A fresh access token, and a new refresh token when the platform rotates it; throws
+   * ReconnectRequiredError when the platform refuses.
+   */
   refresh(
     app: AppCredentials,
     refreshToken: string,
-  ): Promise<{ accessToken: string; expiresIn: number }>;
+  ): Promise<{ accessToken: string; expiresIn: number; refreshToken?: string }>;
 }
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
@@ -264,7 +269,8 @@ export interface AnalyticsCapability {
   /** How long after publishing the numbers settle, so callers know recent days are partial. */
   readonly delayDays: number;
   post(platformPostId: string, token: string, range: DateRange): Promise<PostAnalytics>;
-  account(platformAccountId: string, token: string, range: DateRange): Promise<AccountAnalytics>;
+  /** Account-level reports; absent when the platform offers none worth reporting. */
+  account?(platformAccountId: string, token: string, range: DateRange): Promise<AccountAnalytics>;
 }
 
 // ── The provider ─────────────────────────────────────────────────────────────
@@ -279,11 +285,26 @@ export interface SocialProvider {
   readonly schedulesNatively: boolean;
   /** For native scheduling: how long before go-live a post is uploaded by default. */
   readonly defaultLeadMinutes: number;
+  /**
+   * The smallest lead the platform can schedule with (0, "upload at go-live", is always
+   * allowed): Facebook refuses a publish time under 10 minutes away.
+   */
+  readonly minLeadMinutes?: number;
 
   readonly connect: ConnectCapability;
   readonly metadata: MetadataSpec;
   /** Uploads the post; follow-ups that fail (thumbnail, playlists…) become a warning. */
   upload(post: PostWithMedia, token: string, metadata: Metadata): Promise<UploadResult>;
+  /**
+   * For a platform that cannot hold a post until a time itself (Instagram, Threads): with
+   * a publishAt, upload only prepares the post (a processed media container) ahead of
+   * time, and release publishes it at go-live, returning the live post.
+   */
+  release?(
+    prepared: string,
+    token: string,
+    platformAccountId: string,
+  ): Promise<{ platformPostId: string; platformUrl?: string }>;
 
   readonly status?: StatusCapability;
   readonly thumbnails?: ThumbnailCapability;

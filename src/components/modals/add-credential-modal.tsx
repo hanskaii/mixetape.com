@@ -51,8 +51,24 @@ const styles = stylex.create({
   footer: { display: "flex", gap: "0.5rem", justifyContent: "flex-end" },
 });
 
+/** Where each platform's OAuth app is made, shown with the redirect URI to paste there. */
+const SETUP: Record<string, string> = {
+  youtube:
+    "For YouTube, create an OAuth client ID (Web application) in Google Cloud with this redirect URI.",
+  facebook:
+    'For Facebook, create a Meta app with the use case "Manage everything on your Page", set it to Live, and add this redirect URI under Facebook Login › Valid OAuth Redirect URIs.',
+  instagram:
+    "For Instagram, use the same Meta app as Facebook: add the Instagram use case (Facebook Login) and this redirect URI too. The Instagram account must be Business or Creator and linked to a Page.",
+  threads:
+    'For Threads, create a Meta app with the use case "Access the Threads API", add this redirect URI, and add your profile as a Threads Tester (accept it in Threads › Settings › Website permissions). Use the Threads App ID and secret.',
+  tiktok:
+    "For TikTok, create an app in the TikTok developer portal with Login Kit and the Content Posting API (Direct Post), and add this redirect URI. Until TikTok audits the app, posts can only be private.",
+  pinterest:
+    "For Pinterest, create an app at developers.pinterest.com (a business account is required) and add this redirect URI.",
+};
+
 /**
- * Adds an OAuth app credential (the user's own Google app for YouTube), which channels
+ * Adds an OAuth app credential (the user's own Google or Meta app), which channels
  * are then connected through. Opened through useModal().openModal.
  */
 export function AddCredentialModal({
@@ -99,9 +115,9 @@ export function AddCredentialModal({
         <ModalHeader>
           <ModalTitle>Add an app credential</ModalTitle>
           <ModalDescription>
-            mixetape posts through your own OAuth app, so the quota and the approval stay yours. For
-            YouTube, create an OAuth client ID (Web application) in Google Cloud with this redirect
-            URI, then paste its ID and secret here.
+            mixetape posts through your own OAuth app, so the quota and the approval stay yours.{" "}
+            {SETUP[form.provider] ?? "Create an OAuth app with this redirect URI."} Then paste its
+            ID and secret here.
           </ModalDescription>
         </ModalHeader>
 

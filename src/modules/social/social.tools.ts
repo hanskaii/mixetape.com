@@ -100,7 +100,7 @@ export const socialTools: Tool[] = [
     name: "list_collections",
     scope: "read",
     description:
-      "List the account's collections — playlists on YouTube — with id, title, visibility and item count. Use an id in metadata.playlistIds or add_to_collection.",
+      "List the account's collections — playlists on YouTube, boards on Pinterest — with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.",
     inputSchema: object({ accountId: ACCOUNT_ID }, ["accountId"]),
     annotations: READ_ONLY,
     run: (userId, input) => platform.listCollections(userId, input.string("accountId")),
@@ -120,7 +120,7 @@ export const socialTools: Tool[] = [
     name: "create_post",
     scope: "publish",
     description:
-      "Schedule a video on a connected account. Like Buffer, the post waits in mixetape (editable, cancellable) and is uploaded leadMinutes before scheduledAt as private; YouTube processes it and makes it public at scheduledAt. Thumbnail, playlists and captions in metadata are applied right after upload; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).",
+      "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).",
     inputSchema: object(
       {
         accountId: ACCOUNT_ID,
@@ -134,7 +134,7 @@ export const socialTools: Tool[] = [
         leadMinutes: {
           type: "number",
           description:
-            "Minutes before go-live that mixetape uploads it (YouTube default 30), so the platform can finish processing HD first. 0 uploads at go-live time.",
+            "Minutes before go-live that mixetape uploads or prepares it, so the platform finishes processing first (defaults: YouTube and Facebook 30, Instagram 15, Threads 10; TikTok and Pinterest always 0). 0 uploads at go-live time. Facebook needs 0 or at least 15.",
         },
         metadata: METADATA,
       },
@@ -201,7 +201,7 @@ export const socialTools: Tool[] = [
     name: "set_thumbnail",
     scope: "publish",
     description:
-      "Set or replace the custom thumbnail of a post already on YouTube. imageUrl: public https JPEG/PNG, ≤ 2 MB, 1280×720; the channel must be verified. For a post still 'scheduled', use update_post with metadata.thumbnailUrl.",
+      "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: ≤ 2 MB, 1280×720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.",
     inputSchema: object({ id: POST_ID, imageUrl: { type: "string" } }, ["id", "imageUrl"]),
     annotations: { idempotentHint: true },
     run: (userId, input) =>
@@ -213,7 +213,7 @@ export const socialTools: Tool[] = [
     name: "edit_published_post",
     scope: "manage",
     description:
-      "Change the details of a post that is already on the platform (uploaded or published): title, description, tags, category, privacy, made-for-kids, language and localizations. Only the given fields change; null clears one. Costs 50 YouTube quota units.",
+      "Change the details of a post that is already on the platform (uploaded or published). YouTube: title, description, tags, category, privacy, made-for-kids, language and localizations (50 quota units). Facebook: title and description. Only the given fields change; null clears one.",
     inputSchema: object({ id: POST_ID, metadata: EDITABLE_METADATA }, ["id", "metadata"]),
     annotations: { idempotentHint: true },
     run: (userId, input) =>
@@ -222,7 +222,7 @@ export const socialTools: Tool[] = [
   {
     name: "create_collection",
     scope: "manage",
-    description: "Create a collection (a YouTube playlist) on the account.",
+    description: "Create a collection on the account: a YouTube playlist or a Pinterest board.",
     inputSchema: object(
       {
         accountId: ACCOUNT_ID,
@@ -243,7 +243,7 @@ export const socialTools: Tool[] = [
     name: "add_to_collection",
     scope: "manage",
     description:
-      "Add a post that is on the platform to a collection (YouTube playlist). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead.",
+      "Add a post that is on the platform to a collection (YouTube playlist, or save a Pin to another Pinterest board). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead.",
     inputSchema: object(
       { id: POST_ID, collectionId: { type: "string" }, position: { type: "number" } },
       ["id", "collectionId"],
@@ -260,7 +260,7 @@ export const socialTools: Tool[] = [
     name: "upload_caption",
     scope: "manage",
     description:
-      "Upload a subtitle track (public https SRT or WebVTT) to a post on the platform. A track with the same language and name is replaced. Costs 400–450 YouTube quota units.",
+      "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400–450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.",
     inputSchema: object(
       {
         id: POST_ID,
@@ -308,7 +308,7 @@ export const socialTools: Tool[] = [
     name: "post_comment",
     scope: "comments",
     description:
-      "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. The API cannot pin it; pin it in YouTube Studio.",
+      "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.",
     inputSchema: object({ id: POST_ID, text: { type: "string" } }, ["id", "text"]),
     run: (userId, input) => platform.postComment(userId, input.string("id"), input.string("text")),
   },

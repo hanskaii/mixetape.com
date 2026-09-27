@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { postFirstComment } from "./platform.service";
+import { postFirstComment, releasePrepared } from "./platform.service";
 import { getProvider, PermanentPublishError } from "./providers";
 import { accessTokenFor, loadForPublishing, platformStatusFor, updatePost } from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
@@ -18,6 +18,7 @@ export type PublishParams = { postId: string };
  *   wait    — in mixetape, until `leadMinutes` before go-live (see timing.ts)
  *   publish — refresh the token and upload; a platform that can hold it (YouTube) gets
  *             publishAt, and processes the high-quality versions while it waits
+ *   release — at go-live, publish what a platform could only prepare (Instagram, Threads)
  *   confirm — after go-live, check the platform really made it public
  *   comment — post metadata.firstComment, which needs the post to be public
  */
@@ -69,6 +70,29 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
     }
 
     // Held by the platform until go-live: once that has passed, confirm it went public.
+    // Prepared ahead, published by mixetape on the minute (Instagram, Threads).
+    if (result.status === "uploaded" && result.publishAt && result.releases) {
+      await step.sleepUntil("wait for go-live", new Date(result.publishAt));
+      try {
+        await step.do(
+          "release",
+          { retries: { limit: 4, delay: "1 minute", backoff: "exponential" } },
+          async () => releasePrepared(postId),
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await step.do("record release failure", async () => {
+          await updatePost(postId, {
+            status: "failed",
+            error: `Prepared, but could not publish at go-live: ${message}`.slice(0, 1000),
+          });
+        });
+        throw error;
+      }
+      await firstComment(step, postId);
+      return { ...result, status: "published" };
+    }
+
     if (result.status === "uploaded" && result.publishAt) {
       await step.sleepUntil(
         "wait for go-live",
@@ -123,7 +147,7 @@ async function firstComment(step: WorkflowStep, postId: string) {
 async function publish(
   postId: string,
   instanceId: string,
-): Promise<{ status: string; platformPostId?: string; publishAt?: string }> {
+): Promise<{ status: string; platformPostId?: string; publishAt?: string; releases?: boolean }> {
   const loaded = await loadForPublishing(postId);
   if (!loaded) throw new NonRetryableError("The post, its account or its credential was deleted");
   const { post, account, credential } = loaded;
@@ -169,7 +193,12 @@ async function publish(
       publishedAt: publishAt ? null : new Date(),
       error: result.warning ?? null,
     });
-    return { status, platformPostId: result.platformPostId, publishAt };
+    return {
+      status,
+      platformPostId: result.platformPostId,
+      publishAt,
+      releases: Boolean(provider.release),
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const permanent =

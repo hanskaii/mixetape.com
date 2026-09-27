@@ -59,3 +59,35 @@ export async function mediaRange(url: string, start: number, end: number): Promi
   if (res.status === 200 && body.byteLength !== end - start) return body.slice(start, end);
   return body;
 }
+
+/**
+ * A URL the platform itself can fetch, for platforms that pull media rather than take an
+ * upload (Facebook's file_url). Files in mixetape's bucket are public on its custom domain.
+ */
+export function publicMediaUrl(url: string): string {
+  const key = bucketKey(url);
+  if (!key) return url;
+  const base = (env.MEDIA_PUBLIC_URL ?? "").replace(/\/$/, "");
+  if (!base) throw new Error("MEDIA_PUBLIC_URL is not set, so stored media has no public URL");
+  return `${base}/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+/** The whole media as a stream with its size and type, for uploads a platform takes in one body. */
+export async function mediaStream(
+  url: string,
+): Promise<{ stream: ReadableStream; size: number; contentType: string }> {
+  const key = bucketKey(url);
+  if (key) {
+    const object = await env.BUCKET.get(key);
+    if (!object) throw new Error(`Media not found in storage: ${key}`);
+    return {
+      stream: object.body,
+      size: object.size,
+      contentType: object.httpMetadata?.contentType ?? "video/mp4",
+    };
+  }
+  const res = await fetch(url);
+  const size = Number(res.headers.get("content-length") ?? 0);
+  if (!res.ok || !res.body || !size) throw new Error(`Cannot read media URL: ${res.status}`);
+  return { stream: res.body, size, contentType: res.headers.get("content-type") ?? "video/mp4" };
+}

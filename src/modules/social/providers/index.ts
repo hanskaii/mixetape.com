@@ -1,4 +1,9 @@
 import { CAPABILITIES, type Capability, type SocialProvider } from "./types";
+import { facebook } from "./facebook";
+import { instagram } from "./instagram";
+import { threads } from "./threads";
+import { pinterestProvider } from "./pinterest";
+import { tiktokProvider } from "./tiktok";
 import { youtube } from "./youtube";
 
 /**
@@ -7,6 +12,11 @@ import { youtube } from "./youtube";
  */
 const PROVIDERS: Record<string, SocialProvider> = {
   youtube,
+  facebook,
+  instagram,
+  threads,
+  tiktok: tiktokProvider,
+  pinterest: pinterestProvider,
 };
 
 export function getProvider(id: string): SocialProvider {

@@ -8,6 +8,11 @@ import {
   PlugsConnected,
   Trash,
   WarningCircle,
+  FacebookLogo,
+  InstagramLogo,
+  PinterestLogo,
+  ThreadsLogo,
+  TiktokLogo,
   YoutubeLogo,
 } from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
@@ -27,6 +32,7 @@ import { AddCredentialModal } from "#/components/modals/add-credential-modal";
 import { CredentialSecretModal } from "#/components/modals/credential-secret-modal";
 import { getChannelsData, removeAccount, removeCredential } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
+import { colors } from "../../../../components/ui/tokens.stylex";
 
 export const Route = createFileRoute("/(app)/_app/channels/")({
   validateSearch: z.object({ connected: z.string().optional(), error: z.string().optional() }),
@@ -43,7 +49,12 @@ const styles = stylex.create({
     objectFit: "cover",
     width: "2rem",
   },
-  youtube: { color: "#ef4444", flexShrink: 0, fontSize: "2rem" },
+  logo: { flexShrink: 0, fontSize: "2rem" },
+  youtube: { color: "#ef4444" },
+  facebook: { color: "#1877f2" },
+  instagram: { color: "#d62976" },
+  pinterest: { color: "#e60023" },
+  ink: { color: colors.foreground },
   actions: { alignItems: "center", display: "flex", gap: "0.25rem" },
 });
 
@@ -140,7 +151,7 @@ function ChannelsPage() {
                   account.avatar ? (
                     <img src={account.avatar} alt="" {...stylex.props(styles.avatar)} />
                   ) : (
-                    <YoutubeLogo weight="fill" {...stylex.props(styles.youtube)} />
+                    <PlatformLogo provider={account.provider} />
                   )
                 }
                 title={account.name}
@@ -219,4 +230,22 @@ function ChannelsPage() {
       </Panel>
     </Page>
   );
+}
+
+/** A connected account's platform mark, when the account has no picture of its own. */
+function PlatformLogo({ provider }: { provider: string }) {
+  switch (provider) {
+    case "facebook":
+      return <FacebookLogo weight="fill" {...stylex.props(styles.logo, styles.facebook)} />;
+    case "instagram":
+      return <InstagramLogo weight="fill" {...stylex.props(styles.logo, styles.instagram)} />;
+    case "threads":
+      return <ThreadsLogo weight="fill" {...stylex.props(styles.logo, styles.ink)} />;
+    case "tiktok":
+      return <TiktokLogo weight="fill" {...stylex.props(styles.logo, styles.ink)} />;
+    case "pinterest":
+      return <PinterestLogo weight="fill" {...stylex.props(styles.logo, styles.pinterest)} />;
+    default:
+      return <YoutubeLogo weight="fill" {...stylex.props(styles.logo, styles.youtube)} />;
+  }
 }

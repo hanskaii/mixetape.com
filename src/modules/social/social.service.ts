@@ -204,12 +204,13 @@ export async function completeConnect(provider: string, code: string, state: str
     redirectUri: redirectUri(provider),
   });
 
-  const accessToken = await encrypt(grant.accessToken);
-  const refreshToken = grant.refreshToken ? await encrypt(grant.refreshToken) : null;
-  const expiresAt = new Date(Date.now() + grant.expiresIn * 1000);
-  const scopes = grant.scopes.join(" ");
-
   for (const account of accounts) {
+    // A Facebook Page has its own token; a YouTube channel shares the consent's.
+    const own = account.grant ?? grant;
+    const accessToken = await encrypt(own.accessToken);
+    const refreshToken = own.refreshToken ? await encrypt(own.refreshToken) : null;
+    const expiresAt = new Date(Date.now() + own.expiresIn * 1000);
+    const scopes = own.scopes.join(" ");
     const existing = await db.query.socialAccounts.findFirst({
       where: and(
         eq(socialAccounts.userId, userId),
@@ -305,6 +306,7 @@ export async function accessTokenFor(
       .set({
         accessToken: await encrypt(refreshed.accessToken),
         accessTokenExpiresAt: new Date(Date.now() + refreshed.expiresIn * 1000),
+        ...(refreshed.refreshToken && { refreshToken: await encrypt(refreshed.refreshToken) }),
         status: "active",
         updatedAt: new Date(),
       })
@@ -362,11 +364,19 @@ function checkTime(value: string | undefined, leadMinutes: number): Date {
 
 function leadFor(provider: string, value: unknown): number {
   const platform = getProvider(provider);
+  let lead: number;
   try {
-    return platform.schedulesNatively ? checkLead(value, platform.defaultLeadMinutes) : 0;
+    lead = platform.schedulesNatively ? checkLead(value, platform.defaultLeadMinutes) : 0;
   } catch (error) {
     throw new ServiceError(error instanceof Error ? error.message : "Invalid leadMinutes");
   }
+  const min = platform.minLeadMinutes ?? 0;
+  if (lead > 0 && lead < min) {
+    throw new ServiceError(
+      `${platform.name} needs at least ${min} minutes to schedule: use leadMinutes 0 (upload at go-live) or ${min} or more`,
+    );
+  }
+  return lead;
 }
 
 function checkMetadata(

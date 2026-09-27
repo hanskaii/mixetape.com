@@ -248,6 +248,32 @@ export async function moderateComment(
 }
 
 /**
+ * Publishes a post the platform could only prepare ahead of time (Instagram, Threads), at
+ * go-live, for the publishing workflow. The prepared container's id is replaced by the
+ * live post's.
+ */
+export async function releasePrepared(postId: string) {
+  const loaded = await loadForPublishing(postId);
+  if (!loaded?.post.platformPostId) throw new Error("The post has nothing prepared to publish");
+  if (loaded.post.status === "published") return;
+  const provider = getProvider(loaded.post.provider);
+  if (!provider.release) throw new Error(`${provider.name} does not release prepared posts`);
+  const token = await accessTokenFor(loaded.account, loaded.credential);
+  const live = await provider.release(
+    loaded.post.platformPostId,
+    token,
+    loaded.account.platformAccountId,
+  );
+  await updatePost(postId, {
+    status: "published",
+    platformPostId: live.platformPostId,
+    platformUrl: live.platformUrl ?? loaded.post.platformUrl,
+    publishedAt: new Date(),
+    error: null,
+  });
+}
+
+/**
  * Posts metadata.firstComment once the post is public, for the publishing workflow. Runs
  * at most once per post: the comment's id is kept in the metadata.
  */
