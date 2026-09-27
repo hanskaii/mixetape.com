@@ -20,34 +20,12 @@ const styles = stylex.create({
     paddingInlineStart: { default: 0, "@media (min-width: 1024px)": "4rem" },
     paddingBlockStart: { default: 0, "@media (min-width: 1024px)": "1rem" },
   },
-  eyebrow: {
-    alignItems: "center",
-    backgroundColor: colors.muted,
-    borderRadius: "9999px",
-    color: colors.mutedForeground,
-    display: "inline-flex",
-    fontFamily: MONO,
-    fontSize: "0.7rem",
-    fontWeight: 600,
-    gap: "0.5rem",
-    letterSpacing: "0.16em",
-    marginBlockEnd: "1.25rem",
-    paddingBlock: "0.4rem",
-    paddingInline: "0.8rem",
-    textTransform: "uppercase",
-  },
-  dot: {
-    backgroundColor: colors.primary,
-    borderRadius: "9999px",
-    height: "0.5rem",
-    width: "0.5rem",
-  },
   title: {
     color: colors.foreground,
-    fontSize: "clamp(3.3rem, 9.3vw, 9.25rem)",
+    fontSize: "clamp(3.25rem, 7vw, 6rem)",
     fontWeight: 600,
-    letterSpacing: "-0.075em",
-    lineHeight: 0.79,
+    letterSpacing: "-0.04em",
+    lineHeight: 0.94,
     margin: 0,
   },
   titleSerif: {
@@ -57,7 +35,7 @@ const styles = stylex.create({
     fontSize: "1.04em",
     fontWeight: 400,
     letterSpacing: "-0.045em",
-    lineHeight: 0.86,
+    lineHeight: 1,
   },
   lede: {
     color: colors.mutedForeground,
@@ -99,11 +77,10 @@ const styles = stylex.create({
     },
   },
   label: {
-    fontFamily: MONO,
-    fontSize: "0.7rem",
-    fontWeight: 500,
-    letterSpacing: "0.17em",
-    textTransform: "uppercase",
+    color: "#3b2a12",
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    margin: 0,
   },
   card: {
     alignItems: "center",
@@ -186,33 +163,31 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
   return (
     <section {...stylex.props(styles.section)}>
       <div {...stylex.props(styles.copy)}>
-        <p {...stylex.props(styles.eyebrow)}>
-          <span {...stylex.props(styles.dot)} /> Agent-first social scheduling
-        </p>
         <h1 {...stylex.props(styles.title)}>
-          Publish on
+          Your agents publish
           <br />
-          <em {...stylex.props(styles.titleSerif)}>your time.</em>
+          <em {...stylex.props(styles.titleSerif)}>on your time.</em>
         </h1>
         <p {...stylex.props(styles.lede)}>
-          Let your AI agents and pipelines schedule social posts through MCP or the API. mixetape
-          holds each post, keeps it editable until it goes out, publishes on time and tells you what
-          went live.
+          mixetape is an agent-first social scheduler. Claude Code, your own agent or a pipeline
+          schedules posts through MCP (the protocol agents already speak) or a REST API; mixetape
+          holds each post, publishes it on time and tells the agent what went live.
         </p>
         <div {...stylex.props(styles.actions)}>
           <LandingCta
             signedIn={signedIn}
-            signedInLabel="Open workspace"
-            signedOutLabel="Start publishing"
+            to="/api-keys"
+            signedInLabel="Get an API key"
+            signedOutLabel="Get an API key"
           />
           <a href="#agents" {...stylex.props(styles.secondary)}>
-            Connect your agent
+            See how agents connect
           </a>
         </div>
       </div>
 
       <div {...stylex.props(styles.visual)} aria-label="Illustrative example">
-        <p {...stylex.props(styles.label)}>Illustrative example</p>
+        <p {...stylex.props(styles.label)}>An illustrative example</p>
 
         <div {...stylex.props(styles.card, styles.codeCard)}>
           <div {...stylex.props(styles.row)}>

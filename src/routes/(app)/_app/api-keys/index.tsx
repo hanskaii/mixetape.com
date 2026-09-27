@@ -5,6 +5,7 @@ import { Button } from "#/components/ui/button";
 import { colors } from "../../../../components/ui/tokens.stylex";
 import {
   Empty,
+  LocalTime,
   Mono,
   Page,
   PageHeader,
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/(app)/_app/api-keys/")({
   head: () => ({ meta: [{ title: `API keys | ${siteConfig.name}` }] }),
   component: ApiKeysPage,
 });
+
+const USED: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
 
 const styles = stylex.create({
   connect: {
@@ -106,9 +109,13 @@ function ApiKeysPage() {
                 meta={
                   <Mono>
                     {key.prefix}… · {key.scopes.join(" · ")} ·{" "}
-                    {key.lastUsedAt
-                      ? `used ${new Date(key.lastUsedAt).toLocaleDateString()}`
-                      : "never used"}
+                    {key.lastUsedAt ? (
+                      <>
+                        used <LocalTime date={key.lastUsedAt} format={USED} />
+                      </>
+                    ) : (
+                      "never used"
+                    )}
                   </Mono>
                 }
               >

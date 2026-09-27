@@ -16,7 +16,7 @@ export function AppHeader() {
         aria-label="Main navigation"
         className={
           isLanding
-            ? "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 lg:translate-x-[48px]"
+            ? "grid grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto_1fr]"
             : "flex items-center justify-between gap-4"
         }
       >
@@ -44,7 +44,7 @@ export function AppHeader() {
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           {user && (
             <Link
               to="/queue"

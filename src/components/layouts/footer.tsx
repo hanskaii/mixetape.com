@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-semibold tracking-tight text-foreground">{siteConfig.name}</p>
-          <p className="mt-1 text-xs">Publish on your time.</p>
+          <p className="mt-1 text-xs">Social scheduling for AI agents.</p>
         </div>
         <p className="font-mono text-[11px] tracking-wide">
           &copy; {year} {siteConfig.name} · YouTube today

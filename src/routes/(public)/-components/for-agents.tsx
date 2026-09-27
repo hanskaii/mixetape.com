@@ -1,5 +1,4 @@
 import * as stylex from "@stylexjs/stylex";
-import { ArrowsClockwise, ShieldCheck, TerminalWindow } from "@phosphor-icons/react";
 import { LandingCta } from "./landing-cta";
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';
@@ -46,17 +45,14 @@ const REST = `curl -X POST https://mixetape.com/api/v1/posts \\
 
 const PROMISES = [
   {
-    icon: TerminalWindow,
-    title: "Same actions, same meaning",
-    text: "Every tool does exactly what the workspace does, with plain errors an agent can act on.",
+    title: "Every action is a tool",
+    text: "The same names and rules over MCP and REST, with plain errors an agent can act on.",
   },
   {
-    icon: ArrowsClockwise,
     title: "Durable by default",
     text: "Each post is a job that survives restarts, retries on its own and never publishes twice.",
   },
   {
-    icon: ShieldCheck,
     title: "You stay in control",
     text: "Each API key carries only the permissions you give it, and anything your agent schedules can be edited or cancelled until it goes out.",
   },
@@ -83,21 +79,12 @@ const styles = stylex.create({
     gap: "2rem",
     gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "1fr auto" },
   },
-  kicker: {
-    color: "#ffd21f",
-    fontFamily: MONO,
-    fontSize: "0.75rem",
-    letterSpacing: "0.16em",
-    marginBlock: 0,
-    textTransform: "uppercase",
-  },
   title: {
     fontSize: "clamp(2.5rem, 4.5vw, 4.5rem)",
     fontWeight: 600,
-    letterSpacing: "-0.06em",
+    letterSpacing: "-0.04em",
     lineHeight: 1.02,
-    marginBlockEnd: 0,
-    marginBlockStart: "1rem",
+    marginBlock: 0,
     maxWidth: "660px",
   },
   lede: {
@@ -123,13 +110,11 @@ const styles = stylex.create({
     paddingInline: "1.1rem",
   },
   blockLabel: {
-    color: "#8d8a82",
-    fontFamily: MONO,
-    fontSize: "0.65rem",
-    letterSpacing: "0.14em",
+    color: "#a8a59c",
+    fontSize: "0.8125rem",
+    fontWeight: 600,
     marginBlockEnd: "0.6rem",
     marginBlockStart: 0,
-    textTransform: "uppercase",
   },
   pre: {
     color: "#e9e6de",
@@ -156,24 +141,26 @@ const styles = stylex.create({
     borderWidth: "1px",
     color: "#d8d5cc",
     fontFamily: MONO,
-    fontSize: "0.72rem",
+    fontSize: "0.75rem",
     paddingBlock: "0.3rem",
     paddingInline: "0.55rem",
   },
   promises: {
+    borderBlockStartColor: "#2e2d29",
+    borderBlockStartStyle: "solid",
+    borderBlockStartWidth: "1px",
     display: "grid",
     gap: "1.5rem",
+    paddingBlockStart: "1.75rem",
     gridTemplateColumns: { default: "1fr", "@media (min-width: 768px)": "repeat(3, 1fr)" },
     listStyle: "none",
     marginBlock: 0,
     paddingInline: 0,
   },
-  promiseIcon: { color: "#ffd21f", height: "1.4rem", width: "1.4rem" },
   promiseTitle: {
     fontSize: "1.05rem",
     fontWeight: 600,
-    marginBlockEnd: 0,
-    marginBlockStart: "0.6rem",
+    margin: 0,
   },
   promiseText: {
     color: "#aaa69d",
@@ -189,12 +176,11 @@ export function ForAgents({ signedIn }: { signedIn: boolean }) {
     <section id="agents" {...stylex.props(styles.section)}>
       <div {...stylex.props(styles.top)}>
         <div>
-          <p {...stylex.props(styles.kicker)}>For agents</p>
-          <h2 {...stylex.props(styles.title)}>Your agent can publish here.</h2>
+          <h2 {...stylex.props(styles.title)}>Agents first. The workspace watches.</h2>
           <p {...stylex.props(styles.lede)}>
-            mixetape is an MCP server and a REST API first. Point Claude, your own agent or a
-            pipeline at it with an API key, and it can schedule, reschedule, cancel and check posts
-            on the channels you connected.
+            Everything mixetape does is a tool an agent can call: schedule, upload, reschedule,
+            cancel and retry posts, manage what is already on YouTube, and read the analytics. The
+            workspace is where you check on it.
           </p>
         </div>
         <LandingCta
@@ -208,13 +194,13 @@ export function ForAgents({ signedIn }: { signedIn: boolean }) {
 
       <div {...stylex.props(styles.code)}>
         <div {...stylex.props(styles.block)}>
-          <p {...stylex.props(styles.blockLabel)}>MCP · Claude Code</p>
+          <p {...stylex.props(styles.blockLabel)}>Claude Code, or any MCP client</p>
           <pre {...stylex.props(styles.pre)}>
             <code>{MCP}</code>
           </pre>
         </div>
         <div {...stylex.props(styles.block)}>
-          <p {...stylex.props(styles.blockLabel)}>REST · any script</p>
+          <p {...stylex.props(styles.blockLabel)}>Any script, over REST</p>
           <pre {...stylex.props(styles.pre)}>
             <code>{REST}</code>
           </pre>
@@ -230,9 +216,8 @@ export function ForAgents({ signedIn }: { signedIn: boolean }) {
       </ul>
 
       <ul {...stylex.props(styles.promises)}>
-        {PROMISES.map(({ icon: PromiseIcon, title, text }) => (
+        {PROMISES.map(({ title, text }) => (
           <li key={title}>
-            <PromiseIcon {...stylex.props(styles.promiseIcon)} weight="bold" />
             <h3 {...stylex.props(styles.promiseTitle)}>{title}</h3>
             <p {...stylex.props(styles.promiseText)}>{text}</p>
           </li>

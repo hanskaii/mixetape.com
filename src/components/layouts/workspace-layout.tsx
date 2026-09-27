@@ -13,7 +13,6 @@ import {
 } from "@phosphor-icons/react";
 import {
   Sidebar,
-  SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
@@ -23,6 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarNav,
   SidebarProvider,
   SidebarTrigger,
 } from "../ui/sidebar";
@@ -117,6 +117,7 @@ const styles = stylex.create({
   crumb: { color: colors.mutedForeground, fontSize: "0.8125rem" },
   crumbCurrent: { color: colors.foreground, fontWeight: 600 },
   spacer: { flexGrow: 1 },
+  main: { display: "flex", flexDirection: "column", flexGrow: 1, minWidth: 0 },
   agentsLink: {
     alignItems: "center",
     borderRadius: "0.5rem",
@@ -219,16 +220,23 @@ function NavGroup({
 
 export function WorkspaceLayout({
   defaultOpen,
+  activePath,
+  preview = false,
   children,
 }: {
   defaultOpen: boolean;
+  /** The page shown as current; defaults to the browser's location. */
+  activePath?: string;
+  /** Rendered as a picture of the workspace (landing page): no keyboard shortcut. */
+  preview?: boolean;
   children: ReactNode;
 }) {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const pathname = activePath ?? location.pathname;
   const current = PAGES.find((page) => pathname.startsWith(page.to));
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    <SidebarProvider defaultOpen={defaultOpen} shortcut={!preview}>
       <Sidebar label="Workspace">
         <SidebarHeader>
           <Link to="/" {...stylex.props(styles.brand)}>
@@ -238,10 +246,10 @@ export function WorkspaceLayout({
             </SidebarLabel>
           </Link>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarNav label="Workspace">
           <NavGroup label="Workspace" items={WORKSPACE} pathname={pathname} />
           <NavGroup label="Account" items={ACCOUNT} pathname={pathname} />
-        </SidebarContent>
+        </SidebarNav>
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -263,7 +271,7 @@ export function WorkspaceLayout({
           </a>
           <ThemeToggle />
         </header>
-        {children}
+        <main {...stylex.props(styles.main)}>{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

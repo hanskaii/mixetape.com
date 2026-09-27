@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { colors } from "../ui/tokens.stylex";
@@ -69,17 +69,39 @@ const styles = stylex.create({
   count: { color: colors.mutedForeground, fontFamily: MONO, fontSize: "0.7rem" },
 
   rows: { listStyle: "none", margin: 0, padding: 0 },
+  // Phones: status and actions drop under the title so the title keeps the full width.
   row: {
     alignItems: "center",
     borderBlockStartColor: { default: colors.border, ":first-child": "transparent" },
     borderBlockStartStyle: "solid",
     borderBlockStartWidth: "1px",
-    display: "flex",
-    gap: "0.75rem",
+    columnGap: "0.75rem",
+    display: "grid",
     minHeight: "3.25rem",
     paddingBlock: "0.5rem",
     paddingInline: "0.875rem",
+    rowGap: "0.375rem",
   },
+  withLead: {
+    gridTemplateColumns: {
+      default: "auto minmax(0, 1fr)",
+      "@media (min-width: 640px)": "auto minmax(0, 1fr) auto",
+    },
+  },
+  noLead: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      "@media (min-width: 640px)": "minmax(0, 1fr) auto",
+    },
+  },
+  lead: { gridRow: { default: "span 2", "@media (min-width: 640px)": "auto" } },
+  trailing: {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.75rem",
+    justifyContent: { default: "flex-start", "@media (min-width: 640px)": "flex-end" },
+  },
+
   rowMain: { display: "flex", flexDirection: "column", flexGrow: 1, gap: "0.125rem", minWidth: 0 },
   rowTitle: {
     fontSize: "0.8125rem",
@@ -87,7 +109,8 @@ const styles = stylex.create({
     margin: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+    // Phones: a title wraps rather than shrinking to a few characters.
+    whiteSpace: { default: "normal", "@media (min-width: 640px)": "nowrap" },
   },
   rowMeta: {
     color: colors.mutedForeground,
@@ -124,7 +147,7 @@ const styles = stylex.create({
     color: colors.destructive,
   },
   info: { backgroundColor: colors.muted, color: colors.foreground },
-  mono: { fontFamily: MONO, fontSize: "0.75rem" },
+  mono: { fontFamily: MONO, fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" },
 });
 
 export const Page = ({ children }: { children: ReactNode }) => (
@@ -195,14 +218,14 @@ export function Row({
   children?: ReactNode;
 }) {
   return (
-    <li {...stylex.props(styles.row)}>
-      {leading}
+    <li {...stylex.props(styles.row, leading ? styles.withLead : styles.noLead)}>
+      {leading && <div {...stylex.props(styles.lead)}>{leading}</div>}
       <div {...stylex.props(styles.rowMain)}>
         <p {...stylex.props(styles.rowTitle)}>{title}</p>
         {meta && <p {...stylex.props(styles.rowMeta)}>{meta}</p>}
         {error && <p {...stylex.props(styles.rowError)}>{error}</p>}
       </div>
-      {children}
+      {children && <div {...stylex.props(styles.trailing)}>{children}</div>}
     </li>
   );
 }
@@ -219,6 +242,25 @@ export function Notice({
   children: ReactNode;
 }) {
   return <p {...stylex.props(styles.notice, styles[tone])}>{children}</p>;
+}
+
+/**
+ * A time in the reader's own time zone. The server does not know it, so the text is set
+ * after hydration (the ISO time is in the markup until then) and never mismatches.
+ */
+export function LocalTime({
+  date,
+  format,
+}: {
+  date: Date | string | number;
+  format: Intl.DateTimeFormatOptions;
+}) {
+  const iso = new Date(date).toISOString();
+  const [text, setText] = useState<string | null>(null);
+  useEffect(() => {
+    setText(new Intl.DateTimeFormat(undefined, format).format(new Date(iso)));
+  }, [iso, format]);
+  return <time dateTime={iso}>{text ?? "\u00a0"}</time>;
 }
 
 export const Mono = ({ children, style }: { children: ReactNode; style?: StyleXStyles }) => (

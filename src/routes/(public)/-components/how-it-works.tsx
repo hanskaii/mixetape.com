@@ -10,15 +10,15 @@ const STEPS = [
   },
   {
     title: "Give your agent a key",
-    text: "Add mixetape as an MCP server, or call the REST API from any script. The agent sees the same channels and queue you do.",
+    text: "Add mixetape to your agent as an MCP server, or call the REST API from any script. The key decides what the agent may do.",
   },
   {
     title: "mixetape holds the post",
     text: "Each post waits in mixetape — editable, movable, cancellable — and goes up shortly before its time, so the platform has finished processing when it goes live.",
   },
   {
-    title: "Everyone sees what happened",
-    text: "Scheduled, uploaded, published or failed, with the reason when something goes wrong. Retry or cancel from the workspace or the API.",
+    title: "The agent hears back",
+    text: "Scheduled, uploaded, published or failed, with the reason when something goes wrong, so the agent can retry or move on. You see the same queue in the workspace.",
   },
 ];
 
@@ -34,21 +34,12 @@ const styles = stylex.create({
     paddingBlock: "5rem",
     scrollMarginTop: "6rem",
   },
-  kicker: {
-    color: colors.mutedForeground,
-    fontFamily: MONO,
-    fontSize: "0.75rem",
-    letterSpacing: "0.16em",
-    marginBlock: 0,
-    textTransform: "uppercase",
-  },
   title: {
     fontSize: "clamp(2.7rem, 5vw, 4.7rem)",
     fontWeight: 600,
-    letterSpacing: "-0.065em",
-    lineHeight: 0.99,
-    marginBlockEnd: 0,
-    marginBlockStart: "1rem",
+    letterSpacing: "-0.04em",
+    lineHeight: 1,
+    marginBlock: 0,
   },
   serif: {
     color: colors.editorial,
@@ -90,11 +81,10 @@ export function HowItWorks() {
   return (
     <section id="how" {...stylex.props(styles.section)}>
       <div>
-        <p {...stylex.props(styles.kicker)}>How it works</p>
         <h2 {...stylex.props(styles.title)}>
-          One queue.
+          Built for agents.
           <br />
-          <em {...stylex.props(styles.serif)}>Two ways in.</em>
+          <em {...stylex.props(styles.serif)}>Watched by you.</em>
         </h2>
       </div>
       <ol {...stylex.props(styles.list)}>

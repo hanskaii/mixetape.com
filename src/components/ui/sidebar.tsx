@@ -59,9 +59,10 @@ const styles = stylex.create({
     insetInlineStart: 0,
     overflow: "hidden",
     position: { default: "fixed", [DESKTOP]: "sticky" },
-    transitionDuration: "200ms",
-    transitionProperty: "width, transform",
-    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+    // Only the mobile drawer animates (transform); the desktop collapse is instant.
+    transitionDuration: "220ms",
+    transitionProperty: "transform",
+    transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
     width: { default: "17rem", [DESKTOP]: "15rem" },
     zIndex: 40,
   },
@@ -112,15 +113,12 @@ const styles = stylex.create({
   },
   groupLabel: {
     color: `color-mix(in oklab, ${colors.sidebarForeground} 60%, transparent)`,
-    fontFamily: '"Geist Mono Variable", ui-monospace, monospace',
-    fontSize: "0.65rem",
-    fontWeight: 600,
+    fontSize: "0.75rem",
+    fontWeight: 500,
     height: "2rem",
-    letterSpacing: "0.14em",
     lineHeight: "2rem",
     overflow: "hidden",
-    paddingInline: "0.5rem",
-    textTransform: "uppercase",
+    paddingInline: "0.625rem",
     whiteSpace: "nowrap",
   },
   groupLabelCollapsed: { opacity: { default: 1, [DESKTOP]: 0 } },
@@ -210,10 +208,13 @@ const styles = stylex.create({
 
 export function SidebarProvider({
   defaultOpen = true,
+  shortcut = true,
   children,
 }: {
   /** Desktop state on first render, e.g. from the sidebar_state cookie on the server. */
   defaultOpen?: boolean;
+  /** Listen for Ctrl/⌘+B. Off for a sidebar shown as a picture (the landing preview). */
+  shortcut?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
@@ -231,6 +232,7 @@ export function SidebarProvider({
   }, []);
 
   React.useEffect(() => {
+    if (!shortcut) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -239,7 +241,7 @@ export function SidebarProvider({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggle]);
+  }, [toggle, shortcut]);
 
   const value = React.useMemo(
     () => ({ collapsed: !open, openMobile, setOpenMobile, toggle }),
@@ -403,4 +405,11 @@ export function SidebarTrigger({ label = "Toggle sidebar" }: { label?: string })
 
 export const SidebarInset = ({ children }: { children: React.ReactNode }) => (
   <div {...stylex.props(styles.inset)}>{children}</div>
+);
+
+/** The sidebar's navigation landmark (use in place of SidebarContent). */
+export const SidebarNav = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <nav aria-label={label} {...stylex.props(styles.content)}>
+    {children}
+  </nav>
 );

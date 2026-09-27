@@ -189,7 +189,7 @@ function ChannelsPage() {
                 }
               >
                 <span {...stylex.props(styles.actions)}>
-                  <Button size="xs" onClick={() => connect(credential.id)}>
+                  <Button size="xs" variant="outline" onClick={() => connect(credential.id)}>
                     <PlugsConnected /> Connect
                   </Button>
                   <Button

@@ -88,7 +88,7 @@ const styles = stylex.create({
   tag: {
     borderRadius: "6px",
     fontFamily: MONO,
-    fontSize: "0.6rem",
+    fontSize: "0.6875rem",
     fontWeight: 600,
     letterSpacing: "0.12em",
     paddingBlock: "0.15rem",
