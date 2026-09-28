@@ -3,7 +3,8 @@
   "info": {
     "title": "mixetape API",
     "version": "1.0.0",
-    "description": "Schedule and manage posts on connected social channels. Every action is also an MCP tool at /mcp, with the same names, inputs and errors. Authenticate with an API key from the workspace: `Authorization: Bearer mxt_…`; each key carries only the permissions it was given."
+    "summary": "Schedule and manage posts on connected social channels.",
+    "description": "Schedule and manage posts on connected social channels — the same actions agents use over MCP."
   },
   "servers": [
     {
@@ -174,7 +175,7 @@
       "post": {
         "operationId": "createPostRest",
         "summary": "Schedule a post",
-        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).\n\nNeeds the **publish** permission.",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). Needs the **publish** permission.",
         "tags": [
           "Accounts and posts"
         ],
@@ -584,7 +585,7 @@
       "patch": {
         "operationId": "updatePostRest",
         "summary": "Change a scheduled post",
-        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post.\n\nNeeds the **publish** permission.",
+        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post. Needs the **publish** permission.",
         "tags": [
           "Accounts and posts"
         ],
@@ -1068,7 +1069,7 @@
       "post": {
         "operationId": "list_accounts",
         "summary": "list_accounts",
-        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.\n\nNeeds the **read** permission. Also available as the MCP tool `list_accounts`.",
+        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions. Needs the **read** permission. Also available as the MCP tool `list_accounts`.",
         "tags": [
           "read"
         ],
@@ -1122,7 +1123,7 @@
       "post": {
         "operationId": "list_posts",
         "summary": "list_posts",
-        "description": "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled.\n\nNeeds the **read** permission. Also available as the MCP tool `list_posts`.",
+        "description": "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled. Needs the **read** permission. Also available as the MCP tool `list_posts`.",
         "tags": [
           "read"
         ],
@@ -1196,7 +1197,7 @@
       "post": {
         "operationId": "get_post",
         "summary": "get_post",
-        "description": "One post with its status, error, platform link and attempts.\n\nNeeds the **read** permission. Also available as the MCP tool `get_post`.",
+        "description": "One post with its status, error, platform link and attempts. Needs the **read** permission. Also available as the MCP tool `get_post`.",
         "tags": [
           "read"
         ],
@@ -1258,7 +1259,7 @@
       "post": {
         "operationId": "get_post_insights",
         "summary": "get_post_insights",
-        "description": "How a post that is on the platform stands right now: visibility, processing, scheduled publish time, any rejection, plus lifetime views, likes and comments. For watch time and retention use get_post_analytics.\n\nNeeds the **read** permission. Also available as the MCP tool `get_post_insights`.",
+        "description": "How a post that is on the platform stands right now: visibility, processing, scheduled publish time, any rejection, plus lifetime views, likes and comments. For watch time and retention use get_post_analytics. Needs the **read** permission. Also available as the MCP tool `get_post_insights`.",
         "tags": [
           "read"
         ],
@@ -1320,7 +1321,7 @@
       "post": {
         "operationId": "list_collections",
         "summary": "list_collections",
-        "description": "List the account's collections — playlists on YouTube, boards on Pinterest — with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.\n\nNeeds the **read** permission. Also available as the MCP tool `list_collections`.",
+        "description": "List the account's collections — playlists on YouTube, boards on Pinterest — with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection. Needs the **read** permission. Also available as the MCP tool `list_collections`.",
         "tags": [
           "read"
         ],
@@ -1382,7 +1383,7 @@
       "post": {
         "operationId": "list_captions",
         "summary": "list_captions",
-        "description": "List the caption tracks of a post on the platform (language, name, kind; 'asr' is automatic).\n\nNeeds the **read** permission. Also available as the MCP tool `list_captions`.",
+        "description": "List the caption tracks of a post on the platform (language, name, kind; 'asr' is automatic). Needs the **read** permission. Also available as the MCP tool `list_captions`.",
         "tags": [
           "read"
         ],
@@ -1444,7 +1445,7 @@
       "post": {
         "operationId": "create_post",
         "summary": "create_post",
-        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).\n\nNeeds the **publish** permission. Also available as the MCP tool `create_post`.",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). Needs the **publish** permission. Also available as the MCP tool `create_post`.",
         "tags": [
           "publish"
         ],
@@ -1798,7 +1799,7 @@
       "post": {
         "operationId": "update_post",
         "summary": "update_post",
-        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post.\n\nNeeds the **publish** permission. Also available as the MCP tool `update_post`.",
+        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post. Needs the **publish** permission. Also available as the MCP tool `update_post`.",
         "tags": [
           "publish"
         ],
@@ -2150,7 +2151,7 @@
       "post": {
         "operationId": "cancel_post",
         "summary": "cancel_post",
-        "description": "Cancel a post that is still 'scheduled'.\n\nNeeds the **publish** permission. Also available as the MCP tool `cancel_post`.",
+        "description": "Cancel a post that is still 'scheduled'. Needs the **publish** permission. Also available as the MCP tool `cancel_post`.",
         "tags": [
           "publish"
         ],
@@ -2212,7 +2213,7 @@
       "post": {
         "operationId": "retry_post",
         "summary": "retry_post",
-        "description": "Send a 'failed' post again — now, or at its original time if that is still ahead.\n\nNeeds the **publish** permission. Also available as the MCP tool `retry_post`.",
+        "description": "Send a 'failed' post again — now, or at its original time if that is still ahead. Needs the **publish** permission. Also available as the MCP tool `retry_post`.",
         "tags": [
           "publish"
         ],
@@ -2274,7 +2275,7 @@
       "post": {
         "operationId": "set_thumbnail",
         "summary": "set_thumbnail",
-        "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: ≤ 2 MB, 1280×720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.\n\nNeeds the **publish** permission. Also available as the MCP tool `set_thumbnail`.",
+        "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: ≤ 2 MB, 1280×720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl. Needs the **publish** permission. Also available as the MCP tool `set_thumbnail`.",
         "tags": [
           "publish"
         ],
@@ -2340,7 +2341,7 @@
       "post": {
         "operationId": "edit_published_post",
         "summary": "edit_published_post",
-        "description": "Change the details of a post that is already on the platform (uploaded or published). YouTube: title, description, tags, category, privacy, made-for-kids, language and localizations (50 quota units). Facebook: title and description. Only the given fields change; null clears one.\n\nNeeds the **manage** permission. Also available as the MCP tool `edit_published_post`.",
+        "description": "Change the details of a post that is already on the platform (uploaded or published). YouTube: title, description, tags, category, privacy, made-for-kids, language and localizations (50 quota units). Facebook: title and description. Only the given fields change; null clears one. Needs the **manage** permission. Also available as the MCP tool `edit_published_post`.",
         "tags": [
           "manage"
         ],
@@ -2602,7 +2603,7 @@
       "post": {
         "operationId": "create_collection",
         "summary": "create_collection",
-        "description": "Create a collection on the account: a YouTube playlist or a Pinterest board.\n\nNeeds the **manage** permission. Also available as the MCP tool `create_collection`.",
+        "description": "Create a collection on the account: a YouTube playlist or a Pinterest board. Needs the **manage** permission. Also available as the MCP tool `create_collection`.",
         "tags": [
           "manage"
         ],
@@ -2679,7 +2680,7 @@
       "post": {
         "operationId": "add_to_collection",
         "summary": "add_to_collection",
-        "description": "Add a post that is on the platform to a collection (YouTube playlist, or save a Pin to another Pinterest board). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead.\n\nNeeds the **manage** permission. Also available as the MCP tool `add_to_collection`.",
+        "description": "Add a post that is on the platform to a collection (YouTube playlist, or save a Pin to another Pinterest board). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead. Needs the **manage** permission. Also available as the MCP tool `add_to_collection`.",
         "tags": [
           "manage"
         ],
@@ -2748,7 +2749,7 @@
       "post": {
         "operationId": "upload_caption",
         "summary": "upload_caption",
-        "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400–450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.\n\nNeeds the **manage** permission. Also available as the MCP tool `upload_caption`.",
+        "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400–450 quota units), SRT on Facebook. A track with the same language (and name) is replaced. Needs the **manage** permission. Also available as the MCP tool `upload_caption`.",
         "tags": [
           "manage"
         ],
@@ -2827,7 +2828,7 @@
       "post": {
         "operationId": "list_comments",
         "summary": "list_comments",
-        "description": "Read the comments on a post (with replies). Comment ids are what reply_to_comment and moderate_comment take. held: true lists comments held for review.\n\nNeeds the **comments** permission. Also available as the MCP tool `list_comments`.",
+        "description": "Read the comments on a post (with replies). Comment ids are what reply_to_comment and moderate_comment take. held: true lists comments held for review. Needs the **comments** permission. Also available as the MCP tool `list_comments`.",
         "tags": [
           "comments"
         ],
@@ -2903,7 +2904,7 @@
       "post": {
         "operationId": "post_comment",
         "summary": "post_comment",
-        "description": "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.\n\nNeeds the **comments** permission. Also available as the MCP tool `post_comment`.",
+        "description": "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform. Needs the **comments** permission. Also available as the MCP tool `post_comment`.",
         "tags": [
           "comments"
         ],
@@ -2969,7 +2970,7 @@
       "post": {
         "operationId": "reply_to_comment",
         "summary": "reply_to_comment",
-        "description": "Reply to a comment on one of the account's posts, as the channel.\n\nNeeds the **comments** permission. Also available as the MCP tool `reply_to_comment`.",
+        "description": "Reply to a comment on one of the account's posts, as the channel. Needs the **comments** permission. Also available as the MCP tool `reply_to_comment`.",
         "tags": [
           "comments"
         ],
@@ -3039,7 +3040,7 @@
       "post": {
         "operationId": "moderate_comment",
         "summary": "moderate_comment",
-        "description": "Publish, hold for review, or reject (hide) a comment on one of the account's posts. banAuthor with 'rejected' also hides the author's future comments.\n\nNeeds the **comments** permission. Also available as the MCP tool `moderate_comment`.",
+        "description": "Publish, hold for review, or reject (hide) a comment on one of the account's posts. banAuthor with 'rejected' also hides the author's future comments. Needs the **comments** permission. Also available as the MCP tool `moderate_comment`.",
         "tags": [
           "comments"
         ],
@@ -3117,7 +3118,7 @@
       "post": {
         "operationId": "connect_channel",
         "summary": "connect_channel",
-        "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.\n\nNeeds the **channels** permission. Also available as the MCP tool `connect_channel`.",
+        "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state. Needs the **channels** permission. Also available as the MCP tool `connect_channel`.",
         "tags": [
           "channels"
         ],
@@ -3187,7 +3188,7 @@
       "post": {
         "operationId": "get_connection",
         "summary": "get_connection",
-        "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) — ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.\n\nNeeds the **channels** permission. Also available as the MCP tool `get_connection`.",
+        "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) — ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed. Needs the **channels** permission. Also available as the MCP tool `get_connection`.",
         "tags": [
           "channels"
         ],
@@ -3249,7 +3250,7 @@
       "post": {
         "operationId": "choose_channels",
         "summary": "choose_channels",
-        "description": "Add the channels the user picked after get_connection answered 'choose'. The choice is held for 10 minutes after the sign-in; channels left out are not connected.\n\nNeeds the **channels** permission. Also available as the MCP tool `choose_channels`.",
+        "description": "Add the channels the user picked after get_connection answered 'choose'. The choice is held for 10 minutes after the sign-in; channels left out are not connected. Needs the **channels** permission. Also available as the MCP tool `choose_channels`.",
         "tags": [
           "channels"
         ],
@@ -3319,7 +3320,7 @@
       "post": {
         "operationId": "get_post_analytics",
         "summary": "get_post_analytics",
-        "description": "A post's analytics: views, watch time, average view duration and percentage, likes, comments, shares, subscribers gained/lost, the audience-retention curve and traffic sources. Defaults to the day it went up through today; the last ~3 days are incomplete.\n\nNeeds the **analytics** permission. Also available as the MCP tool `get_post_analytics`.",
+        "description": "A post's analytics: views, watch time, average view duration and percentage, likes, comments, shares, subscribers gained/lost, the audience-retention curve and traffic sources. Defaults to the day it went up through today; the last ~3 days are incomplete. Needs the **analytics** permission. Also available as the MCP tool `get_post_analytics`.",
         "tags": [
           "analytics"
         ],
@@ -3389,7 +3390,7 @@
       "post": {
         "operationId": "get_account_analytics",
         "summary": "get_account_analytics",
-        "description": "An account's analytics: totals, day by day, its top 10 posts (with the mixetape post id when published through mixetape) and traffic sources. Defaults to the last 28 days; the last ~3 days are incomplete.\n\nNeeds the **analytics** permission. Also available as the MCP tool `get_account_analytics`.",
+        "description": "An account's analytics: totals, day by day, its top 10 posts (with the mixetape post id when published through mixetape) and traffic sources. Defaults to the last 28 days; the last ~3 days are incomplete. Needs the **analytics** permission. Also available as the MCP tool `get_account_analytics`.",
         "tags": [
           "analytics"
         ],
@@ -3459,7 +3460,7 @@
       "post": {
         "operationId": "create_upload",
         "summary": "create_upload",
-        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://…) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file.\n\nNeeds the **storage** permission. Also available as the MCP tool `create_upload`.",
+        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://…) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file. Needs the **storage** permission. Also available as the MCP tool `create_upload`.",
         "tags": [
           "storage"
         ],
@@ -3528,7 +3529,7 @@
       "post": {
         "operationId": "import_file",
         "summary": "import_file",
-        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://…).\n\nNeeds the **storage** permission. Also available as the MCP tool `import_file`.",
+        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://…). Needs the **storage** permission. Also available as the MCP tool `import_file`.",
         "tags": [
           "storage"
         ],
@@ -3593,7 +3594,7 @@
       "post": {
         "operationId": "list_files",
         "summary": "list_files",
-        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size.\n\nNeeds the **storage** permission. Also available as the MCP tool `list_files`.",
+        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size. Needs the **storage** permission. Also available as the MCP tool `list_files`.",
         "tags": [
           "storage"
         ],
@@ -3652,7 +3653,7 @@
       "post": {
         "operationId": "delete_file",
         "summary": "delete_file",
-        "description": "Delete a file from mixetape storage. A post that still points at it will fail to upload, so only delete files you no longer need.\n\nNeeds the **storage** permission. Also available as the MCP tool `delete_file`.",
+        "description": "Delete a file from mixetape storage. A post that still points at it will fail to upload, so only delete files you no longer need. Needs the **storage** permission. Also available as the MCP tool `delete_file`.",
         "tags": [
           "storage"
         ],

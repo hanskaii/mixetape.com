@@ -20,14 +20,29 @@ import ApiEndpointCard from "./ApiEndpointCard.astro";
 import { authFields } from "./auth";
 import { cn } from "@/lib/cn";
 import { withBase } from "@cloudflare/nimbus-docs/runtime";
-import type { ApiPageProps, ApiResponseView } from "@cloudflare/nimbus-docs/api";
+import { ApiMethodChip } from "@/components/ui/api-sidebar";
+import { baseUrl, permissions } from "@/lib/api-overview";
+import type { ApiNav, ApiPageProps, ApiResponseView } from "@cloudflare/nimbus-docs/api";
 
 interface Props {
   page: ApiPageProps;
+  /** The reference's navigation: the overview lists every group's operations from it. */
+  nav?: ApiNav;
 }
 
-const { page } = Astro.props;
+const { page, nav } = Astro.props;
+// The overview's groups: every nav group that has operations (tags have no page here).
+const overviewGroups = page.kind === "api" ? (nav?.items ?? []).filter((item) => item.children.length) : [];
 const markdownUrl = page.markdownHref;
+// "Tools under the **read** permission: see channels…." → "See channels…"
+const allows = (description: string) => {
+  const text = description.replace(/^Tools under the \*\*\w+\*\* permission: /, "").replace(/\.$/, "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+// A tag is a group, not a page here: its crumb is plain text.
+const breadcrumbs = page.breadcrumbs.map((crumb) =>
+  crumb.href?.includes("/api/tags/") ? { ...crumb, href: undefined } : crumb,
+);
 
 const detail = (v: unknown): string => JSON.stringify(v);
 
@@ -86,7 +101,7 @@ const deprecationHtml = page.deprecated
 ---
 
 <div data-pagefind-ignore>
-  <Breadcrumbs items={page.breadcrumbs} endsAtCurrentPage={false} class="pb-2" />
+  <Breadcrumbs items={breadcrumbs} endsAtCurrentPage={false} class="pb-2" />
   {deprecationHtml && <Banner variant="caution" content={deprecationHtml} />}
 </div>
 
@@ -291,24 +306,61 @@ const deprecationHtml = page.deprecated
 
   {page.kind === "api" && (
     <>
-      {page.version && <p class="text-sm text-muted-foreground">Version: <code class="font-mono">{page.version}</code></p>}
-      {page.servers.length > 0 && (
-        <section>
-          <h2 class="mb-2 text-sm font-semibold text-foreground">Servers</h2>
-          <ul class="flex list-none flex-col gap-1 p-0 font-mono text-xs text-muted-foreground">
-            {page.servers.map((s) => <li>{s}</li>)}
-          </ul>
-        </section>
-      )}
-      {page.sections.length > 0 && (
-        <ul class="flex list-none flex-col gap-1 p-0">
-          {page.sections.map((s) => (
-            <li>
-              <a href={withBase(s.href, import.meta.env.BASE_URL)} class="font-medium underline-offset-2 hover:underline">{s.label}</a>
+      {/* The overview: how to call the API at all, then every group's operations. */}
+      <div class="nb-md mt-2 flex flex-col gap-2 text-foreground">
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Base URL</h2>
+        <p><code>{baseUrl}</code> — every path starts with <code>/api/v1</code>.</p>
+
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Authentication</h2>
+        <p>
+          Send an API key from the workspace (<strong>API keys</strong>) as a bearer token:{" "}
+          <code>Authorization: Bearer mxt_…</code>. Each key carries only the permissions it was
+          given; a call that needs another answers <code>403</code>.
+        </p>
+
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Permissions</h2>
+        <ul class="mt-1 flex list-none flex-col gap-1.5 p-0">
+          {permissions.map((permission) => (
+            <li class="flex gap-3">
+              <code class="shrink-0">{permission.name}</code>
+              <span class="text-muted-foreground">{allows(permission.description)}</span>
             </li>
           ))}
         </ul>
-      )}
+
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Tools</h2>
+        <p>
+          Every tool is also an MCP tool of the same name at <code>{baseUrl}/mcp</code>. Over REST,
+          call it with <code>POST /api/v1/tools/{"{name}"}</code> and its arguments as JSON; the
+          answer is <code>{'{ "result": … }'}</code>.
+        </p>
+
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Errors</h2>
+        <p>
+          A failed call answers <code>{'{ "error": "…" }'}</code> in plain words: <code>400</code> invalid
+          input, <code>401</code> no valid key, <code>403</code> a missing permission, <code>404</code> not
+          found (or not yours), <code>409</code> not possible right now (for example, the channel must
+          be reconnected), <code>503</code> a platform mixetape cannot connect yet.
+        </p>
+      </div>
+      {overviewGroups.map((group) => (
+        <section class="mt-4">
+          <h2 class="mb-2 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">{group.label}</h2>
+          <ul class="flex list-none flex-col gap-px p-0">
+            {group.children.map((op) => (
+              <li>
+                <a
+                  href={withBase(op.href ?? "#", import.meta.env.BASE_URL)}
+                  class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-foreground no-underline transition-colors hover:bg-accent"
+                >
+                  {op.method && <ApiMethodChip method={op.method} display="label" />}
+                  <span class={cn(op.label.includes("_") && "font-mono text-[0.8125rem]")}>{op.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </>
   )}
 </div>

@@ -23,6 +23,8 @@ const hasChildren = item.children.length > 0;
 // `expanded` ⟺ ancestor of the active node; `active` ⟺ the current node. Both
 // mean "on the active trail" for header emphasis, and either opens the group.
 const onActiveTrail = Boolean(item.expanded || item.active);
+// Groups (the permission tags) have no page of their own on this site: their row only
+// opens and closes. See src/pages/api/[...slug].astro.
 ---
 
 {
@@ -32,8 +34,7 @@ const onActiveTrail = Boolean(item.expanded || item.active);
         label={item.label}
         isOpen={onActiveTrail}
         hasActive={onActiveTrail}
-        indexHref={item.href}
-        indexIsCurrent={item.active}
+        indexHref={undefined}
         deprecated={item.deprecated}
       />
       <CollapsibleContent data-nb-state={onActiveTrail ? "open" : "closed"}>

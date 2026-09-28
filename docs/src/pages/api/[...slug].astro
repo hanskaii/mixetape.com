@@ -5,7 +5,12 @@ import { ApiLayout } from "@/components/ui/api-layout";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 
 export const prerender = true;
-export const getStaticPaths = getApiStaticPaths("api");
+// Every API page except the tag pages (/api/tags/*): a tag is only a group in the
+// sidebar and on the overview, which already list its operations.
+export async function getStaticPaths(context: Parameters<ReturnType<typeof getApiStaticPaths>>[0]) {
+  const paths = await getApiStaticPaths("api")(context);
+  return paths.filter((path) => !String(path.params.slug ?? "").startsWith("tags/"));
+}
 
 const result = await getApiRoute(Astro);
 if (result instanceof Response) return result;
