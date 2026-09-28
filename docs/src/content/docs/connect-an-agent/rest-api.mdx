@@ -16,7 +16,7 @@ curl https://mixetape.com/api/v1/accounts -H "Authorization: Bearer mxt_…"
 | Method | Path | Does |
 |---|---|---|
 | `GET` | `/api/v1/accounts` | The connected channels, with what each platform supports |
-| `GET` | `/api/v1/posts` | Posts; filter with `status`, `from`, `to`, `limit` |
+| `GET` | `/api/v1/posts` | Posts, a page at a time; narrow with `accountId`, `provider`, `status`, `search`, `from`, `to` |
 | `POST` | `/api/v1/posts` | Schedule a post |
 | `GET` | `/api/v1/posts/{id}` | One post; `?insights=1` for its live platform status |
 | `PATCH` | `/api/v1/posts/{id}` | Change a post that is still scheduled |
@@ -34,6 +34,20 @@ curl -X POST https://mixetape.com/api/v1/posts \
     "metadata": { "title": "Episode 12" }
   }'
 ```
+
+## Lists come in pages
+
+`GET /api/v1/posts`, `list_posts` and `list_files` answer one page at a time, with a
+`nextCursor`. Pass it back as `cursor` — with the same filters — for the next page; it is
+`null` on the last one.
+
+```sh
+curl "https://mixetape.com/api/v1/posts?accountId=…&search=pompeii&limit=20" \
+  -H "Authorization: Bearer mxt_…"
+# → { "posts": [ … ], "nextCursor": "WzE3O…" }
+```
+
+Comma-separated values (`accountId=a,b`, `status=scheduled,failed`) match any of them.
 
 ## Every tool, over REST
 

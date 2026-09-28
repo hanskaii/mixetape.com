@@ -12,7 +12,7 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 | Tool | Does |
 |---|---|
 | [`list_accounts`](/api/read/list_accounts) | The connected channels, their status and what each platform supports |
-| [`list_posts`](/api/read/list_posts) | Posts, newest scheduled first; filter by status and time |
+| [`list_posts`](/api/read/list_posts) | Posts, newest scheduled first — by account, platform, status, time or words in the title/caption; paged |
 | [`get_post`](/api/read/get_post) | One post: status, error, platform link, attempts |
 | [`get_post_insights`](/api/read/get_post_insights) | A post on the platform right now: visibility, processing, views, likes, comments |
 | [`list_collections`](/api/read/list_collections) | Playlists (YouTube) or boards (Pinterest) |
@@ -59,7 +59,7 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 |---|---|
 | [`create_upload`](/api/storage/create_upload) | A presigned URL to upload a file (up to 5 GB) in one PUT |
 | [`import_file`](/api/storage/import_file) | Copy a file from a public URL into storage |
-| [`list_files`](/api/storage/list_files) | The files in storage, with their r2:// URLs |
+| [`list_files`](/api/storage/list_files) | The files in storage, newest first, with their r2:// URLs — by words in the name; paged |
 | [`delete_file`](/api/storage/delete_file) | Delete a file from storage |
 
 ## `channels`

@@ -97,11 +97,43 @@
       "get": {
         "operationId": "listPostsRest",
         "summary": "List posts",
-        "description": "Posts, newest scheduled first. Needs the **read** permission.",
+        "description": "Posts, newest scheduled first, a page at a time; pass `nextCursor` back as `cursor` for the next page. Needs the **read** permission.",
         "tags": [
           "Accounts and posts"
         ],
         "parameters": [
+          {
+            "name": "accountId",
+            "in": "query",
+            "description": "Comma-separated account ids: only posts on these accounts",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "Comma-separated platforms, e.g. `youtube,instagram`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Words in the title, caption or description (case-insensitive)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "`nextCursor` from the previous page",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "status",
             "in": "query",
@@ -141,7 +173,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The posts.",
+            "description": "A page of posts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -152,10 +184,18 @@
                       "items": {
                         "$ref": "#/components/schemas/Post"
                       }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Pass as `cursor` for the next page; null on the last"
                     }
                   },
                   "required": [
-                    "posts"
+                    "posts",
+                    "nextCursor"
                   ]
                 }
               }
@@ -1123,7 +1163,7 @@
       "post": {
         "operationId": "list_posts",
         "summary": "list_posts",
-        "description": "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled. Needs the **read** permission. Also available as the MCP tool `list_posts`.",
+        "description": "List posts, newest scheduled time first, a page at a time — narrow by account, platform, status, time or words in the title/caption. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled. Returns { posts, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **read** permission. Also available as the MCP tool `list_posts`.",
         "tags": [
           "read"
         ],
@@ -1135,12 +1175,30 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "accountId": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Only posts on these accounts (list_accounts ids)"
+                  },
+                  "provider": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Only posts on these platforms, e.g. youtube, instagram"
+                  },
                   "status": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
                     "description": "Only these statuses"
+                  },
+                  "search": {
+                    "type": "string",
+                    "description": "Words in the title, caption or description (case-insensitive)"
                   },
                   "from": {
                     "type": "string",
@@ -1152,7 +1210,11 @@
                   },
                   "limit": {
                     "type": "number",
-                    "description": "Default 50, max 500"
+                    "description": "Posts per page: default 50, max 500"
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "description": "nextCursor from the previous page"
                   }
                 }
               }
@@ -3594,7 +3656,7 @@
       "post": {
         "operationId": "list_files",
         "summary": "list_files",
-        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size. Needs the **storage** permission. Also available as the MCP tool `list_files`.",
+        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size — narrow by words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **storage** permission. Also available as the MCP tool `list_files`.",
         "tags": [
           "storage"
         ],
@@ -3606,9 +3668,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "search": {
+                    "type": "string",
+                    "description": "Words in the file name (case-insensitive)"
+                  },
                   "limit": {
                     "type": "number",
-                    "description": "Default 50, max 1000"
+                    "description": "Files per page: default 50, max 1000"
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "description": "nextCursor from the previous page"
                   }
                 }
               }
