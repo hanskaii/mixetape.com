@@ -11,11 +11,11 @@ importers:
       '@cloudflare/nimbus-docs':
         specifier: ^0.15.0
         version: 0.15.0(@readme/httpsnippet@11.4.0)(@scalar/openapi-parser@0.28.12)(@types/node@24.19.0)(astro@7.3.1(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.19.0)(jiti@2.7.0)(yaml@2.9.1))(esbuild@0.28.2)(jiti@2.7.0)(openapi-sampler@1.7.4)
-      '@fontsource-variable/inter':
-        specifier: ^5.2.8
+      '@fontsource-variable/figtree':
+        specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource-variable/jetbrains-mono':
-        specifier: ^5.2.8
+      '@fontsource-variable/geist-mono':
+        specifier: ^5.3.0
         version: 5.3.0
       '@iconify-json/ph':
         specifier: ^1.2.0
@@ -737,11 +737,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fontsource-variable/inter@5.3.0':
-    resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
+  '@fontsource-variable/figtree@5.3.0':
+    resolution: {integrity: sha512-VRVodD7OiG7apQwE8/2fMjaqpY/a0qRJqL5HtYj8CKIVps+9amaFcdfKmDIf7iqYQx6iPLlArVXAfKeIZmVcNQ==}
 
-  '@fontsource-variable/jetbrains-mono@5.3.0':
-    resolution: {integrity: sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw==}
+  '@fontsource-variable/geist-mono@5.3.0':
+    resolution: {integrity: sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw==}
 
   '@iconify-json/ph@1.2.2':
     resolution: {integrity: sha512-PgkEZNtqa8hBGjHXQa4pMwZa93hmfu8FUSjs/nv4oUU6yLsgv+gh9nu28Kqi8Fz9CCVu4hj1MZs9/60J57IzFw==}
@@ -3511,9 +3511,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@fontsource-variable/inter@5.3.0': {}
+  '@fontsource-variable/figtree@5.3.0': {}
 
-  '@fontsource-variable/jetbrains-mono@5.3.0': {}
+  '@fontsource-variable/geist-mono@5.3.0': {}
 
   '@iconify-json/ph@1.2.2':
     dependencies:

@@ -10,8 +10,11 @@ A post's `mediaUrl` is either:
 - a **public https URL** that the platform can fetch, or
 - an **`r2://` URL** of a file in mixetape storage.
 
-Use storage when the file is on your machine, or when its link expires before the post goes
-out.
+<Aside type="tip" title="Prefer storage">
+  The platform fetches the media only at the post's lead time, possibly days later. A link from
+  a render service or a signed URL may have expired by then; a file in mixetape storage has not.
+  See [Tips](/tips#keep-the-media-in-mixetape-storage).
+</Aside>
 
 ## Uploading a file
 

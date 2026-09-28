@@ -1,0 +1,3 @@
+# The docs open on their introduction (a real 301 at the edge; Astro also writes a
+# meta-refresh page for /).
+/ /introduction/ 301

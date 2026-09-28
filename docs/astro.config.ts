@@ -21,6 +21,7 @@ const nimbusConfig = defineNimbusConfig({
     items: [
       "introduction",
       "quickstart",
+      "tips",
       { label: "Concepts", autogenerate: { directory: "concepts" } },
       { label: "Connect an agent", autogenerate: { directory: "connect-an-agent" } },
       "tools",
@@ -31,6 +32,8 @@ const nimbusConfig = defineNimbusConfig({
 });
 
 export default defineConfig({
+  // No landing page: the docs open on their introduction.
+  redirects: { "/": "/introduction" },
   // nimbus:adapter
   output: "static",
   // Tailwind v4 via its Vite plugin (the integration Astro recommends for

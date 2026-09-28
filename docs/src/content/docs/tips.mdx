@@ -1,0 +1,73 @@
+---
+title: Tips
+description: Habits that keep scheduled posts going out on time, from agents and pipelines that use mixetape every day.
+sidebar:
+  order: 2
+---
+
+## Keep the media in mixetape storage
+
+A post is sent to the platform only at its lead time — which can be days after you schedule
+it. Whatever `mediaUrl` points at has to still be there then. Links from render services,
+signed download URLs and temporary hosts often expire before that; some hosts also refuse or
+throttle the platforms' fetchers.
+
+Files in mixetape storage stay put for as long as a post needs them:
+
+- **From your machine:** `create_upload` gives a presigned URL; send the file in one PUT
+  (up to 5 GB) and schedule the `r2://` URL it returns. The file never passes through the
+  agent's context.
+- **From a link that will expire:** `import_file` copies it into storage right away.
+
+See [Media and storage](/concepts/media).
+
+## Schedule ahead, even for "now"
+
+A scheduled post waits in mixetape — editable and cancellable — until shortly before its time,
+while a post without `scheduledAt` goes straight out. When there is any chance of a
+correction, give it a time a little ahead: you keep the chance to fix it.
+
+## Keep the default lead on YouTube
+
+The 30 minutes before go-live is when YouTube processes the HD versions. With `leadMinutes: 0`
+a long video can go public while it is still low resolution. See
+[Posts and timing](/concepts/posts-and-timing).
+
+## Always write times with an offset
+
+`2026-10-02T17:30:00+07:00`, never `2026-10-02T17:30:00` — a time without an offset is read as
+UTC, which for Jakarta is seven hours late.
+
+## Put the extras on the post
+
+`thumbnailUrl`, `playlistIds`, `captions` and `firstComment` in the post's `metadata` are
+applied automatically right after the upload — no second call to remember, no window where
+the video is live without them. `set_thumbnail`, `add_to_collection` and `upload_caption` are
+for posts that are already up.
+
+A `firstComment` on a Short is a good place for a link to the full video.
+
+## Check how it went
+
+After a post's time, `get_post` tells you how it went: `published` with its link, or `failed`
+with the reason. Fix what the reason says and `retry_post` — it goes now, or at its original
+time if that is still ahead. YouTube's upload quota resets at midnight Pacific time; retry a
+post that failed on it after that.
+
+## Make a pipeline safe to run twice
+
+A script that may be retried should look before it schedules: `list_posts` with `from`/`to`
+around the time, and skip the post if one with the same `mediaUrl` is already there. Then an
+interrupted run never schedules the same video twice.
+
+## One key per agent
+
+Give each agent or script its own [API key](/concepts/api-keys) with only the permissions it
+needs. A pipeline usually needs `read`, `publish` and `storage`; only an agent you trust to
+add channels needs `channels`. Removing one key then never stops another.
+
+## Watch for `reconnect`
+
+A channel whose access was revoked — or that mixetape needs new permissions from — shows
+`status: "reconnect"` in `list_accounts`, and its posts fail until it is connected again.
+The agent can hand you a fresh sign-in link with `connect_channel`.

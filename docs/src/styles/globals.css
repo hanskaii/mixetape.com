@@ -23,28 +23,34 @@
 	color-scheme: light;
 
 	/* Surfaces (paired with foregrounds for contrast) */
-	--nb-background: oklch(0.99 0 0);
-	--nb-foreground: oklch(0.21 0 0);
+	--nb-background: #f7f5f0;
+	--nb-foreground: #0b0b0b;
 
-	--nb-card: oklch(1 0 0);
+	--nb-card: #fffefa;
 	--nb-card-foreground: var(--nb-foreground);
 
-	--nb-muted: oklch(0.967 0 0);
-	--nb-muted-foreground: oklch(0.556 0 0);
+	--nb-muted: #f1eee7;
+	--nb-muted-foreground: #656159;
 
-	--nb-accent: oklch(0.967 0 0);
+	--nb-accent: #efebe2;
 	--nb-accent-foreground: var(--nb-foreground);
 
 	/* Primary action / brand */
-	--nb-primary: oklch(0.145 0 0);
-	--nb-primary-foreground: oklch(0.97 0 0);
-	--nb-primary-hover: oklch(0.371 0 0);
+	--nb-primary: #0b0b0b;
+	--nb-primary-foreground: #fffefa;
+	--nb-primary-hover: #3a3934;
+
+	/* mixetape's yellow: the brand signal, for the next action and the current place.
+	   Never text on the paper background — it does not read there. */
+	--nb-brand: #ffd21f;
+	--nb-brand-foreground: #0b0b0b;
+	--nb-brand-hover: #f2c200;
 
 	/* Borders / focus */
-	--nb-border: oklch(0.935 0 0);
-	--nb-border-strong: oklch(0.87 0 0);
-	--nb-selected: oklch(0.89 0 0);
-	--nb-ring: oklch(0.145 0 0 / 0.35);
+	--nb-border: #e4e0d7;
+	--nb-border-strong: #d2cdc2;
+	--nb-selected: #e4e0d7;
+	--nb-ring: rgb(215 170 0 / 0.45);
 
 	/* Status colors — paired (saturated for text/border + muted for bg) */
 	--nb-info: oklch(0.45 0.18 255);
@@ -81,12 +87,8 @@
 	--nb-code-rail-width: 34rem;
 
 	/* Typography — self-hosted via @fontsource-variable in BaseLayout.astro */
-	--nb-font-sans:
-		"Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
-		sans-serif;
-	--nb-font-mono:
-		"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code",
-		"Source Code Pro", Menlo, Consolas, monospace;
+	--nb-font-sans: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
+	--nb-font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
 	--nb-h1-size: 2.1875rem;
 	--nb-h1-weight: 600;
 	--nb-h1-tracking: -0.025em;
@@ -115,26 +117,26 @@
 [data-mode="dark"] {
 	color-scheme: dark;
 
-	--nb-background: oklch(0.085 0 0);
-	--nb-foreground: oklch(0.97 0 0);
+	--nb-background: #141413;
+	--nb-foreground: #f6f4ee;
 
-	--nb-card: #0F0F0F;
+	--nb-card: #1b1b19;
 	--nb-card-foreground: var(--nb-foreground);
 
-	--nb-muted: #060606;
-	--nb-muted-foreground: oklch(0.65 0 0);
+	--nb-muted: #20201e;
+	--nb-muted-foreground: #aaa69d;
 
-	--nb-accent: oklch(0.269 0 0);
+	--nb-accent: #2d2c28;
 	--nb-accent-foreground: var(--nb-foreground);
 
-	--nb-primary: oklch(0.9 0 0);
-	--nb-primary-foreground: oklch(0.085 0 0);
-	--nb-primary-hover: oklch(0.7 0 0);
+	--nb-primary: #f6f4ee;
+	--nb-primary-foreground: #141413;
+	--nb-primary-hover: #d8d4ca;
 
-	--nb-border: oklch(0.269 0 0);
-	--nb-border-strong: oklch(0.371 0 0);
-	--nb-selected: oklch(0.371 0 0);
-	--nb-ring: oklch(0.9 0 0 / 0.35);
+	--nb-border: #3b3933;
+	--nb-border-strong: #555148;
+	--nb-selected: #3b3933;
+	--nb-ring: rgb(255 210 31 / 0.4);
 
 	--nb-info: oklch(0.75 0.12 255);
 	--nb-info-foreground: oklch(0.75 0.12 255);
@@ -169,6 +171,9 @@
  *   bg-card, text-foreground, border-border, ring-ring, etc.
  */
 @theme {
+	--color-brand: var(--nb-brand);
+	--color-brand-foreground: var(--nb-brand-foreground);
+	--color-brand-hover: var(--nb-brand-hover);
 	--color-background: var(--nb-background);
 	--color-foreground: var(--nb-foreground);
 
