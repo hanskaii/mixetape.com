@@ -17,7 +17,8 @@ import { getGroup, readyFiles } from "./groups.service";
  *
  * What each channel gets: the caption as the post caption; the shared metadata fields that
  * platform knows; the title and description where the platform has them
- * (provider.textFields); then that platform's own overrides. A `caption` override on a
+ * (provider.textFields: YouTube and Pinterest take both, Facebook only a title, for videos),
+ * an empty description falling back to the caption; then that platform's own overrides. A `caption` override on a
  * platform without a caption field of its own replaces the caption there. On top, the
  * obvious choice where the files make it one: a short upright video goes to Facebook as a
  * Reel.
@@ -165,8 +166,10 @@ export function postFields(draft: Draft, provider: string, files: FileView[] = [
   for (const [key, value] of Object.entries(shared)) if (known.has(key)) metadata[key] = value;
   const { title, description } = platform.textFields ?? {};
   if (title && draft.title && metadata[title] === undefined) metadata[title] = draft.title;
-  if (description && draft.description && metadata[description] === undefined)
-    metadata[description] = draft.description;
+  // An empty description is the caption: a YouTube video is never left without one.
+  const longText = draft.description || draft.caption;
+  if (description && longText && metadata[description] === undefined)
+    metadata[description] = longText;
 
   let caption = draft.caption ?? null;
   if ("caption" in overrides && !known.has("caption")) {

@@ -34,7 +34,8 @@ export const facebook: SocialProvider = {
   metadata: facebookMetadata,
   // A Page video or Reel, a photo, or an album of up to 10 photos.
   formats: { video: true, image: true, carousel: { min: 2, max: 10, kinds: ["image"] } },
-  textFields: { title: "title", description: "description" },
+  // The post's text is the caption (its `description` field); a title only for Page videos.
+  textFields: { title: "title" },
   status: facebookStatus,
   thumbnails: facebookThumbnails,
   editing: facebookEditing,

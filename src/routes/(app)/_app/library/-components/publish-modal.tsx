@@ -461,8 +461,31 @@ export function PublishModal({
   const relevant = chosenPlatforms.length
     ? chosenPlatforms
     : platforms.filter((platform) => fitting.some((account) => account.provider === platform.id));
-  const showTitle = relevant.some((platform) => platform.takesTitle);
-  const showDescription = relevant.some((platform) => platform.takesDescription);
+  // Where each of the words goes, so no field is a guess. Facebook takes a title only on a
+  // Page video.
+  const names = (list: Platform[]) => list.map((platform) => platform.name).join(", ");
+  const titleTargets = relevant.filter(
+    (platform) => platform.takesTitle && (platform.id !== "facebook" || singleVideo),
+  );
+  const descriptionTargets = relevant.filter((platform) => platform.takesDescription);
+  const captionTargets = relevant.filter((platform) =>
+    platform.fields.some((field) => field.caption),
+  );
+  const showTitle = titleTargets.length > 0;
+  const showDescription = descriptionTargets.length > 0;
+  const captionHint = [
+    captionTargets.length && `The post's text on ${names(captionTargets)}`,
+    !description.trim() &&
+      descriptionTargets.length &&
+      `the description on ${names(descriptionTargets)} while Description is empty`,
+  ]
+    .filter(Boolean)
+    .join(" — and ")
+    .replace(/^./, (first) => first.toUpperCase());
+  const titleHint = `On ${names(titleTargets)}${
+    titleTargets.some((platform) => platform.id === "youtube") ? " · YouTube needs one" : ""
+  }`;
+  const descriptionHint = `On ${names(descriptionTargets)} · empty uses the caption`;
   const activeTab = chosenPlatforms.find((platform) => platform.id === tab) ?? chosenPlatforms[0];
 
   // The preview follows the tab: the chosen platforms, or before any is chosen, those that fit.
@@ -484,7 +507,6 @@ export function PublishModal({
     return {
       caption: text(captionKey) ?? caption,
       title: text("title") ?? title,
-      description: text("description") ?? description,
     };
   })();
 
@@ -705,28 +727,28 @@ export function PublishModal({
             <section {...stylex.props(styles.section)}>
               <Heading>Words</Heading>
               {showTitle && (
-                <Field label="Title">
+                <Field label="Title" hint={titleHint}>
                   <Input
                     value={title}
-                    placeholder="For YouTube, Facebook videos and Pins"
+                    placeholder="The headline"
                     onChange={(event) => setTitle(event.target.value)}
                   />
                 </Field>
               )}
-              <Field label="Caption">
+              <Field label="Caption" hint={captionHint || undefined}>
                 <Textarea
                   rows={3}
                   value={caption}
-                  placeholder="What the post says — every platform starts from this"
+                  placeholder="What the post says"
                   onChange={(event) => setCaption(event.target.value)}
                 />
               </Field>
               {showDescription && (
-                <Field label="Description">
+                <Field label="Description" hint={descriptionHint}>
                   <Textarea
                     rows={3}
                     value={description}
-                    placeholder="The longer text, where the platform has one"
+                    placeholder="The longer text"
                     onChange={(event) => setDescription(event.target.value)}
                   />
                 </Field>
@@ -809,7 +831,6 @@ export function PublishModal({
                   files={files}
                   caption={previewText.caption}
                   title={previewText.title}
-                  description={previewText.description}
                 />
               </>
             ) : (

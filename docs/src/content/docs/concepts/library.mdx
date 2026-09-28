@@ -48,9 +48,10 @@ they cover:
 - `warnings` that do not — a horizontal video for Reels;
 - the `caption` and `metadata` the post would carry.
 
-Each channel gets the caption; the shared metadata fields its platform knows; the title and
-description where the platform has them (YouTube, Facebook, Pinterest); then that platform's
-overrides. A `caption` override on a platform without a caption field of its own replaces the
+Each channel gets the caption as the post's text; the shared metadata fields its platform
+knows; the title where the platform has one (YouTube, a Pin, a Facebook Page video) and the
+description where it has one (YouTube, a Pin) — an empty description uses the caption, so a
+YouTube video is never left without one; then that platform's overrides. A `caption` override on a platform without a caption field of its own replaces the
 caption there. Where the files make a choice obvious, mixetape makes it: a short upright video
 goes to Facebook as a Reel.
 

@@ -66,6 +66,7 @@ const CAPTION_KEYS: Record<string, string> = {
   instagram: "caption",
   threads: "text",
   tiktok: "title",
+  facebook: "description",
 };
 
 export function platformFields(provider: string): Field[] {

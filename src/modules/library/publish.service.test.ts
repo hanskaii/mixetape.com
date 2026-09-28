@@ -54,11 +54,17 @@ describe("what a draft gives each platform", () => {
     expect(metadata).not.toHaveProperty("caption");
   });
 
-  it("gives Facebook the description as its text", () => {
-    expect(postFields(item, "facebook").metadata).toMatchObject({
-      title: "Why Rome burned",
-      description: "A longer story of 64 AD.",
-    });
+  it("gives Facebook the title but keeps the caption as its text", () => {
+    const { caption, metadata } = postFields(item, "facebook");
+    expect(caption).toBe("The night Rome burned.");
+    expect(metadata).toMatchObject({ title: "Why Rome burned" });
+    expect(metadata).not.toHaveProperty("description");
+  });
+
+  it("uses the caption as YouTube's description when there is none", () => {
+    expect(
+      postFields({ title: "T", caption: "Short text", metadata: {} }, "youtube").metadata,
+    ).toMatchObject({ title: "T", description: "Short text" });
   });
 });
 

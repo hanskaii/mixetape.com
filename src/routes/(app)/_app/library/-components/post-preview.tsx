@@ -29,7 +29,6 @@ export type PreviewProps = {
   files: FileView[];
   caption: string;
   title: string;
-  description: string;
 };
 
 const styles = stylex.create({
@@ -370,7 +369,7 @@ function Vertical({ provider, label, channel, files, caption, title }: PreviewPr
  * carousel and whether the words read right, without pretending to be pixel-exact.
  */
 export function PostPreview(props: PreviewProps) {
-  const { provider, label, channel, files, caption, title, description } = props;
+  const { provider, label, channel, files, caption, title } = props;
   if (!files.length) return null;
   const vertical = label === "Reel" || label === "Short" || provider === "tiktok";
   if (vertical && files.length === 1 && files[0].kind === "video") return <Vertical {...props} />;
@@ -411,7 +410,7 @@ export function PostPreview(props: PreviewProps) {
           </div>
           <DotsThree size={18} />
         </div>
-        <Text value={description || caption} />
+        <Text value={caption} />
         {files.length > 1 ? (
           <div {...stylex.props(styles.album)}>
             {files.slice(0, 4).map((file, index) => (
