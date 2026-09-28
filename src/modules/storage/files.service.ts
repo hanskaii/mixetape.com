@@ -203,6 +203,7 @@ export async function listFiles(
 export async function deleteFile(userId: string, idOrUrl: string) {
   const file = await ownedFile(userId, idOrUrl).catch(() => null);
   if (!file) {
+    if (!idOrUrl.startsWith("r2://")) throw new ServiceError("File not found", 404);
     const key = uploads.ownKey(userId, idOrUrl);
     if (!(await deleteUserFile(userId, key))) throw new ServiceError("File not found", 404);
     return { deleted: true, url: `r2://${key}` };
