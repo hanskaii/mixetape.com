@@ -9,6 +9,7 @@ import {
   Robot,
   Stack,
   Trash,
+  UploadSimple,
   X,
 } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
@@ -173,6 +174,7 @@ const styles = stylex.create({
     paddingBlock: "2.5rem",
     textAlign: "center",
   },
+  hidden: { display: "none" },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
   menu: { minWidth: "14rem" },
 });
@@ -211,6 +213,7 @@ export function GroupBand({
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState(group.title ?? "");
   const band = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   // The server's order wins once it answers.
   useEffect(() => {
@@ -334,8 +337,34 @@ export function GroupBand({
             <ArrowSquareOut /> Take out {pickedHere.length}
           </Button>
         )}
-        <Button size="xs" disabled={!files.length} onClick={() => onPublish({ ...group, files })}>
-          <PaperPlaneTilt weight="fill" /> Publish
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label="Upload files into this carousel"
+          title="Upload"
+          onClick={() => input.current?.click()}
+        >
+          <UploadSimple weight="bold" />
+        </Button>
+        <input
+          ref={input}
+          type="file"
+          multiple
+          accept="video/*,image/*"
+          {...stylex.props(styles.hidden)}
+          onChange={(event) => {
+            if (event.target.files?.length) onUpload([...event.target.files]);
+            event.target.value = "";
+          }}
+        />
+        <Button
+          size="icon-xs"
+          aria-label="Publish this carousel"
+          title="Publish"
+          disabled={!files.length}
+          onClick={() => onPublish({ ...group, files })}
+        >
+          <PaperPlaneTilt weight="fill" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
