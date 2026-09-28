@@ -3,7 +3,7 @@
   "info": {
     "title": "mixetape API",
     "version": "1.0.0",
-    "description": "Schedule and manage posts on connected social channels. Every action is also an MCP tool at /mcp, with the same names, inputs and errors. Authenticate with an API key from the workspace: `Authorization: Bearer mxt_\u2026`; each key carries only the permissions it was given."
+    "description": "Schedule and manage posts on connected social channels. Every action is also an MCP tool at /mcp, with the same names, inputs and errors. Authenticate with an API key from the workspace: `Authorization: Bearer mxt_…`; each key carries only the permissions it was given."
   },
   "servers": [
     {
@@ -197,7 +197,7 @@
                   },
                   "scheduledAt": {
                     "type": "string",
-                    "description": "ISO 8601 with timezone offset \u2014 when it goes live. Omit to post now (live after leadMinutes)."
+                    "description": "ISO 8601 with timezone offset — when it goes live. Omit to post now (live after leadMinutes)."
                   },
                   "leadMinutes": {
                     "type": "number",
@@ -228,7 +228,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "\u2264 500 characters in total"
+                            "description": "≤ 500 characters in total"
                           },
                           "privacyStatus": {
                             "type": "string",
@@ -250,7 +250,7 @@
                           },
                           "localizations": {
                             "type": "object",
-                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
                             "additionalProperties": {
                               "type": "object",
                               "properties": {
@@ -268,7 +268,7 @@
                           },
                           "thumbnailUrl": {
                             "type": "string",
-                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                            "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
                           },
                           "playlistIds": {
                             "type": "array",
@@ -304,14 +304,14 @@
                           },
                           "firstComment": {
                             "type": "string",
-                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                            "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
                           }
                         },
                         "title": "YouTube"
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -362,11 +362,11 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
-                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                            "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
                           },
                           "thumbnailUrl": {
                             "type": "string",
@@ -389,7 +389,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -410,7 +410,7 @@
                         "properties": {
                           "title": {
                             "type": "string",
-                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                            "description": "Caption, ≤ 2,200 characters; defaults to caption"
                           },
                           "privacyLevel": {
                             "type": "string",
@@ -633,7 +633,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "\u2264 500 characters in total"
+                            "description": "≤ 500 characters in total"
                           },
                           "privacyStatus": {
                             "type": "string",
@@ -655,7 +655,7 @@
                           },
                           "localizations": {
                             "type": "object",
-                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
                             "additionalProperties": {
                               "type": "object",
                               "properties": {
@@ -673,7 +673,7 @@
                           },
                           "thumbnailUrl": {
                             "type": "string",
-                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                            "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
                           },
                           "playlistIds": {
                             "type": "array",
@@ -709,14 +709,14 @@
                           },
                           "firstComment": {
                             "type": "string",
-                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                            "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
                           }
                         },
                         "title": "YouTube"
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -767,11 +767,11 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
-                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                            "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
                           },
                           "thumbnailUrl": {
                             "type": "string",
@@ -794,7 +794,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -815,7 +815,7 @@
                         "properties": {
                           "title": {
                             "type": "string",
-                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                            "description": "Caption, ≤ 2,200 characters; defaults to caption"
                           },
                           "privacyLevel": {
                             "type": "string",
@@ -1068,7 +1068,7 @@
       "post": {
         "operationId": "list_accounts",
         "summary": "list_accounts",
-        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) \u2014 also after mixetape asks for new permissions.\n\nNeeds the **read** permission. Also available as the MCP tool `list_accounts`.",
+        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.\n\nNeeds the **read** permission. Also available as the MCP tool `list_accounts`.",
         "tags": [
           "read"
         ],
@@ -1320,7 +1320,7 @@
       "post": {
         "operationId": "list_collections",
         "summary": "list_collections",
-        "description": "List the account's collections \u2014 playlists on YouTube, boards on Pinterest \u2014 with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.\n\nNeeds the **read** permission. Also available as the MCP tool `list_collections`.",
+        "description": "List the account's collections — playlists on YouTube, boards on Pinterest — with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.\n\nNeeds the **read** permission. Also available as the MCP tool `list_collections`.",
         "tags": [
           "read"
         ],
@@ -1468,7 +1468,7 @@
                   },
                   "scheduledAt": {
                     "type": "string",
-                    "description": "ISO 8601 with timezone offset \u2014 when it goes live. Omit to post now (live after leadMinutes)."
+                    "description": "ISO 8601 with timezone offset — when it goes live. Omit to post now (live after leadMinutes)."
                   },
                   "leadMinutes": {
                     "type": "number",
@@ -1499,7 +1499,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "\u2264 500 characters in total"
+                            "description": "≤ 500 characters in total"
                           },
                           "privacyStatus": {
                             "type": "string",
@@ -1521,7 +1521,7 @@
                           },
                           "localizations": {
                             "type": "object",
-                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
                             "additionalProperties": {
                               "type": "object",
                               "properties": {
@@ -1539,7 +1539,7 @@
                           },
                           "thumbnailUrl": {
                             "type": "string",
-                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                            "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
                           },
                           "playlistIds": {
                             "type": "array",
@@ -1575,14 +1575,14 @@
                           },
                           "firstComment": {
                             "type": "string",
-                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                            "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
                           }
                         },
                         "title": "YouTube"
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -1633,11 +1633,11 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
-                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                            "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
                           },
                           "thumbnailUrl": {
                             "type": "string",
@@ -1660,7 +1660,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -1681,7 +1681,7 @@
                         "properties": {
                           "title": {
                             "type": "string",
-                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                            "description": "Caption, ≤ 2,200 characters; defaults to caption"
                           },
                           "privacyLevel": {
                             "type": "string",
@@ -1852,7 +1852,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "\u2264 500 characters in total"
+                            "description": "≤ 500 characters in total"
                           },
                           "privacyStatus": {
                             "type": "string",
@@ -1874,7 +1874,7 @@
                           },
                           "localizations": {
                             "type": "object",
-                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
                             "additionalProperties": {
                               "type": "object",
                               "properties": {
@@ -1892,7 +1892,7 @@
                           },
                           "thumbnailUrl": {
                             "type": "string",
-                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                            "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
                           },
                           "playlistIds": {
                             "type": "array",
@@ -1928,14 +1928,14 @@
                           },
                           "firstComment": {
                             "type": "string",
-                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                            "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
                           }
                         },
                         "title": "YouTube"
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -1986,11 +1986,11 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
-                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                            "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
                           },
                           "thumbnailUrl": {
                             "type": "string",
@@ -2013,7 +2013,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -2034,7 +2034,7 @@
                         "properties": {
                           "title": {
                             "type": "string",
-                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                            "description": "Caption, ≤ 2,200 characters; defaults to caption"
                           },
                           "privacyLevel": {
                             "type": "string",
@@ -2212,7 +2212,7 @@
       "post": {
         "operationId": "retry_post",
         "summary": "retry_post",
-        "description": "Send a 'failed' post again \u2014 now, or at its original time if that is still ahead.\n\nNeeds the **publish** permission. Also available as the MCP tool `retry_post`.",
+        "description": "Send a 'failed' post again — now, or at its original time if that is still ahead.\n\nNeeds the **publish** permission. Also available as the MCP tool `retry_post`.",
         "tags": [
           "publish"
         ],
@@ -2274,7 +2274,7 @@
       "post": {
         "operationId": "set_thumbnail",
         "summary": "set_thumbnail",
-        "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: \u2264 2 MB, 1280\u00d7720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.\n\nNeeds the **publish** permission. Also available as the MCP tool `set_thumbnail`.",
+        "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: ≤ 2 MB, 1280×720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.\n\nNeeds the **publish** permission. Also available as the MCP tool `set_thumbnail`.",
         "tags": [
           "publish"
         ],
@@ -2381,7 +2381,7 @@
                             "items": {
                               "type": "string"
                             },
-                            "description": "\u2264 500 characters in total"
+                            "description": "≤ 500 characters in total"
                           },
                           "privacyStatus": {
                             "type": "string",
@@ -2400,7 +2400,7 @@
                           },
                           "localizations": {
                             "type": "object",
-                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
                             "additionalProperties": {
                               "type": "object",
                               "properties": {
@@ -2421,7 +2421,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
                         "properties": {
                           "title": {
                             "type": "string",
@@ -2437,11 +2437,11 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
-                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                            "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
                           },
                           "thumbnailUrl": {
                             "type": "string",
@@ -2464,7 +2464,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -2485,7 +2485,7 @@
                         "properties": {
                           "title": {
                             "type": "string",
-                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                            "description": "Caption, ≤ 2,200 characters; defaults to caption"
                           },
                           "privacyLevel": {
                             "type": "string",
@@ -2748,7 +2748,7 @@
       "post": {
         "operationId": "upload_caption",
         "summary": "upload_caption",
-        "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400\u2013450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.\n\nNeeds the **manage** permission. Also available as the MCP tool `upload_caption`.",
+        "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400–450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.\n\nNeeds the **manage** permission. Also available as the MCP tool `upload_caption`.",
         "tags": [
           "manage"
         ],
@@ -2845,7 +2845,7 @@
                   },
                   "limit": {
                     "type": "number",
-                    "description": "1\u2013100, default 20"
+                    "description": "1–100, default 20"
                   },
                   "order": {
                     "type": "string",
@@ -2903,7 +2903,7 @@
       "post": {
         "operationId": "post_comment",
         "summary": "post_comment",
-        "description": "Post a comment on a public post as the channel itself \u2014 e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.\n\nNeeds the **comments** permission. Also available as the MCP tool `post_comment`.",
+        "description": "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.\n\nNeeds the **comments** permission. Also available as the MCP tool `post_comment`.",
         "tags": [
           "comments"
         ],
@@ -3117,7 +3117,7 @@
       "post": {
         "operationId": "connect_channel",
         "summary": "connect_channel",
-        "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user \u2014 they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.\n\nNeeds the **channels** permission. Also available as the MCP tool `connect_channel`.",
+        "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.\n\nNeeds the **channels** permission. Also available as the MCP tool `connect_channel`.",
         "tags": [
           "channels"
         ],
@@ -3187,7 +3187,7 @@
       "post": {
         "operationId": "get_connection",
         "summary": "get_connection",
-        "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) \u2014 ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.\n\nNeeds the **channels** permission. Also available as the MCP tool `get_connection`.",
+        "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) — ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.\n\nNeeds the **channels** permission. Also available as the MCP tool `get_connection`.",
         "tags": [
           "channels"
         ],
@@ -3459,7 +3459,7 @@
       "post": {
         "operationId": "create_upload",
         "summary": "create_upload",
-        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header \u2014 the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://\u2026) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file.\n\nNeeds the **storage** permission. Also available as the MCP tool `create_upload`.",
+        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://…) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file.\n\nNeeds the **storage** permission. Also available as the MCP tool `create_upload`.",
         "tags": [
           "storage"
         ],
@@ -3528,7 +3528,7 @@
       "post": {
         "operationId": "import_file",
         "summary": "import_file",
-        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage \u2014 e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://\u2026).\n\nNeeds the **storage** permission. Also available as the MCP tool `import_file`.",
+        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://…).\n\nNeeds the **storage** permission. Also available as the MCP tool `import_file`.",
         "tags": [
           "storage"
         ],
@@ -3593,7 +3593,7 @@
       "post": {
         "operationId": "list_files",
         "summary": "list_files",
-        "description": "List the files in your mixetape storage, newest first, with url (r2://\u2026) and size.\n\nNeeds the **storage** permission. Also available as the MCP tool `list_files`.",
+        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size.\n\nNeeds the **storage** permission. Also available as the MCP tool `list_files`.",
         "tags": [
           "storage"
         ],
@@ -3666,7 +3666,7 @@
                 "properties": {
                   "url": {
                     "type": "string",
-                    "description": "r2://\u2026 from list_files"
+                    "description": "r2://… from list_files"
                   }
                 },
                 "required": [
