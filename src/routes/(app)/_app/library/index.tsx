@@ -21,14 +21,15 @@ import {
   getLibraryData,
   listLooseFiles,
   removeGroup,
+  ungroupFiles,
 } from "#/modules/library/library.fn";
 import type { FileView } from "#/modules/storage/files.service";
 import { removeFiles } from "#/modules/storage/storage.fn";
 import { colors, radius } from "../../../../components/ui/tokens.stylex";
 import { DragDock } from "./-components/drag-dock";
 import { FileCard } from "./-components/file-card";
-import { FILES_TYPE, GROUP_FOOTER, GroupCard } from "./-components/group-card";
-import { GroupModal } from "./-components/group-modal";
+import { FILES_TYPE, FROM_GROUP_TYPE, GROUP_FOOTER, GroupCard } from "./-components/group-card";
+import { GroupBand } from "./-components/group-band";
 import { Masonry } from "./-components/masonry";
 import { PublishModal, type PublishDraft } from "./-components/publish-modal";
 import { SelectionBar } from "./-components/selection-bar";
@@ -179,6 +180,9 @@ function LibraryPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [anchor, setAnchor] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  // The group open across the grid, and the one files are being dragged out of.
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [dragFrom, setDragFrom] = useState<string | null>(null);
   const [dropping, setDropping] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const loading = useRef(false);
@@ -351,28 +355,28 @@ function LibraryPage() {
     });
 
   const openGroup = (group: GroupView) =>
-    openModal(
-      <GroupModal
-        group={group}
-        onClose={closeModal}
-        onChanged={() => void refresh()}
-        onUpload={(files) => upload(files, group.id)}
-        onPublish={(current) => {
-          closeModal();
-          publish(current.files, current, current.id);
-        }}
-        onDelete={(deleteFiles) => {
-          closeModal();
-          void attempt(
-            () => removeGroup({ data: { id: group.id, deleteFiles } }),
-            deleteFiles ? "Group and files deleted" : "Ungrouped",
-          );
-        }}
-      />,
+    setExpanded((current) => (current === group.id ? null : group.id));
+
+  const takeOut = (fileIds: string[]) =>
+    attempt(
+      () => ungroupFiles({ data: { fileIds } }),
+      `Took ${fileIds.length} file${fileIds.length === 1 ? "" : "s"} out`,
     );
 
+  const deleteGroup = (group: GroupView, deleteFiles: boolean) => {
+    setExpanded(null);
+    void attempt(
+      () => removeGroup({ data: { id: group.id, deleteFiles } }),
+      deleteFiles ? "Group and files deleted" : "Ungrouped",
+    );
+  };
+
   const emptyGroup = () =>
-    attempt(async () => openGroup(await createGroupFromFiles({ data: { fileIds: [] } })));
+    attempt(async () => {
+      const group = await createGroupFromFiles({ data: { fileIds: [] } });
+      setKind("all");
+      setExpanded(group.id);
+    });
 
   const dragStart = (file: FileView, event: React.DragEvent) => {
     const ids = order.has(file.id) ? selected : [file.id];
@@ -413,11 +417,62 @@ function LibraryPage() {
 
   const empty = !list.files.length && !groups.length && !serverFiltered && kind === "all";
 
+  // An open group lies across the grid where its card was: the grid above it, the band, the
+  // grid below it.
+  const openAt = expanded
+    ? tiles.findIndex((tile) => tile.type === "group" && tile.group.id === expanded)
+    : -1;
+  const openTile = openAt >= 0 ? tiles[openAt] : null;
+  const open = openTile?.type === "group" ? openTile.group : null;
+  const before = open ? tiles.slice(0, openAt) : tiles;
+  const after = open ? tiles.slice(openAt + 1) : [];
+  const onEnd = list.nextCursor && kind !== "group" ? more : undefined;
+
+  const grid = (items: Tile[], end?: () => void) =>
+    items.length > 0 && (
+      <Masonry
+        items={items}
+        getKey={(tile) => tile.key}
+        height={(tile, column) =>
+          tile.type === "group"
+            ? Math.round(column * 0.75) + GROUP_FOOTER
+            : fileHeight(tile.file, column)
+        }
+        onEnd={end}
+        render={(tile) =>
+          tile.type === "group" ? (
+            <GroupCard
+              group={tile.group}
+              onOpen={groupOpen}
+              onPublish={groupPublish}
+              onDropFiles={groupDropFiles}
+              onDropUploads={groupDropUploads}
+            />
+          ) : (
+            <FileCard
+              file={tile.file}
+              selected={order.has(tile.file.id)}
+              order={selected.length > 1 ? (order.get(tile.file.id) ?? 0) : 0}
+              selecting={selected.length > 0}
+              scheduled={scheduled[tile.file.url] ?? 0}
+              onToggle={cardToggle}
+              onDragStart={cardDragStart}
+              onDragEnd={cardDragEnd}
+            />
+          )
+        }
+      />
+    );
+
   return (
     // The whole page takes files from the computer.
     <div
       {...stylex.props(styles.root)}
       onDragOver={(event) => {
+        if (event.dataTransfer.types.includes(FROM_GROUP_TYPE)) {
+          event.preventDefault();
+          return;
+        }
         if (!event.dataTransfer.types.includes("Files")) return;
         event.preventDefault();
         setDropping(true);
@@ -428,6 +483,13 @@ function LibraryPage() {
       // A group card takes its own drops; the overlay goes either way.
       onDropCapture={() => setDropping(false)}
       onDrop={(event) => {
+        // A file dragged out of an open group and let go on the grid leaves the group.
+        if (event.dataTransfer.types.includes(FROM_GROUP_TYPE)) {
+          event.preventDefault();
+          const ids = event.dataTransfer.getData(FILES_TYPE);
+          if (ids) void takeOut(JSON.parse(ids) as string[]);
+          return;
+        }
         if (!event.dataTransfer.files.length) return;
         event.preventDefault();
         upload([...event.dataTransfer.files]);
@@ -501,38 +563,22 @@ function LibraryPage() {
                 </div>
 
                 {tiles.length ? (
-                  <Masonry
-                    items={tiles}
-                    getKey={(tile) => tile.key}
-                    height={(tile, column) =>
-                      tile.type === "group"
-                        ? Math.round(column * 0.75) + GROUP_FOOTER
-                        : fileHeight(tile.file, column)
-                    }
-                    onEnd={list.nextCursor && kind !== "group" ? more : undefined}
-                    render={(tile) =>
-                      tile.type === "group" ? (
-                        <GroupCard
-                          group={tile.group}
-                          onOpen={groupOpen}
-                          onPublish={groupPublish}
-                          onDropFiles={groupDropFiles}
-                          onDropUploads={groupDropUploads}
-                        />
-                      ) : (
-                        <FileCard
-                          file={tile.file}
-                          selected={order.has(tile.file.id)}
-                          order={selected.length > 1 ? (order.get(tile.file.id) ?? 0) : 0}
-                          selecting={selected.length > 0}
-                          scheduled={scheduled[tile.file.url] ?? 0}
-                          onToggle={cardToggle}
-                          onDragStart={cardDragStart}
-                          onDragEnd={cardDragEnd}
-                        />
-                      )
-                    }
-                  />
+                  <>
+                    {grid(before, open ? undefined : onEnd)}
+                    {open && (
+                      <GroupBand
+                        key={open.id}
+                        group={open}
+                        onCollapse={() => setExpanded(null)}
+                        onPublish={(current) => publish(current.files, current, current.id)}
+                        onChanged={() => void refresh()}
+                        onDragging={setDragFrom}
+                        onUpload={(files) => upload(files, open.id)}
+                        onDelete={(deleteFiles) => deleteGroup(open, deleteFiles)}
+                      />
+                    )}
+                    {open && grid(after, onEnd)}
+                  </>
                 ) : (
                   <p {...stylex.props(styles.nothing)}>
                     {kind === "group" && !words
@@ -548,16 +594,23 @@ function LibraryPage() {
         <div {...stylex.props(styles.room)} />
       </Page>
 
-      {dragging ? (
+      {dragging || dragFrom ? (
         <DragDock
           groups={groups}
+          from={dragFrom}
           onNewGroup={(ids) => {
             setDragging(false);
+            setDragFrom(null);
             void newGroup(ids);
           }}
           onMove={(groupId, ids) => {
             setDragging(false);
+            setDragFrom(null);
             void moveTo(groupId, ids);
+          }}
+          onTakeOut={(ids) => {
+            setDragFrom(null);
+            void takeOut(ids);
           }}
         />
       ) : (

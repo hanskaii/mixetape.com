@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { FolderSimplePlus, Stack } from "@phosphor-icons/react";
+import { ArrowSquareOut, FolderSimplePlus, Stack } from "@phosphor-icons/react";
 import type { GroupView } from "#/modules/library/groups.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { FloatingBar } from "./floating-bar";
@@ -44,6 +44,8 @@ function Target({
       onDragLeave={() => setOver(false)}
       onDrop={(event) => {
         event.preventDefault();
+        // The page would take a drop from a group as "take it out".
+        event.stopPropagation();
         setOver(false);
         const ids = event.dataTransfer.getData(FILES_TYPE);
         if (ids) onDrop(JSON.parse(ids) as string[]);
@@ -61,27 +63,39 @@ function Target({
  */
 export function DragDock({
   groups,
+  from,
   onNewGroup,
   onMove,
+  onTakeOut,
 }: {
   groups: GroupView[];
+  /** The group the files are dragged out of, if any. */
+  from: string | null;
   onNewGroup: (fileIds: string[]) => void;
   onMove: (groupId: string, fileIds: string[]) => void;
+  onTakeOut: (fileIds: string[]) => void;
 }) {
   return (
     <FloatingBar label="Drop into a group">
+      {from && (
+        <Target onDrop={onTakeOut}>
+          <ArrowSquareOut size={16} /> Take out of group
+        </Target>
+      )}
       <Target onDrop={onNewGroup}>
         <FolderSimplePlus size={16} /> New group
       </Target>
-      {groups.map((group) => (
-        <Target key={group.id} onDrop={(ids) => onMove(group.id, ids)}>
-          <Stack size={16} />
-          <span {...stylex.props(styles.name)}>
-            {group.title || group.caption || "Untitled group"}
-          </span>
-          <span {...stylex.props(styles.count)}>{group.files.length}</span>
-        </Target>
-      ))}
+      {groups
+        .filter((group) => group.id !== from)
+        .map((group) => (
+          <Target key={group.id} onDrop={(ids) => onMove(group.id, ids)}>
+            <Stack size={16} />
+            <span {...stylex.props(styles.name)}>
+              {group.title || group.caption || "Untitled group"}
+            </span>
+            <span {...stylex.props(styles.count)}>{group.files.length}</span>
+          </Target>
+        ))}
     </FloatingBar>
   );
 }

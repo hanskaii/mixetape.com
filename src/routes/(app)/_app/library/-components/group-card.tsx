@@ -1,6 +1,13 @@
 import { memo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { CalendarCheck, PaperPlaneTilt, Plus, Robot, Stack } from "@phosphor-icons/react";
+import {
+  CalendarCheck,
+  PaperPlaneTilt,
+  PencilSimpleLine,
+  Plus,
+  Robot,
+  Stack,
+} from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import type { GroupView } from "#/modules/library/groups.service";
@@ -10,6 +17,8 @@ import { MediaImage } from "./media-image";
 
 /** Files dragged inside the page carry their ids under this type. */
 export const FILES_TYPE = "application/x-mixetape-files";
+/** …and, when dragged out of an open group, that group's id under this one. */
+export const FROM_GROUP_TYPE = "application/x-mixetape-from-group";
 
 /** The footer's height under the cover, for the masonry to size a group's card. */
 export const GROUP_FOOTER = 56;
@@ -171,6 +180,7 @@ export const GroupCard = memo(function GroupCard({
         type="button"
         onClick={() => onOpen(group)}
         aria-label={`Open ${title || "untitled group"}`}
+        aria-expanded={false}
         {...stylex.props(styles.cover, group.files.length > 1 && styles.two)}
       >
         <Cover group={group} />
@@ -195,7 +205,12 @@ export const GroupCard = memo(function GroupCard({
                 <CalendarCheck size={12} /> Scheduled on {pending}
               </>
             ) : group.files.length ? (
-              selectionSummary(group.files)
+              <>
+                {selectionSummary(group.files)}
+                {(group.caption || group.description) && (
+                  <PencilSimpleLine size={12} aria-label="Caption drafted" />
+                )}
+              </>
             ) : (
               "Empty — drop files here"
             )}
