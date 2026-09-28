@@ -51,7 +51,7 @@
     },
     {
       "name": "library",
-      "description": "Tools under the **library** permission: create, change and read content in the library (files and metadata, not scheduled yet)."
+      "description": "Tools under the **library** permission: make, change and read groups in the library (files that go out together, with drafted words)."
     }
   ],
   "paths": {
@@ -1214,9 +1214,9 @@
                     },
                     "description": "Only these statuses"
                   },
-                  "itemId": {
+                  "groupId": {
                     "type": "string",
-                    "description": "Only posts scheduled from this library item"
+                    "description": "Only posts published from this library group"
                   },
                   "search": {
                     "type": "string",
@@ -3809,11 +3809,11 @@
         }
       }
     },
-    "/api/v1/tools/create_item": {
+    "/api/v1/tools/create_group": {
       "post": {
-        "operationId": "create_item",
-        "summary": "create_item",
-        "description": "Put content in the library without scheduling it: files from storage plus the title, caption and metadata you wrote. The user sees it in the workspace (Library) and can send it to channels or a brand later. Answers the item with its files (kind, size, orientation, duration). Needs the **library** permission. Also available as the MCP tool `create_item`.",
+        "operationId": "create_group",
+        "summary": "create_group",
+        "description": "Make a group in the library: files that go out together (a carousel), with the title, caption and metadata you drafted, so the user can publish it from the workspace in a few clicks. Empty is fine — then upload into it with create_upload or import_file (groupId). Answers the group with its files (kind, size, orientation, duration). Needs the **library** permission. Also available as the MCP tool `create_group`.",
         "tags": [
           "library"
         ],
@@ -3831,7 +3831,7 @@
                   },
                   "caption": {
                     "type": "string",
-                    "description": "The post text; defaults for every platform"
+                    "description": "The post text; the default on every platform"
                   },
                   "description": {
                     "type": "string",
@@ -3842,11 +3842,11 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "Files from storage (list_files ids), in order — one video or image, or several for a carousel. Each must be ready (finish_upload done)."
+                    "description": "Files from storage (list_files ids), in order — a carousel's order. Each must be ready (finish_upload done); a file in another group moves here. To upload straight into a group, pass groupId to create_upload or import_file instead."
                   },
                   "metadata": {
                     "type": "object",
-                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, facebook: { … } } with each platform's overrides (same fields as create_post's metadata for that platform). On update it is merged; null clears a field or a platform."
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides (same fields as create_post's metadata for that platform; a caption there replaces the caption on that platform). On update it is merged; null clears a field or a platform."
                   }
                 }
               }
@@ -3887,11 +3887,11 @@
         }
       }
     },
-    "/api/v1/tools/update_item": {
+    "/api/v1/tools/update_group": {
       "post": {
-        "operationId": "update_item",
-        "summary": "update_item",
-        "description": "Change a library item: the given fields only (null clears one); fileIds, when given, replaces the files and their order; metadata is merged. Needs the **library** permission. Also available as the MCP tool `update_item`.",
+        "operationId": "update_group",
+        "summary": "update_group",
+        "description": "Change a group: the given fields only (null clears one); fileIds, when given, replaces its files and their order (the ones left out stay in storage); metadata is merged. Needs the **library** permission. Also available as the MCP tool `update_group`.",
         "tags": [
           "library"
         ],
@@ -3905,7 +3905,7 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "description": "Content item id (list_items)"
+                    "description": "Group id (list_groups)"
                   },
                   "title": {
                     "type": "string",
@@ -3913,7 +3913,7 @@
                   },
                   "caption": {
                     "type": "string",
-                    "description": "The post text; defaults for every platform"
+                    "description": "The post text; the default on every platform"
                   },
                   "description": {
                     "type": "string",
@@ -3924,11 +3924,11 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "Files from storage (list_files ids), in order — one video or image, or several for a carousel. Each must be ready (finish_upload done)."
+                    "description": "Files from storage (list_files ids), in order — a carousel's order. Each must be ready (finish_upload done); a file in another group moves here. To upload straight into a group, pass groupId to create_upload or import_file instead."
                   },
                   "metadata": {
                     "type": "object",
-                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, facebook: { … } } with each platform's overrides (same fields as create_post's metadata for that platform). On update it is merged; null clears a field or a platform."
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides (same fields as create_post's metadata for that platform; a caption there replaces the caption on that platform). On update it is merged; null clears a field or a platform."
                   }
                 },
                 "required": [
@@ -3972,11 +3972,11 @@
         }
       }
     },
-    "/api/v1/tools/get_item": {
+    "/api/v1/tools/get_group": {
       "post": {
-        "operationId": "get_item",
-        "summary": "get_item",
-        "description": "One library item with its files and metadata. Needs the **library** permission. Also available as the MCP tool `get_item`.",
+        "operationId": "get_group",
+        "summary": "get_group",
+        "description": "One group: its files in order, its drafted words, and the posts published from it. Needs the **library** permission. Also available as the MCP tool `get_group`.",
         "tags": [
           "library"
         ],
@@ -3990,7 +3990,7 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "description": "Content item id (list_items)"
+                    "description": "Group id (list_groups)"
                   }
                 },
                 "required": [
@@ -4034,11 +4034,11 @@
         }
       }
     },
-    "/api/v1/tools/list_items": {
+    "/api/v1/tools/list_groups": {
       "post": {
-        "operationId": "list_items",
-        "summary": "list_items",
-        "description": "List the library's content items, newest first, with their files — narrowed by words in the title, caption or description. Returns { items, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **library** permission. Also available as the MCP tool `list_items`.",
+        "operationId": "list_groups",
+        "summary": "list_groups",
+        "description": "List the library's groups, newest first, with their files — narrowed by words in the title, caption or description. Returns { groups, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **library** permission. Also available as the MCP tool `list_groups`.",
         "tags": [
           "library"
         ],
@@ -4056,7 +4056,7 @@
                   },
                   "limit": {
                     "type": "number",
-                    "description": "Items per page: default 50, max 200"
+                    "description": "Groups per page: default 50, max 200"
                   },
                   "cursor": {
                     "type": "string",
@@ -4101,11 +4101,11 @@
         }
       }
     },
-    "/api/v1/tools/delete_item": {
+    "/api/v1/tools/delete_group": {
       "post": {
-        "operationId": "delete_item",
-        "summary": "delete_item",
-        "description": "Delete a library item. Its files stay in storage. Needs the **library** permission. Also available as the MCP tool `delete_item`.",
+        "operationId": "delete_group",
+        "summary": "delete_group",
+        "description": "Delete a group. Its files stay in storage, in no group — unless deleteFiles, which deletes them too (except any a post not yet sent still needs). Needs the **library** permission. Also available as the MCP tool `delete_group`.",
         "tags": [
           "library"
         ],
@@ -4119,7 +4119,11 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "description": "Content item id (list_items)"
+                    "description": "Group id (list_groups)"
+                  },
+                  "deleteFiles": {
+                    "type": "boolean",
+                    "description": "Delete its files too"
                   }
                 },
                 "required": [
@@ -4163,11 +4167,11 @@
         }
       }
     },
-    "/api/v1/tools/plan_item": {
+    "/api/v1/tools/plan_group": {
       "post": {
-        "operationId": "plan_item",
-        "summary": "plan_item",
-        "description": "Before scheduling a library item: for each channel of the given brands and channels, whether it can go there and exactly what would be posted — the format (video, image, carousel), problems that stop it (a platform that takes no images, too many files, a missing Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Each channel gets the item's caption, its shared metadata fields that platform knows, its title and description where the platform has them, then that platform's overrides. Schedules nothing. Needs the **library** permission. Also available as the MCP tool `plan_item`.",
+        "operationId": "plan_group",
+        "summary": "plan_group",
+        "description": "Before publishing a group: for each channel of the given brands and channels, whether its files can go there and as what (label: Short, Video, Reel, Photo, Carousel, Album, Pin…), problems that stop it (a platform that takes no images, too many files, a missing YouTube title or Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Publishes nothing. Needs the **library** permission. Also available as the MCP tool `plan_group`.",
         "tags": [
           "library"
         ],
@@ -4181,7 +4185,7 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "description": "Content item id (list_items)"
+                    "description": "Group id (list_groups)"
                   },
                   "brandIds": {
                     "type": "array",
@@ -4239,11 +4243,11 @@
         }
       }
     },
-    "/api/v1/tools/schedule_item": {
+    "/api/v1/tools/publish_group": {
       "post": {
-        "operationId": "schedule_item",
-        "summary": "schedule_item",
-        "description": "Schedule a library item to brands and/or channels: one post per channel that can take it (see plan_item), all at scheduledAt, each linked to the item. Channels that cannot take it are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts then behave like any from create_post — editable and cancellable until they go out. Needs the **publish** permission. Also available as the MCP tool `schedule_item`.",
+        "operationId": "publish_group",
+        "summary": "publish_group",
+        "description": "Publish a group to brands and/or channels: one post per channel that can take it (see plan_group), all at scheduledAt. Channels that cannot are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts behave like any from create_post — editable and cancellable until they go out. Once every post is out, the files are deleted from storage (and the emptied group), unless keepFiles. Needs the **publish** permission. Also available as the MCP tool `publish_group`.",
         "tags": [
           "publish"
         ],
@@ -4257,7 +4261,7 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "description": "Content item id (list_items)"
+                    "description": "Group id (list_groups)"
                   },
                   "brandIds": {
                     "type": "array",
@@ -4280,6 +4284,10 @@
                   "leadMinutes": {
                     "type": "number",
                     "description": "Same for every channel; omit to keep each platform's default"
+                  },
+                  "keepFiles": {
+                    "type": "boolean",
+                    "description": "Keep the files in storage after the posts are out (default: delete them)"
                   }
                 },
                 "required": [
@@ -4327,7 +4335,7 @@
       "post": {
         "operationId": "create_upload",
         "summary": "create_upload",
-        "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post and the file can go into a library item. For a file already on the web use import_file. Needs the **storage** permission. Also available as the MCP tool `create_upload`.",
+        "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that library group. Storage keeps a file 30 days (expiresAt), never while a post not yet sent needs it. For a file already on the web use import_file. Needs the **storage** permission. Also available as the MCP tool `create_upload`.",
         "tags": [
           "storage"
         ],
@@ -4349,6 +4357,10 @@
                   "size": {
                     "type": "number",
                     "description": "Size in bytes, to refuse files over 5 GB early"
+                  },
+                  "groupId": {
+                    "type": "string",
+                    "description": "Put the file in this library group (create_group), after its other files"
                   }
                 },
                 "required": [
@@ -4476,6 +4488,10 @@
                   "fileName": {
                     "type": "string",
                     "description": "Defaults to the URL's file name"
+                  },
+                  "groupId": {
+                    "type": "string",
+                    "description": "Put the file in this library group (create_group), after its other files"
                   }
                 },
                 "required": [
@@ -4550,6 +4566,14 @@
                   "search": {
                     "type": "string",
                     "description": "Words in the file name (case-insensitive)"
+                  },
+                  "groupId": {
+                    "type": "string",
+                    "description": "Only the files in this group"
+                  },
+                  "loose": {
+                    "type": "boolean",
+                    "description": "Only files in no group"
                   },
                   "limit": {
                     "type": "number",
@@ -4664,7 +4688,7 @@
       "post": {
         "operationId": "delete_file",
         "summary": "delete_file",
-        "description": "Delete a file from mixetape storage. Refused while a library item holds it or a post that has not gone out yet points at it — remove it from those first. Needs the **storage** permission. Also available as the MCP tool `delete_file`.",
+        "description": "Delete a file from mixetape storage (it leaves its group). Refused while a post that has not gone out yet points at it. Needs the **storage** permission. Also available as the MCP tool `delete_file`.",
         "tags": [
           "storage"
         ],
