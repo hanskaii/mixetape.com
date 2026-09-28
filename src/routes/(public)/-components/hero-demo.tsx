@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { CheckCircle, Robot } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { colors } from "../../../components/ui/tokens.stylex";
 import { Bubble, BubbleContent } from "../../../components/ui/bubble";
 import {
   Message,
@@ -144,7 +145,7 @@ const enter = stylex.keyframes({
 
 const styles = stylex.create({
   visual: {
-    color: "#eeeae0",
+    color: colors.foreground,
     height: { default: "440px", "@media (min-width: 640px)": "500px" },
     justifySelf: "center",
     maxHeight: "500px",
@@ -157,7 +158,7 @@ const styles = stylex.create({
     animationName: enter,
     animationDuration: "220ms",
     animationTimingFunction: "ease-out",
-    borderColor: "#474740",
+    borderColor: colors.border,
     borderRadius: "12px",
     borderStyle: "solid",
     borderWidth: "1px",
@@ -173,11 +174,16 @@ const styles = stylex.create({
     paddingBlock: "0.45rem",
     paddingInline: "0.7rem",
   },
-  toolDot: { backgroundColor: "#f2d86a", borderRadius: "50%", height: "0.4rem", width: "0.4rem" },
+  toolDot: {
+    backgroundColor: colors.primary,
+    borderRadius: "50%",
+    height: "0.4rem",
+    width: "0.4rem",
+  },
   toolName: { fontFamily: '"Geist Mono Variable", ui-monospace, monospace', fontWeight: 600 },
-  toolSource: { color: "#a8a49a", fontSize: "0.65rem", marginInlineStart: "auto" },
+  toolSource: { color: colors.mutedForeground, fontSize: "0.65rem", marginInlineStart: "auto" },
   toolArgs: {
-    color: "#aaa69d",
+    color: colors.mutedForeground,
     fontFamily: '"Geist Mono Variable", ui-monospace, monospace',
     fontSize: "0.66rem",
     lineHeight: 1.5,
@@ -189,17 +195,19 @@ const styles = stylex.create({
   },
   toolResult: {
     alignItems: "center",
-    borderBlockStartColor: "#474740",
+    borderBlockStartColor: colors.border,
     borderBlockStartStyle: "solid",
     borderBlockStartWidth: "1px",
-    color: "#d7e8cc",
+    color: colors.foreground,
     display: "flex",
     gap: "0.4rem",
     minHeight: "2rem",
     paddingBlock: "0.4rem",
     paddingInline: "0.7rem",
   },
-  pending: { color: "#a8a49a" },
+  pending: { color: colors.mutedForeground },
+  // Readable on both themes; the same green as the connect page's success mark.
+  check: { color: "#10b981", flexShrink: 0 },
 });
 
 function StreamingText({
@@ -244,7 +252,12 @@ function ToolStep({ step, done }: { step: Extract<Step, { type: "tool" }>; done:
       <div {...stylex.props(styles.toolResult, !done && styles.pending)}>
         {done ? (
           <>
-            <CheckCircle size={14} weight="fill" aria-hidden="true" />
+            <CheckCircle
+              size={14}
+              weight="fill"
+              aria-hidden="true"
+              {...stylex.props(styles.check)}
+            />
             <span>{step.result}</span>
           </>
         ) : (
