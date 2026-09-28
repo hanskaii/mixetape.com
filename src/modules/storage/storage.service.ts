@@ -52,6 +52,33 @@ export async function listOwnedMedia(
     }));
 }
 
+/** All media the user may see under a prefix, following R2's pages (1000 objects each). */
+export async function listAllOwnedMedia(userId: string, subPrefix = ""): Promise<MediaObject[]> {
+  if (!env.BUCKET) return [];
+  const objects: MediaObject[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await env.BUCKET.list({
+      prefix: `${MEDIA_PREFIX}${subPrefix}`,
+      limit: 1000,
+      cursor,
+      include: ["customMetadata", "httpMetadata"],
+    });
+    for (const obj of page.objects) {
+      const owner = obj.customMetadata?.userId;
+      if (owner && owner !== userId) continue;
+      objects.push({
+        key: obj.key,
+        size: obj.size,
+        uploaded: obj.uploaded,
+        httpMetadata: obj.httpMetadata,
+      });
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  return objects;
+}
+
 /**
  * Delete only the keys the user owns. Returns counts rather than throwing on a
  * partial refusal, so a mixed batch does not lose its successful deletes.

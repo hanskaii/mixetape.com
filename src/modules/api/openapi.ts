@@ -101,9 +101,33 @@ export function openApiDocument(serverUrl: string) {
         get: {
           operationId: "listPostsRest",
           summary: "List posts",
-          description: `Posts, newest scheduled first. ${permission("read")}`,
+          description: `Posts, newest scheduled first, a page at a time; pass \`nextCursor\` back as \`cursor\` for the next page. ${permission("read")}`,
           tags: ["Accounts and posts"],
           parameters: [
+            {
+              name: "accountId",
+              in: "query",
+              description: "Comma-separated account ids: only posts on these accounts",
+              schema: { type: "string" },
+            },
+            {
+              name: "provider",
+              in: "query",
+              description: "Comma-separated platforms, e.g. `youtube,instagram`",
+              schema: { type: "string" },
+            },
+            {
+              name: "search",
+              in: "query",
+              description: "Words in the title, caption or description (case-insensitive)",
+              schema: { type: "string" },
+            },
+            {
+              name: "cursor",
+              in: "query",
+              description: "`nextCursor` from the previous page",
+              schema: { type: "string" },
+            },
             {
               name: "status",
               in: "query",
@@ -130,10 +154,16 @@ export function openApiDocument(serverUrl: string) {
             },
           ],
           responses: {
-            "200": ok("The posts.", {
+            "200": ok("A page of posts.", {
               type: "object",
-              properties: { posts: { type: "array", items: ref("Post") } },
-              required: ["posts"],
+              properties: {
+                posts: { type: "array", items: ref("Post") },
+                nextCursor: {
+                  type: ["string", "null"],
+                  description: "Pass as `cursor` for the next page; null on the last",
+                },
+              },
+              required: ["posts", "nextCursor"],
             }),
             ...ERRORS,
           },

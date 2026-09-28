@@ -24,7 +24,7 @@ async function currentUserId(): Promise<string> {
 
 export const getQueueData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
-  const [accounts, posts] = await Promise.all([
+  const [accounts, { posts }] = await Promise.all([
     social.listAccounts(userId),
     social.listPosts(userId, { limit: 200 }),
   ]);

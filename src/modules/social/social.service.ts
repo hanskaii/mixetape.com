@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { and, asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
   socialAccounts,
@@ -539,19 +539,82 @@ export async function getPost(userId: string, id: string) {
   return post;
 }
 
-export async function listPosts(
-  userId: string,
-  filter: { status?: string[]; from?: Date; to?: Date; limit?: number } = {},
-) {
+export type PostFilter = {
+  status?: string[];
+  /** Only posts on these accounts (mixetape account ids). */
+  accountId?: string[];
+  /** Only posts on these platforms, e.g. "youtube". */
+  provider?: string[];
+  /** Words in the title, caption or description (case-insensitive). */
+  search?: string;
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  /** nextCursor from the previous page. */
+  cursor?: string;
+};
+
+// A page ends at a post; the next starts after it in (scheduledAt, id) order, so pages never
+// skip or repeat a post even when several share a time.
+const encodeCursor = (post: { scheduledAt: Date; id: string }) =>
+  btoa(JSON.stringify([post.scheduledAt.getTime(), post.id]));
+
+function decodeCursor(cursor: string): { at: Date; id: string } {
+  try {
+    const [at, id] = JSON.parse(atob(cursor)) as [number, string];
+    if (typeof at !== "number" || typeof id !== "string") throw new Error();
+    return { at: new Date(at), id };
+  } catch {
+    throw new ServiceError("cursor is not one this API gave out — use nextCursor as it came");
+  }
+}
+
+/** LIKE pattern for `text` anywhere, with LIKE's own wildcards taken literally. */
+const containing = (text: string) => `%${text.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
+
+/** Posts, newest scheduled first, a page at a time: `nextCursor` is null on the last page. */
+export async function listPosts(userId: string, filter: PostFilter = {}) {
+  const limit = Math.min(Math.max(filter.limit ?? 100, 1), 500);
+  for (const [name, date] of [
+    ["from", filter.from],
+    ["to", filter.to],
+  ] as const) {
+    if (date && Number.isNaN(date.getTime()))
+      throw new ServiceError(`${name} must be an ISO time, e.g. 2026-10-02T00:00:00+07:00`);
+  }
   const conditions = [eq(socialPosts.userId, userId)];
   if (filter.status?.length) conditions.push(inArray(socialPosts.status, filter.status));
+  if (filter.accountId?.length) conditions.push(inArray(socialPosts.accountId, filter.accountId));
+  if (filter.provider?.length) conditions.push(inArray(socialPosts.provider, filter.provider));
   if (filter.from) conditions.push(gte(socialPosts.scheduledAt, filter.from));
   if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
-  return db.query.socialPosts.findMany({
+  const search = filter.search?.trim();
+  if (search) {
+    const pattern = containing(search);
+    conditions.push(
+      sql`(lower(coalesce(${socialPosts.caption}, '')) like ${pattern} escape '\\'
+        or lower(coalesce(json_extract(${socialPosts.metadata}, '$.title'), '')) like ${pattern} escape '\\'
+        or lower(coalesce(json_extract(${socialPosts.metadata}, '$.description'), '')) like ${pattern} escape '\\')`,
+    );
+  }
+  if (filter.cursor) {
+    const after = decodeCursor(filter.cursor);
+    conditions.push(
+      or(
+        lt(socialPosts.scheduledAt, after.at),
+        and(eq(socialPosts.scheduledAt, after.at), lt(socialPosts.id, after.id)),
+      )!,
+    );
+  }
+  // One more than a page, to know whether another follows.
+  const rows = await db.query.socialPosts.findMany({
     where: and(...conditions),
-    orderBy: [desc(socialPosts.scheduledAt)],
-    limit: Math.min(filter.limit ?? 100, 500),
+    orderBy: [desc(socialPosts.scheduledAt), desc(socialPosts.id)],
+    limit: limit + 1,
   });
+  const posts = rows.slice(0, limit);
+  const last = posts.at(-1);
+  return { posts, nextCursor: rows.length > limit && last ? encodeCursor(last) : null };
 }
 
 /** Stops a post that has not been published; its workflow sees the status and ends. */

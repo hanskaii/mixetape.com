@@ -60,12 +60,27 @@ export const socialTools: Tool[] = [
     name: "list_posts",
     scope: "read",
     description:
-      "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled.",
+      "List posts, newest scheduled time first, a page at a time — narrow by account, platform, status, time or words in the title/caption. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled. Returns { posts, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
     inputSchema: object({
+      accountId: {
+        type: "array",
+        items: { type: "string" },
+        description: "Only posts on these accounts (list_accounts ids)",
+      },
+      provider: {
+        type: "array",
+        items: { type: "string" },
+        description: "Only posts on these platforms, e.g. youtube, instagram",
+      },
       status: { type: "array", items: { type: "string" }, description: "Only these statuses" },
+      search: {
+        type: "string",
+        description: "Words in the title, caption or description (case-insensitive)",
+      },
       from: { type: "string", description: "ISO time; scheduled at or after" },
       to: { type: "string", description: "ISO time; scheduled at or before" },
-      limit: { type: "number", description: "Default 50, max 500" },
+      limit: { type: "number", description: "Posts per page: default 50, max 500" },
+      cursor: { type: "string", description: "nextCursor from the previous page" },
     }),
     annotations: READ_ONLY,
     run: (userId, input) => {
@@ -74,10 +89,14 @@ export const socialTools: Tool[] = [
         return value ? new Date(value) : undefined;
       };
       return social.listPosts(userId, {
+        accountId: input.strings("accountId"),
+        provider: input.strings("provider"),
         status: input.strings("status"),
+        search: input.optionalString("search"),
         from: date("from"),
         to: date("to"),
         limit: input.number("limit") ?? 50,
+        cursor: input.optionalString("cursor"),
       });
     },
   },

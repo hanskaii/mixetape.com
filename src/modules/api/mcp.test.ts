@@ -14,9 +14,13 @@ vi.mock("../social/social.service", () => ({
 }));
 vi.mock("../social/platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
 vi.mock("../social/analytics.service", () => ({ accountAnalytics: vi.fn() }));
-vi.mock("../storage/storage.service", () => ({ MEDIA_PREFIX: "media/" }));
+vi.mock("../storage/storage.service", () => ({
+  MEDIA_PREFIX: "media/",
+  listAllOwnedMedia: vi.fn(),
+}));
 vi.mock("../storage/upload.service", () => ({
   createUpload: vi.fn(),
+  publicUrl: (key: string) => `https://media.mixetape.com/${key}`,
 }));
 vi.mock("./api-keys.service", async () => {
   const { ServiceError } = await import("./errors");
@@ -30,6 +34,7 @@ vi.mock("./api-keys.service", async () => {
 import * as platform from "../social/platform.service";
 import * as social from "../social/social.service";
 import * as uploads from "../storage/upload.service";
+import * as storage from "../storage/storage.service";
 import { ServiceError } from "./errors";
 import type { Caller } from "./api-keys.service";
 import { handleMessage } from "./mcp";
@@ -223,5 +228,66 @@ describe("connecting channels over MCP", () => {
     };
     expect(refused.result.isError).toBe(true);
     expect(social.beginConnect).not.toHaveBeenCalled();
+  });
+});
+
+describe("narrowing and paging lists", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const result = (response: unknown) =>
+    JSON.parse((response as { result: { content: { text: string }[] } }).result.content[0].text);
+
+  it("passes list_posts' filters and cursor through", async () => {
+    vi.mocked(social.listPosts).mockResolvedValue({ posts: [], nextCursor: null });
+    await call("list_posts", {
+      accountId: ["acc-1", "acc-2"],
+      provider: ["youtube"],
+      search: "pompeii",
+      cursor: "abc",
+      limit: 20,
+    });
+    expect(social.listPosts).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        accountId: ["acc-1", "acc-2"],
+        provider: ["youtube"],
+        search: "pompeii",
+        cursor: "abc",
+        limit: 20,
+      }),
+    );
+  });
+
+  it("lists files newest first, by name, a page at a time", async () => {
+    const file = (name: string, at: number) => ({
+      key: `media/user-1/${at}-${name}`,
+      size: 10,
+      uploaded: new Date(at),
+    });
+    vi.mocked(storage.listAllOwnedMedia).mockResolvedValue([
+      file("old-episode.mp4", 1000),
+      file("new-episode.mp4", 3000),
+      file("cover.jpg", 2000),
+      file("mid-episode.mp4", 2500),
+    ]);
+
+    const first = result(await call("list_files", { search: "EPISODE", limit: 2 }));
+    expect(first.files.map((f: { name: string }) => f.name)).toEqual([
+      "new-episode.mp4",
+      "mid-episode.mp4",
+    ]);
+    expect(first.nextCursor).toEqual(expect.any(String));
+
+    const second = result(
+      await call("list_files", { search: "episode", limit: 2, cursor: first.nextCursor }),
+    );
+    expect(second.files.map((f: { name: string }) => f.name)).toEqual(["old-episode.mp4"]);
+    expect(second.nextCursor).toBeNull();
+  });
+
+  it("refuses a cursor it did not give out", async () => {
+    vi.mocked(storage.listAllOwnedMedia).mockResolvedValue([]);
+    const response = await call("list_files", { cursor: "not-a-cursor" });
+    expect((response as { result: { isError?: boolean } }).result.isError).toBe(true);
   });
 });

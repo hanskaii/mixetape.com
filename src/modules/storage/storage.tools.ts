@@ -1,12 +1,22 @@
-import { ServiceError } from "#/modules/api/errors";
 import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
-import { deleteUserFile, listOwnedMedia, MEDIA_PREFIX } from "./storage.service";
+import { ServiceError } from "#/modules/api/errors";
+import { deleteUserFile, listAllOwnedMedia, MEDIA_PREFIX } from "./storage.service";
 import * as uploads from "./upload.service";
 
 /**
  * mixetape's file storage for agents. Independent of scheduling: a stored file is just an
  * `r2://` URL, which anything that takes a media URL (such as create_post) accepts.
  */
+
+function decodeFileCursor(cursor: string): { at: number; key: string } {
+  try {
+    const [at, key] = JSON.parse(atob(cursor)) as [number, string];
+    if (typeof at !== "number" || typeof key !== "string") throw new Error();
+    return { at, key };
+  } catch {
+    throw new ServiceError("cursor is not one this API gave out — use nextCursor as it came");
+  }
+}
 
 export const storageTools: Tool[] = [
   {
@@ -51,15 +61,23 @@ export const storageTools: Tool[] = [
     name: "list_files",
     scope: "storage",
     description:
-      "List the files in your mixetape storage, newest first, with url (r2://…) and size.",
-    inputSchema: object({ limit: { type: "number", description: "Default 50, max 1000" } }),
+      "List the files in your mixetape storage, newest first, with url (r2://…) and size — narrow by words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
+    inputSchema: object({
+      search: { type: "string", description: "Words in the file name (case-insensitive)" },
+      limit: { type: "number", description: "Files per page: default 50, max 1000" },
+      cursor: { type: "string", description: "nextCursor from the previous page" },
+    }),
     annotations: READ_ONLY,
     run: async (userId, input) => {
       const limit = Math.min(Math.max(input.number("limit") ?? 50, 1), 1000);
-      // R2 lists oldest first (keys start with the upload time); newest first needs them all.
-      const files = await listOwnedMedia(userId, `${userId}/`, 1000);
-      return files
+      const search = input.optionalString("search")?.trim().toLowerCase();
+      const cursor = input.optionalString("cursor");
+      const after = cursor ? decodeFileCursor(cursor) : null;
+
+      // R2 lists oldest first (keys start with the upload time), so newest first needs them all.
+      const files = (await listAllOwnedMedia(userId, `${userId}/`))
         .map((file) => ({
+          key: file.key,
           url: `r2://${file.key}`,
           publicUrl: uploads.publicUrl(file.key),
           name: file.key.slice(`${MEDIA_PREFIX}${userId}/`.length).replace(/^\d+-/, ""),
@@ -67,8 +85,24 @@ export const storageTools: Tool[] = [
           contentType: file.httpMetadata?.contentType,
           uploaded: file.uploaded,
         }))
-        .sort((a, b) => b.uploaded.getTime() - a.uploaded.getTime())
-        .slice(0, limit);
+        .sort((a, b) => b.uploaded.getTime() - a.uploaded.getTime() || (a.key < b.key ? 1 : -1))
+        .filter((file) => !search || file.name.toLowerCase().includes(search))
+        // A page starts after the previous page's last file, in (uploaded, key) order.
+        .filter(
+          (file) =>
+            !after ||
+            file.uploaded.getTime() < after.at ||
+            (file.uploaded.getTime() === after.at && file.key < after.key),
+        );
+      const page = files.slice(0, limit);
+      const last = page.at(-1);
+      return {
+        files: page.map(({ key: _key, ...file }) => file),
+        nextCursor:
+          files.length > limit && last
+            ? btoa(JSON.stringify([last.uploaded.getTime(), last.key]))
+            : null,
+      };
     },
   },
   {
