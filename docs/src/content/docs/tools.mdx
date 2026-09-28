@@ -22,7 +22,7 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 
 | Tool | Does |
 |---|---|
-| [`create_post`](/api/publish/create_post) | Schedule a post, or post now |
+| [`create_post`](/api/publish/create_post) | Schedule a post, or post now — one file, or several (`media`) as a carousel |
 | [`update_post`](/api/publish/update_post) | Change a post that is still scheduled |
 | [`cancel_post`](/api/publish/cancel_post) | Cancel a post that is still scheduled |
 | [`retry_post`](/api/publish/retry_post) | Send a failed post again |
@@ -73,6 +73,9 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 | [`get_item`](/api/library/get_item) | One content item with its files |
 | [`list_items`](/api/library/list_items) | Content, newest first — by words in the title, caption or description; paged |
 | [`delete_item`](/api/library/delete_item) | Delete content; its files stay in storage |
+| [`plan_item`](/api/library/plan_item) | Channel by channel: can the content go there, and what would be posted |
+
+[`schedule_item`](/api/publish/schedule_item) (permission `publish`) schedules content to brands and channels, one post each.
 
 ## `channels`
 

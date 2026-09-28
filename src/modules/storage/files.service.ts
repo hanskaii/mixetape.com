@@ -213,7 +213,11 @@ export async function deleteFile(userId: string, idOrUrl: string) {
     db.query.socialPosts.findMany({
       where: and(
         eq(socialPosts.userId, userId),
-        eq(socialPosts.mediaUrl, `r2://${file.key}`),
+        // The post's one file, or one of a carousel's.
+        or(
+          eq(socialPosts.mediaUrl, `r2://${file.key}`),
+          sql`${socialPosts.media} like ${`%"r2://${file.key}"%`}`,
+        ),
         inArray(socialPosts.status, ["scheduled", "publishing"]),
       ),
       columns: { id: true },

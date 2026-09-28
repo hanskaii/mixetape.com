@@ -107,9 +107,51 @@ type VideoNode = {
   comments?: { summary?: { total_count?: number } };
 };
 
+type PostNode = {
+  is_published?: boolean;
+  scheduled_publish_time?: number;
+  permalink_url?: string;
+  likes?: { summary?: { total_count?: number } };
+  comments?: { summary?: { total_count?: number } };
+};
+
+/** A photo or album post (its id is "<page>_<post>"): published or scheduled, and its counts. */
+async function postStatus(postId: string, token: string) {
+  let post: PostNode;
+  try {
+    post = await graph<PostNode>(token, postId, {
+      params: {
+        fields:
+          "is_published,scheduled_publish_time,permalink_url,likes.summary(true).limit(0),comments.summary(true).limit(0)",
+      },
+    });
+  } catch (error) {
+    if (error instanceof GraphApiError && error.notFound)
+      return { uploadStatus: "deleted", problem: "The post is no longer on Facebook" };
+    throw error;
+  }
+  return {
+    visibility: post.is_published
+      ? "public"
+      : post.scheduled_publish_time
+        ? "scheduled"
+        : "unpublished",
+    uploadStatus: post.is_published ? "published" : "scheduled",
+    publishAt: post.scheduled_publish_time
+      ? new Date(post.scheduled_publish_time * 1000).toISOString()
+      : null,
+    url: post.permalink_url ?? `https://www.facebook.com/${postId}`,
+    counts: {
+      likes: post.likes?.summary?.total_count,
+      comments: post.comments?.summary?.total_count,
+    },
+  };
+}
+
 /** Where a video stands: published or scheduled, processing, any error, and its counts. */
 export const facebookStatus: StatusCapability = {
   async fetch(videoId, token) {
+    if (videoId.includes("_")) return postStatus(videoId, token);
     let video: VideoNode;
     try {
       video = await graph<VideoNode>(token, videoId, {

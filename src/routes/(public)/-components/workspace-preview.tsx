@@ -39,6 +39,8 @@ const post = (
   accountId,
   provider: "youtube",
   mediaUrl: "r2://sample.mp4",
+  media: null,
+  itemId: null,
   caption: null,
   metadata: { title },
   scheduledAt: new Date(scheduledAt),

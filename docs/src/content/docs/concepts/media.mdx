@@ -5,7 +5,8 @@ sidebar:
   order: 2
 ---
 
-A post's `mediaUrl` is either:
+A post has one file (`mediaUrl`) or several (`media`, a list in order) — a carousel on
+Instagram, Threads and Pinterest, a photo album on Facebook. Each file is either:
 
 - a **public https URL** that the platform can fetch, or
 - an **`r2://` URL** of a file in mixetape storage.
@@ -56,3 +57,23 @@ sent from your machine.
 `list_files` lists your files, newest first; `get_file` answers one, by id or `r2://` URL.
 `delete_file` refuses while a library item holds the file or a post that has not gone out yet
 points at it — take it out of those first.
+
+## What each platform takes
+
+`list_accounts` gives every channel's `formats`: whether its platform takes videos and images,
+how many files a carousel holds and of which kinds, image types, video length, and whether it
+is made for upright media.
+
+| Platform | Video | Image | Several files |
+|---|---|---|---|
+| YouTube | Long videos and Shorts | — | — |
+| Facebook | Page video or Reel | Photo | Album of 2–10 images |
+| Instagram | Reel, 3 s–15 min | JPEG photo | Carousel of 2–10 images and videos |
+| Threads | Up to 5 min | JPEG or PNG | Carousel of 2–20 images and videos |
+| TikTok | 3 s–10 min | — | — |
+| Pinterest | 4 s–15 min | Image Pin | Carousel Pin of 2–5 images |
+
+Files in mixetape storage are checked against this when a post is created, so a post the
+platform cannot take is refused at once — not at go-live. A horizontal video where upright is
+expected is allowed; `plan_item` warns about it.
+

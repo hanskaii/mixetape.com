@@ -51,6 +51,14 @@ export const tiktokProvider: SocialProvider = {
 
   connect: tiktokConnect,
   metadata: tiktokMetadata,
+  // Videos only (3 s–10 min, upright); photo posts are not supported yet.
+  formats: {
+    video: true,
+    image: false,
+    minVideoMs: 3_000,
+    maxVideoMs: 10 * 60_000,
+    vertical: true,
+  },
   status: tiktokStatus,
 
   async upload(post, token, metadata) {

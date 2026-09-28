@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { kindFromUrl } from "../formats";
 import { PermanentPublishError, type PostWithMedia } from "./types";
 import { instagram } from "./instagram";
 import { threads } from "./threads";
@@ -24,8 +25,14 @@ function scriptFetch(responses: Response[]) {
 const form = (call: Call) => new URLSearchParams(String(call.init?.body));
 const json = (call: Call) => JSON.parse(String(call.init?.body));
 
-const post = (account: string, url = "https://media.example.com/ep.mp4") =>
-  ({ id: "p1", url, caption: null, platformAccountId: account }) as unknown as PostWithMedia;
+const post = (account: string, url = "https://media.example.com/ep.mp4", ...more: string[]) =>
+  ({
+    id: "p1",
+    url,
+    media: [url, ...more].map((item) => ({ url: item, kind: kindFromUrl(item) })),
+    caption: null,
+    platformAccountId: account,
+  }) as unknown as PostWithMedia;
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -232,5 +239,92 @@ describe("pinterest", () => {
       media_source: { source_type: "image_url", url: "https://media.example.com/cover.jpg" },
     });
     expect(result.platformUrl).toBe("https://www.pinterest.com/pin/pin-7/");
+  });
+});
+
+describe("photos and carousels", () => {
+  it("posts a JPEG to Instagram as a photo", async () => {
+    const calls = scriptFetch([
+      Response.json({ id: "container-1" }),
+      Response.json({ status_code: "FINISHED" }),
+    ]);
+    await instagram.upload(post("ig-1", "https://media.example.com/a.jpg"), "t", {
+      caption: "Hi",
+      publishAt: "2026-10-02T10:00:00Z",
+    });
+    expect(form(calls[0]).get("image_url")).toBe("https://media.example.com/a.jpg");
+    expect(form(calls[0]).get("media_type")).toBeNull();
+    expect(form(calls[0]).get("caption")).toBe("Hi");
+  });
+
+  it("builds an Instagram carousel from item containers, caption on the carousel", async () => {
+    const calls = scriptFetch([
+      Response.json({ id: "child-1" }),
+      Response.json({ status_code: "FINISHED" }),
+      Response.json({ id: "child-2" }),
+      Response.json({ status_code: "FINISHED" }),
+      Response.json({ id: "carousel-1" }),
+      Response.json({ status_code: "FINISHED" }),
+    ]);
+    const prepared = await instagram.upload(
+      post("ig-1", "https://media.example.com/a.jpg", "https://media.example.com/b.mp4"),
+      "t",
+      { caption: "Two", publishAt: "2026-10-02T10:00:00Z" },
+    );
+    expect(Object.fromEntries(form(calls[0]))).toMatchObject({
+      image_url: "https://media.example.com/a.jpg",
+      is_carousel_item: "true",
+    });
+    expect(Object.fromEntries(form(calls[2]))).toMatchObject({
+      media_type: "VIDEO",
+      video_url: "https://media.example.com/b.mp4",
+      is_carousel_item: "true",
+    });
+    expect(Object.fromEntries(form(calls[4]))).toMatchObject({
+      media_type: "CAROUSEL",
+      children: "child-1,child-2",
+      caption: "Two",
+    });
+    expect(form(calls[0]).get("caption")).toBeNull();
+    expect(prepared.platformPostId).toBe("carousel-1");
+  });
+
+  it("builds a Threads carousel the same way", async () => {
+    const calls = scriptFetch([
+      Response.json({ id: "c1" }),
+      Response.json({ status: "FINISHED" }),
+      Response.json({ id: "c2" }),
+      Response.json({ status: "FINISHED" }),
+      Response.json({ id: "carousel" }),
+      Response.json({ status: "FINISHED" }),
+    ]);
+    await threads.upload(
+      post("th-1", "https://media.example.com/a.png", "https://media.example.com/b.png"),
+      "t",
+      { text: "Pair", publishAt: "2026-10-02T10:00:00Z" },
+    );
+    expect(form(calls[0]).get("media_type")).toBe("IMAGE");
+    expect(form(calls[0]).get("is_carousel_item")).toBe("true");
+    expect(Object.fromEntries(form(calls[4]))).toMatchObject({
+      media_type: "CAROUSEL",
+      children: "c1,c2",
+      text: "Pair",
+    });
+  });
+
+  it("makes several images one carousel Pin", async () => {
+    const calls = scriptFetch([Response.json({ id: "pin-8" })]);
+    await pinterestProvider.upload(
+      post("pi-1", "https://media.example.com/a.jpg", "https://media.example.com/b.jpg"),
+      "t",
+      { boardId: "board-1" },
+    );
+    expect(json(calls[0]).media_source).toEqual({
+      source_type: "multiple_image_urls",
+      items: [
+        { url: "https://media.example.com/a.jpg" },
+        { url: "https://media.example.com/b.jpg" },
+      ],
+    });
   });
 });

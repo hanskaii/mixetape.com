@@ -14,7 +14,8 @@ import type { PinterestPinMeta } from "./metadata";
 /**
  * Pins, boards and Pin analytics. A video goes to Pinterest's upload bucket first (a
  * multipart form streamed straight from mixetape's storage, so a large file never sits in
- * memory), then becomes a Pin once Pinterest has processed it. An image is taken by URL.
+ * memory), then becomes a Pin once Pinterest has processed it. An image is taken by URL,
+ * and several images become one carousel Pin.
  */
 
 const POLL_MS = 10_000;
@@ -88,17 +89,23 @@ async function uploadVideo(url: string, token: string): Promise<string> {
 
 export async function createPin(post: PostWithMedia, token: string, metadata: Metadata) {
   const meta = metadata as PinterestPinMeta;
-  const isImage = /\.(jpe?g|png|webp|gif)(\?|$)/i.test(post.url);
+  const [first] = post.media;
   try {
-    const media_source = isImage
-      ? { source_type: "image_url", url: publicMediaUrl(post.url) }
-      : {
-          source_type: "video_id",
-          media_id: await uploadVideo(post.url, token),
-          ...(meta.thumbnailUrl
-            ? { cover_image_url: meta.thumbnailUrl }
-            : { cover_image_key_frame_time: meta.coverFrameSeconds ?? 1 }),
-        };
+    const media_source =
+      post.media.length > 1
+        ? {
+            source_type: "multiple_image_urls",
+            items: post.media.map((item) => ({ url: publicMediaUrl(item.url) })),
+          }
+        : first.kind === "image"
+          ? { source_type: "image_url", url: publicMediaUrl(first.url) }
+          : {
+              source_type: "video_id",
+              media_id: await uploadVideo(post.url, token),
+              ...(meta.thumbnailUrl
+                ? { cover_image_url: meta.thumbnailUrl }
+                : { cover_image_key_frame_time: meta.coverFrameSeconds ?? 1 }),
+            };
     const pin = await pinterest<{ id: string }>(token, "pins", {
       method: "POST",
       body: {

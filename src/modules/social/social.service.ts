@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
+  mediaFiles,
   socialAccounts,
   socialPosts,
   type SocialAccount,
@@ -18,9 +19,11 @@ import {
   isProvider,
   type AppCredentials,
   type ConnectedAccount,
+  type MediaItem,
   type Metadata,
   type TokenGrant,
 } from "./providers";
+import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
 
 /**
@@ -389,7 +392,10 @@ export function missingScopes(account: Pick<SocialAccount, "provider" | "scopes"
 
 export type CreatePostInput = {
   accountId: string;
-  mediaUrl: string;
+  /** One file; or `media`, several (a carousel). */
+  mediaUrl?: string;
+  /** Every file of the post, in order: a carousel or album where the platform takes one. */
+  media?: string[];
   caption?: string;
   /**
    * ISO time the post goes live. Omitted means "post now": it goes live once the lead time
@@ -400,6 +406,8 @@ export type CreatePostInput = {
   leadMinutes?: number;
   /** Platform fields; see the provider's metadata schema. */
   metadata?: Metadata;
+  /** The library item the post is scheduled from (library schedule_item). */
+  itemId?: string;
 };
 
 function checkMedia(userId: string, url: string): string {
@@ -411,6 +419,51 @@ function checkMedia(userId: string, url: string): string {
     throw new ServiceError("That uploaded file belongs to someone else", 403);
   }
   return mediaUrl;
+}
+
+/**
+ * A post's files with what is known of each: files in mixetape storage are looked up in the
+ * index (kind, type, size, length), anything else is judged by its URL.
+ */
+export async function resolveMedia(
+  userId: string,
+  urls: string[],
+): Promise<{ media: MediaItem[]; facts: FileFacts[] }> {
+  if (!urls.length) throw new ServiceError("Give the post a file: mediaUrl or media");
+  if (urls.length > 20) throw new ServiceError("A post takes at most 20 files");
+  const checked = urls.map((url) => checkMedia(userId, url));
+  const keys = checked.filter((url) => url.startsWith("r2://")).map((url) => url.slice(5));
+  const indexed = keys.length
+    ? await db.query.mediaFiles.findMany({
+        where: and(eq(mediaFiles.userId, userId), inArray(mediaFiles.key, keys)),
+      })
+    : [];
+  const facts = checked.map((url): FileFacts => {
+    const file = indexed.find((candidate) => `r2://${candidate.key}` === url);
+    if (!file) return { kind: kindFromUrl(url) };
+    if (file.status !== "ready")
+      throw new ServiceError(`${file.name} is not ready — finish its upload first`, 409);
+    return file;
+  });
+  const media = checked.map((url, index) => ({
+    url,
+    kind: facts[index].kind === "image" ? ("image" as const) : ("video" as const),
+  }));
+  return { media, facts };
+}
+
+/** Refuses files the platform cannot take as one post. */
+function checkPostFormat(provider: string, facts: FileFacts[]) {
+  const platform = getProvider(provider);
+  const { problems } = checkFormat(platform.name, platform.formats, facts);
+  if (problems.length) throw new ServiceError(problems.join("; "));
+}
+
+/** A post's files: its `media`, or — for posts from before carousels — its one media URL. */
+export function postMedia(post: Pick<SocialPost, "media" | "mediaUrl">): MediaItem[] {
+  return post.media?.length
+    ? post.media
+    : [{ url: post.mediaUrl, kind: kindFromUrl(post.mediaUrl) }];
 }
 
 /** The go-live time: the one asked for, or — for "post now" — once the lead has passed. */
@@ -480,12 +533,19 @@ export async function createPost(userId: string, input: CreatePostInput) {
 
   const id = newId();
   const leadMinutes = leadFor(account.provider, input.leadMinutes);
+  const { media, facts } = await resolveMedia(
+    userId,
+    input.media ?? (input.mediaUrl ? [input.mediaUrl] : []),
+  );
+  checkPostFormat(account.provider, facts);
   await db.insert(socialPosts).values({
     id,
     userId,
     accountId: account.id,
     provider: account.provider,
-    mediaUrl: checkMedia(userId, input.mediaUrl),
+    mediaUrl: media[0].url,
+    media,
+    itemId: input.itemId ?? null,
     caption: input.caption ?? null,
     metadata: checkMetadata(account.provider, input.metadata, input.caption),
     scheduledAt: checkTime(input.scheduledAt, leadMinutes),
@@ -498,7 +558,7 @@ export async function createPost(userId: string, input: CreatePostInput) {
   return getPost(userId, id);
 }
 
-export type EditPostInput = Partial<Omit<CreatePostInput, "accountId">>;
+export type EditPostInput = Partial<Omit<CreatePostInput, "accountId" | "itemId">>;
 
 /**
  * Changes a post that has not gone out yet: its time, media, caption or metadata. The
@@ -516,9 +576,16 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
   const caption = input.caption !== undefined ? input.caption : post.caption;
   const leadMinutes =
     input.leadMinutes !== undefined ? leadFor(post.provider, input.leadMinutes) : post.leadMinutes;
+  const urls = input.media ?? (input.mediaUrl !== undefined ? [input.mediaUrl] : null);
+  let media: MediaItem[] | undefined;
+  if (urls) {
+    const resolved = await resolveMedia(userId, urls);
+    checkPostFormat(post.provider, resolved.facts);
+    media = resolved.media;
+  }
   await updatePost(id, {
     leadMinutes,
-    ...(input.mediaUrl !== undefined && { mediaUrl: checkMedia(userId, input.mediaUrl) }),
+    ...(media && { mediaUrl: media[0].url, media }),
     ...(input.caption !== undefined && { caption: input.caption }),
     ...(input.scheduledAt !== undefined && {
       scheduledAt: checkTime(input.scheduledAt, leadMinutes ?? 0),
@@ -546,6 +613,8 @@ export type PostFilter = {
   accountId?: string[];
   /** Only posts on these platforms, e.g. "youtube". */
   provider?: string[];
+  /** Only posts scheduled from this library item. */
+  itemId?: string;
   /** Words in the title, caption or description (case-insensitive). */
   search?: string;
   from?: Date;
@@ -569,6 +638,7 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
   if (filter.status?.length) conditions.push(inArray(socialPosts.status, filter.status));
   if (filter.accountId?.length) conditions.push(inArray(socialPosts.accountId, filter.accountId));
   if (filter.provider?.length) conditions.push(inArray(socialPosts.provider, filter.provider));
+  if (filter.itemId) conditions.push(eq(socialPosts.itemId, filter.itemId));
   if (filter.from) conditions.push(gte(socialPosts.scheduledAt, filter.from));
   if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
   const search = filter.search?.trim();

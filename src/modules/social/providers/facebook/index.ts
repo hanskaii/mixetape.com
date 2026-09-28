@@ -4,6 +4,7 @@ import { facebookCaptions } from "./captions";
 import { facebookComments } from "./comments";
 import { facebookConnect } from "./connect";
 import { facebookMetadata, type FacebookVideoMeta } from "./metadata";
+import { postUrl, uploadPhotos } from "./photos";
 import {
   facebookEditing,
   facebookStatus,
@@ -17,8 +18,9 @@ export type { FacebookVideoMeta } from "./metadata";
 const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
- * Facebook Pages: Page videos and Reels, scheduled natively, with thumbnails, captions,
- * comments and video insights. Personal profiles cannot be posted to through the API.
+ * Facebook Pages: Page videos, Reels, photos and photo albums, scheduled natively, with
+ * thumbnails, captions, comments and video insights. Personal profiles cannot be posted to
+ * through the API.
  */
 export const facebook: SocialProvider = {
   id: "facebook",
@@ -30,6 +32,9 @@ export const facebook: SocialProvider = {
 
   connect: facebookConnect,
   metadata: facebookMetadata,
+  // A Page video or Reel, a photo, or an album of up to 10 photos.
+  formats: { video: true, image: true, carousel: { min: 2, max: 10, kinds: ["image"] } },
+  textFields: { title: "title", description: "description" },
   status: facebookStatus,
   thumbnails: facebookThumbnails,
   editing: facebookEditing,
@@ -44,6 +49,17 @@ export const facebook: SocialProvider = {
    */
   async upload(post, token, metadata) {
     const meta = metadata as FacebookVideoMeta;
+    if (post.media.some((item) => item.kind === "image")) {
+      const id = await uploadPhotos(post, token, metadata);
+      const what = post.media.length > 1 ? "Album" : "Photo";
+      return {
+        platformPostId: id,
+        platformUrl: postUrl(id),
+        responseLog: meta.publishAt
+          ? `${what} scheduled; Facebook publishes it at ${meta.publishAt}`
+          : `${what} published`,
+      };
+    }
     const { id, format } = await uploadVideo(post, token, metadata);
 
     const warnings: string[] = [];

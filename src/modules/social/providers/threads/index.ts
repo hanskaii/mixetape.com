@@ -7,7 +7,7 @@ import {
 import { threads as call } from "./api";
 import { threadsConnect } from "./connect";
 import { threadsMetadata } from "./metadata";
-import { publishContainer, publishText, threadsStatus, uploadVideo } from "./posts";
+import { publishContainer, publishText, threadsStatus, uploadMedia } from "./posts";
 
 /**
  * Threads profiles: video posts prepared ahead and published by mixetape at go-live, with
@@ -110,12 +110,20 @@ export const threads: SocialProvider = {
 
   connect: threadsConnect,
   metadata: threadsMetadata,
+  // Videos up to 5 minutes, JPEG/PNG images, and carousels of 2–20 of either.
+  formats: {
+    video: true,
+    image: true,
+    carousel: { min: 2, max: 20, kinds: ["image", "video"] },
+    imageTypes: ["image/jpeg", "image/png"],
+    maxVideoMs: 5 * 60_000,
+  },
   status: threadsStatus,
   comments: threadsComments,
   analytics: threadsAnalytics,
 
   async upload(post, token, metadata) {
-    const result = await uploadVideo(post, token, metadata);
+    const result = await uploadMedia(post, token, metadata);
     return {
       platformPostId: result.platformPostId,
       platformUrl: "platformUrl" in result ? result.platformUrl : undefined,

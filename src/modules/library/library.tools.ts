@@ -1,10 +1,10 @@
 import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as library from "./library.service";
+import * as schedule from "./schedule.service";
 
 /**
  * The library for agents: content items — files from storage plus the metadata written for
- * them — that are not scheduled anywhere yet, for a person (or an agent) to send to
- * channels later.
+ * them — made ahead, then sent to brands and channels (plan_item, schedule_item).
  */
 
 const ITEM_ID = { type: "string", description: "Content item id (list_items)" };
@@ -16,7 +16,7 @@ const FIELDS = {
     type: "array",
     items: { type: "string" },
     description:
-      "Files from storage (list_files ids), in order — one video, or several images for a carousel. Each must be ready (finish_upload done).",
+      "Files from storage (list_files ids), in order — one video or image, or several for a carousel. Each must be ready (finish_upload done).",
   },
   metadata: {
     type: "object",
@@ -24,6 +24,24 @@ const FIELDS = {
       "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, facebook: { … } } with each platform's overrides (same fields as create_post's metadata for that platform). On update it is merged; null clears a field or a platform.",
   },
 };
+
+const TARGET = {
+  brandIds: {
+    type: "array",
+    items: { type: "string" },
+    description: "Brands (list_brands): every channel in them",
+  },
+  accountIds: {
+    type: "array",
+    items: { type: "string" },
+    description: "Single channels (list_accounts)",
+  },
+};
+
+const target = (input: Parameters<Tool["run"]>[1]) => ({
+  brandIds: input.strings("brandIds"),
+  accountIds: input.strings("accountIds"),
+});
 
 export const libraryTools: Tool[] = [
   {
@@ -95,5 +113,40 @@ export const libraryTools: Tool[] = [
     inputSchema: object({ id: ITEM_ID }, ["id"]),
     annotations: { destructiveHint: true },
     run: (userId, input) => library.deleteItem(userId, input.string("id")),
+  },
+  {
+    name: "plan_item",
+    scope: "library",
+    description:
+      "Before scheduling a library item: for each channel of the given brands and channels, whether it can go there and exactly what would be posted — the format (video, image, carousel), problems that stop it (a platform that takes no images, too many files, a missing Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Each channel gets the item's caption, its shared metadata fields that platform knows, its title and description where the platform has them, then that platform's overrides. Schedules nothing.",
+    inputSchema: object({ id: ITEM_ID, ...TARGET }, ["id"]),
+    annotations: READ_ONLY,
+    run: (userId, input) => schedule.planItem(userId, input.string("id"), target(input)),
+  },
+  {
+    name: "schedule_item",
+    scope: "publish",
+    description:
+      "Schedule a library item to brands and/or channels: one post per channel that can take it (see plan_item), all at scheduledAt, each linked to the item. Channels that cannot take it are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts then behave like any from create_post — editable and cancellable until they go out.",
+    inputSchema: object(
+      {
+        id: ITEM_ID,
+        ...TARGET,
+        scheduledAt: {
+          type: "string",
+          description: "ISO 8601 with timezone offset. Omit to post now (live after each lead).",
+        },
+        leadMinutes: {
+          type: "number",
+          description: "Same for every channel; omit to keep each platform's default",
+        },
+      },
+      ["id"],
+    ),
+    run: (userId, input) =>
+      schedule.scheduleItem(userId, input.string("id"), target(input), {
+        scheduledAt: input.optionalString("scheduledAt"),
+        leadMinutes: input.number("leadMinutes"),
+      }),
   },
 ];

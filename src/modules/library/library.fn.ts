@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { JsonValue } from "#/database/schema";
 import { currentUserId } from "#/modules/auth/auth.server";
+import * as brands from "#/modules/social/brands.service";
+import * as social from "#/modules/social/social.service";
 import * as files from "#/modules/storage/files.service";
 import * as library from "./library.service";
+import * as schedule from "./schedule.service";
 
 /**
  * Server functions behind the Library page — the same services the library and storage
@@ -13,11 +16,25 @@ type Metadata = Record<string, JsonValue>;
 
 export const getLibraryData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
-  const [fileList, itemList] = await Promise.all([
+  const [fileList, itemList, accounts, brandList] = await Promise.all([
     files.listFiles(userId, { limit: 60 }),
     library.listItems(userId, { limit: 40 }),
+    social.listAccounts(userId),
+    brands.listBrands(userId),
   ]);
-  return { files: fileList, items: itemList };
+  return {
+    files: fileList,
+    items: itemList,
+    // For sending content out: where it can go.
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name.trim(),
+      provider: account.provider,
+      avatar: account.avatar,
+      status: account.status,
+    })),
+    brands: brandList,
+  };
 });
 
 export const listLibraryFiles = createServerFn({ method: "GET" })
@@ -51,3 +68,19 @@ export const updateContent = createServerFn({ method: "POST" })
 export const removeContent = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => library.deleteItem(await currentUserId(), data.id));
+
+// ── sending content out ─────────────────────────────────────────────────────
+
+type Target = { id: string; brandIds: string[]; accountIds: string[] };
+
+export const planContent = createServerFn({ method: "POST" })
+  .validator((data: Target) => data)
+  .handler(async ({ data: { id, ...target } }) =>
+    schedule.planItem(await currentUserId(), id, target),
+  );
+
+export const scheduleContent = createServerFn({ method: "POST" })
+  .validator((data: Target & { scheduledAt: string }) => data)
+  .handler(async ({ data: { id, scheduledAt, ...target } }) =>
+    schedule.scheduleItem(await currentUserId(), id, target, { scheduledAt }),
+  );

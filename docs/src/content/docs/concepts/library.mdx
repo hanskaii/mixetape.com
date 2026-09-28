@@ -1,14 +1,14 @@
 ---
 title: Library and brands
-description: Content filed ahead of scheduling — files with their words and per-platform metadata — and brands, groups of channels.
+description: Content made ahead — files with their words and per-platform metadata — sent to brands (groups of channels) and single channels when it is ready.
 sidebar:
   order: 3
 ---
 
-The library holds content that is made but not scheduled yet: a set of files from
+The library holds content that is made but not sent out yet: a set of files from
 [storage](/concepts/media) with the title, caption, description and metadata written for
 them. An agent that renders a week of videos can file each one as it is done; you see them in
-the workspace under **Library**, and they wait there until they are scheduled.
+the workspace under **Library**, and send each to brands and channels when it is ready.
 
 ## Content items
 
@@ -38,10 +38,29 @@ be longer than an Instagram caption without writing everything twice.
 platform; `null` clears a field or a platform's overrides. `fileIds`, when given, replaces the
 files and their order. Every item records whether an agent or a person made it.
 
-<Aside type="note" title="Not scheduled yet">
-  Content items are not posts. Scheduling one to channels or to a brand is the next step, coming
-  to the library; until then, schedule its files with `create_post` as usual.
-</Aside>
+## Sending it out
+
+`plan_item` takes brands (`brandIds`) and channels (`accountIds`) and answers for every channel
+they cover whether the item can go there and exactly what would be posted:
+
+- `format` — `video`, `image` or `carousel`;
+- `problems` that stop it — a platform that takes no images, more files than its carousel
+  holds, a Pinterest Pin without `boardId`, a channel to reconnect;
+- `warnings` that do not — a horizontal video for Reels;
+- the `caption` and `metadata` the post would carry.
+
+Each channel gets the item's caption; the shared metadata fields its platform knows; the item's
+title and description where the platform has them (YouTube, Facebook, Pinterest); then that
+platform's overrides. A `caption` override on a platform without a caption field of its own
+(YouTube, Threads, TikTok…) replaces the caption there.
+
+`schedule_item` (permission `publish`) then creates one post per channel that can take it, all
+at `scheduledAt`, and skips the rest with their reasons. The posts are ordinary posts —
+editable and cancellable until they go out — linked back to the item: `get_item` lists them,
+and `list_posts` takes `itemId`.
+
+In the workspace, **Schedule** on a content item does the same, showing the plan as you pick
+brands and channels.
 
 ## Brands
 

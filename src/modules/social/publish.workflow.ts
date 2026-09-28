@@ -2,7 +2,13 @@ import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloud
 import { NonRetryableError } from "cloudflare:workflows";
 import { postFirstComment, releasePrepared } from "./platform.service";
 import { getProvider, PermanentPublishError } from "./providers";
-import { accessTokenFor, loadForPublishing, platformStatusFor, updatePost } from "./social.service";
+import {
+  accessTokenFor,
+  loadForPublishing,
+  platformStatusFor,
+  postMedia,
+  updatePost,
+} from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
 import { publishTiming } from "./timing";
 
@@ -177,6 +183,7 @@ async function publish(
       {
         ...post,
         url: post.mediaUrl,
+        media: postMedia(post),
         caption: post.caption,
         platformAccountId: account.platformAccountId,
       },

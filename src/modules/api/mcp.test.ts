@@ -22,6 +22,10 @@ vi.mock("../storage/files.service", () => ({
   getFile: vi.fn(),
   deleteFile: vi.fn(),
 }));
+vi.mock("../library/schedule.service", () => ({
+  planItem: vi.fn(),
+  scheduleItem: vi.fn(),
+}));
 vi.mock("../library/library.service", () => ({
   createItem: vi.fn(),
   updateItem: vi.fn(),
@@ -121,6 +125,8 @@ describe("mixetape MCP", () => {
       "get_item",
       "list_items",
       "delete_item",
+      "plan_item",
+      "schedule_item",
       "create_upload",
       "finish_upload",
       "import_file",

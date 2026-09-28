@@ -109,7 +109,7 @@ export const facebookMetadata: MetadataSpec = {
   schema: {
     type: "object",
     description:
-      'Facebook Page fields. format "video" (default) posts a Page video; "reel" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.',
+      'Facebook Page fields. A video posts as a Page video, or with format "reel" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.',
     properties: {
       format: { type: "string", enum: ["video", "reel"] },
       title: { type: "string", maxLength: 255, description: "Page videos only" },

@@ -13,6 +13,7 @@ import { removeFile } from "#/modules/storage/storage.fn";
 import { ContentModal } from "./-components/content-modal";
 import { ContentView } from "./-components/content-view";
 import { FilesView } from "./-components/files-view";
+import { ScheduleModal } from "./-components/schedule-modal";
 import { UploadTray } from "./-components/upload-tray";
 import { useUploads } from "./-lib/use-uploads";
 
@@ -31,7 +32,7 @@ const TABS = [
 function LibraryPage() {
   const router = useRouter();
   const navigate = useNavigate({ from: "/library/" });
-  const { files, items } = Route.useLoaderData();
+  const { files, items, accounts, brands } = Route.useLoaderData();
   const { tab = "content" } = Route.useSearch();
   const { confirm } = useConfirmModal();
   const { openModal, closeModal } = useModal();
@@ -57,6 +58,17 @@ function LibraryPage() {
           await navigate({ search: { tab: "content" } });
           await refresh();
         }}
+      />,
+    );
+
+  const scheduleItem = (item: ItemView) =>
+    openModal(
+      <ScheduleModal
+        item={item}
+        accounts={accounts}
+        brands={brands}
+        onClose={closeModal}
+        onScheduled={refresh}
       />,
     );
 
@@ -109,7 +121,7 @@ function LibraryPage() {
       <Page>
         <PageHeader
           title="Library"
-          description="Files in your storage, and the content written for them before it is scheduled."
+          description="Files in your storage, and the content written for them — sent to brands and channels when it is ready."
           actions={
             <>
               <Button size="sm" variant="outline" onClick={() => openContent({})}>
@@ -173,6 +185,7 @@ function LibraryPage() {
                 initial={items}
                 onNew={() => openContent({})}
                 onEdit={(item) => openContent({ item })}
+                onSchedule={scheduleItem}
                 onDelete={deleteItem}
               />
             )}

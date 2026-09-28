@@ -18,6 +18,15 @@ export const pinterestProvider: SocialProvider = {
 
   connect: pinterestConnect,
   metadata: pinterestMetadata,
+  // Video Pins (4 s–15 min), image Pins, and carousel Pins of 2–5 images.
+  formats: {
+    video: true,
+    image: true,
+    carousel: { min: 2, max: 5, kinds: ["image"] },
+    minVideoMs: 4_000,
+    maxVideoMs: 15 * 60_000,
+  },
+  textFields: { title: "title", description: "description" },
   status: pinterestStatus,
   collections: pinterestBoards,
   analytics: pinterestAnalytics,

@@ -4,6 +4,7 @@ import {
   libraryItemFiles,
   libraryItems,
   mediaFiles,
+  socialPosts,
   type JsonValue,
   type LibraryItem,
 } from "#/database/schema";
@@ -31,9 +32,23 @@ export type ItemInput = {
 
 export type ItemView = Awaited<ReturnType<typeof itemViews>>[number];
 
-/** Items with their files, in each item's order. */
+/** Items with their files, in each item's order, and the posts scheduled from each. */
 async function itemViews(items: LibraryItem[]) {
   if (!items.length) return [];
+  const ids = items.map((item) => item.id);
+  const posts = await db.query.socialPosts.findMany({
+    where: inArray(socialPosts.itemId, ids),
+    columns: {
+      id: true,
+      itemId: true,
+      accountId: true,
+      provider: true,
+      status: true,
+      scheduledAt: true,
+      platformUrl: true,
+    },
+    orderBy: [asc(socialPosts.scheduledAt)],
+  });
   const links = await db
     .select({
       itemId: libraryItemFiles.itemId,
@@ -42,12 +57,7 @@ async function itemViews(items: LibraryItem[]) {
     })
     .from(libraryItemFiles)
     .innerJoin(mediaFiles, eq(mediaFiles.id, libraryItemFiles.fileId))
-    .where(
-      inArray(
-        libraryItemFiles.itemId,
-        items.map((item) => item.id),
-      ),
-    )
+    .where(inArray(libraryItemFiles.itemId, ids))
     .orderBy(asc(libraryItemFiles.position));
   return items.map((item) => ({
     id: item.id,
@@ -56,6 +66,9 @@ async function itemViews(items: LibraryItem[]) {
     description: item.description,
     metadata: item.metadata ?? {},
     files: links.filter((link) => link.itemId === item.id).map((link) => fileView(link.file)),
+    posts: posts
+      .filter((post) => post.itemId === item.id)
+      .map(({ itemId: _itemId, ...post }) => post),
     createdBy: item.createdBy,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,

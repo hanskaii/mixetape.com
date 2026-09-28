@@ -90,11 +90,40 @@ export interface MetadataSpec {
   validate(input: Metadata, caption: string | null | undefined): Metadata;
 }
 
+// ── Media ────────────────────────────────────────────────────────────────────
+
+export type MediaKind = "video" | "image";
+
+/** One file of a post, as stored (`r2://…` or https) with what kind it is. */
+export type MediaItem = { url: string; kind: MediaKind };
+
+/**
+ * What a platform takes in one post. A post with several files is a carousel (Instagram,
+ * Threads, Pinterest) or an album (Facebook); mixetape checks a post against this before it
+ * is scheduled, so a refusal shows up at once rather than at go-live.
+ */
+export interface MediaFormats {
+  readonly video: boolean;
+  readonly image: boolean;
+  /** Several files in one post; absent when the platform takes one file per post. */
+  readonly carousel?: { min: number; max: number; kinds: readonly MediaKind[] };
+  /** Image content types the platform accepts, when it is pickier than "any image". */
+  readonly imageTypes?: readonly string[];
+  /** Video length the platform accepts, in milliseconds. */
+  readonly minVideoMs?: number;
+  readonly maxVideoMs?: number;
+  /** Made for upright (9:16) media: a horizontal file is allowed but flagged. */
+  readonly vertical?: boolean;
+}
+
 // ── Publishing ───────────────────────────────────────────────────────────────
 
-/** A post row with its media resolved to a URL the provider can read. */
+/** A post row with its media resolved to URLs the provider can read. */
 export type PostWithMedia = typeof schema.socialPosts.$inferSelect & {
+  /** The first file; the only one unless the post is a carousel. */
   url: string;
+  /** Every file, in order. */
+  media: MediaItem[];
   caption?: string | null;
   platformAccountId?: string | null;
 };
@@ -293,6 +322,12 @@ export interface SocialProvider {
 
   readonly connect: ConnectCapability;
   readonly metadata: MetadataSpec;
+  readonly formats: MediaFormats;
+  /**
+   * Where a library item's title and description go in this platform's metadata (YouTube's
+   * title and description, a Pin's title…). The caption always goes to the post's caption.
+   */
+  readonly textFields?: { title?: string; description?: string };
   /** Uploads the post; follow-ups that fail (thumbnail, playlists…) become a warning. */
   upload(post: PostWithMedia, token: string, metadata: Metadata): Promise<UploadResult>;
   /**

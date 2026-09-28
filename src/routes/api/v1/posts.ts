@@ -5,7 +5,7 @@ import { ServiceError } from "#/modules/api/errors";
 
 // GET  /api/v1/posts?accountId=a,b&provider=youtube&status=scheduled,failed&search=words
 //                    &from=ISO&to=ISO&limit=50&cursor=… — { posts, nextCursor }
-// POST /api/v1/posts { accountId, mediaUrl, caption?, scheduledAt?, leadMinutes?, metadata? }
+// POST /api/v1/posts { accountId, mediaUrl | media[], caption?, scheduledAt?, leadMinutes?, metadata? }
 //
 // Like Buffer, a post waits in mixetape until leadMinutes before scheduledAt (YouTube default
 // 30), then goes up as private and YouTube makes it public at scheduledAt. Omitting
@@ -39,9 +39,11 @@ export const Route = createFileRoute("/api/v1/posts")({
         respond(async () => {
           const userId = await requireUser(request, "publish");
           const body = (await request.json().catch(() => null)) as CreatePostInput | null;
-          if (!body?.accountId || !body.mediaUrl)
-            throw new ServiceError("accountId and mediaUrl are required");
-          return { post: await createPost(userId, body) };
+          if (!body?.accountId || !(body.mediaUrl || body.media?.length))
+            throw new ServiceError("accountId and mediaUrl (or media) are required");
+          // itemId is set only by the library's schedule_item, never from outside.
+          const { itemId: _itemId, ...input } = body;
+          return { post: await createPost(userId, input) };
         }, 201),
     },
   },

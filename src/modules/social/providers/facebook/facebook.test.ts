@@ -24,6 +24,7 @@ const form = (call: Call) => new URLSearchParams(String(call.init?.body));
 const post = {
   id: "post-1",
   url: "https://media.example.com/episode.mp4",
+  media: [{ url: "https://media.example.com/episode.mp4", kind: "video" }],
   caption: null,
   platformAccountId: "page-1",
 } as unknown as PostWithMedia;
@@ -165,5 +166,64 @@ describe("facebook.connect", () => {
     );
     expect(url.origin + url.pathname).toBe("https://www.facebook.com/v25.0/dialog/oauth");
     expect(url.searchParams.get("scope")?.split(",")).toContain("pages_manage_posts");
+  });
+});
+
+describe("facebook photos", () => {
+  const photos = (...urls: string[]) =>
+    ({
+      ...post,
+      url: urls[0],
+      media: urls.map((url) => ({ url, kind: "image" })),
+    }) as unknown as PostWithMedia;
+
+  it("schedules one photo natively on the Page", async () => {
+    const calls = scriptFetch([Response.json({ id: "photo-1", post_id: "page-1_post-1" })]);
+    const result = await facebook.upload(photos("https://media.example.com/a.jpg"), "t", {
+      description: "Hello",
+      publishAt: "2026-10-02T10:00:00Z",
+    });
+    expect(calls[0].url.pathname).toBe("/v25.0/page-1/photos");
+    expect(Object.fromEntries(form(calls[0]))).toMatchObject({
+      url: "https://media.example.com/a.jpg",
+      message: "Hello",
+      published: "false",
+      unpublished_content_type: "SCHEDULED",
+      scheduled_publish_time: String(Date.parse("2026-10-02T10:00:00Z") / 1000),
+    });
+    expect(result.platformPostId).toBe("page-1_post-1");
+    expect(result.platformUrl).toBe("https://www.facebook.com/page-1_post-1");
+  });
+
+  it("posts an album: photos held back, then one feed post attaching them", async () => {
+    const calls = scriptFetch([
+      Response.json({ id: "ph-1" }),
+      Response.json({ id: "ph-2" }),
+      Response.json({ id: "page-1_post-2" }),
+    ]);
+    const result = await facebook.upload(
+      photos("https://media.example.com/a.jpg", "https://media.example.com/b.jpg"),
+      "t",
+      { description: "Two" },
+    );
+    expect(form(calls[0]).get("published")).toBe("false");
+    expect(form(calls[0]).get("temporary")).toBeNull();
+    expect(calls[2].url.pathname).toBe("/v25.0/page-1/feed");
+    expect(Object.fromEntries(form(calls[2]))).toEqual({
+      message: "Two",
+      "attached_media[0]": '{"media_fbid":"ph-1"}',
+      "attached_media[1]": '{"media_fbid":"ph-2"}',
+      published: "true",
+    });
+    expect(result.platformPostId).toBe("page-1_post-2");
+  });
+
+  it("reads a photo post's status from the post, not a video", async () => {
+    const calls = scriptFetch([
+      Response.json({ is_published: false, scheduled_publish_time: 1790000000 }),
+    ]);
+    const status = await facebook.status!.fetch("page-1_post-1", "t");
+    expect(calls[0].url.searchParams.get("fields")).toContain("is_published");
+    expect(status).toMatchObject({ visibility: "scheduled", uploadStatus: "scheduled" });
   });
 });

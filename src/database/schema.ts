@@ -148,7 +148,11 @@ export const socialPosts = sqliteTable(
       .notNull()
       .references(() => socialAccounts.id, { onDelete: "cascade" }),
     provider: text("provider").notNull(),
-    mediaUrl: text("media_url").notNull(),
+    mediaUrl: text("media_url").notNull(), // the first file; the only one unless a carousel
+    // Every file, in order, with its kind; null on posts from before carousels (one video).
+    media: text("media", { mode: "json" }).$type<{ url: string; kind: "video" | "image" }[]>(),
+    // The library item the post was scheduled from, if any.
+    itemId: text("item_id").references(() => libraryItems.id, { onDelete: "set null" }),
     caption: text("caption"),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, JsonValue>>(), // per-platform fields
     scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }).notNull(),
@@ -171,6 +175,7 @@ export const socialPosts = sqliteTable(
   (table) => [
     index("social_posts_user_scheduled_idx").on(table.userId, table.scheduledAt),
     index("social_posts_status_idx").on(table.status),
+    index("social_posts_item_idx").on(table.itemId),
   ],
 );
 

@@ -34,6 +34,13 @@ function metadataSchema(pick?: (provider: string) => readonly string[] | undefin
 const METADATA = metadataSchema();
 const EDITABLE_METADATA = metadataSchema((providerId) => getProvider(providerId).editing?.fields);
 
+const MEDIA = {
+  type: "array",
+  items: { type: "string" },
+  description:
+    "Several files in one post, in order (https or r2:// URLs): a carousel or photo album. Use instead of mediaUrl.",
+};
+
 // ── tools ────────────────────────────────────────────────────────────────────
 
 /** Scheduling and managing posts on connected accounts. */
@@ -43,7 +50,7 @@ export const socialTools: Tool[] = [
     name: "list_accounts",
     scope: "read",
     description:
-      "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.",
+      "List the connected channels: id, platform, name, handle, status, the capabilities its platform supports (e.g. comments, analytics), and formats: what one post can hold there (video, image, a carousel of min–max files, image types, video length, upright). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.",
     inputSchema: object({}),
     annotations: READ_ONLY,
     run: async (userId) =>
@@ -55,6 +62,7 @@ export const socialTools: Tool[] = [
         handle: account.handle,
         status: account.status,
         capabilities: capabilitiesOf(getProvider(account.provider)),
+        formats: getProvider(account.provider).formats,
       })),
   },
   {
@@ -74,6 +82,7 @@ export const socialTools: Tool[] = [
         description: "Only posts on these platforms, e.g. youtube, instagram",
       },
       status: { type: "array", items: { type: "string" }, description: "Only these statuses" },
+      itemId: { type: "string", description: "Only posts scheduled from this library item" },
       search: {
         type: "string",
         description: "Words in the title, caption or description (case-insensitive)",
@@ -93,6 +102,7 @@ export const socialTools: Tool[] = [
         accountId: input.strings("accountId"),
         provider: input.strings("provider"),
         status: input.strings("status"),
+        itemId: input.optionalString("itemId"),
         search: input.optionalString("search"),
         from: date("from"),
         to: date("to"),
@@ -142,11 +152,12 @@ export const socialTools: Tool[] = [
     name: "create_post",
     scope: "publish",
     description:
-      "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).",
+      "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted.",
     inputSchema: object(
       {
         accountId: ACCOUNT_ID,
-        mediaUrl: { type: "string" },
+        mediaUrl: { type: "string", description: "One file: https or r2:// URL" },
+        media: MEDIA,
         caption: { type: "string" },
         scheduledAt: {
           type: "string",
@@ -160,12 +171,13 @@ export const socialTools: Tool[] = [
         },
         metadata: METADATA,
       },
-      ["accountId", "mediaUrl"],
+      ["accountId"],
     ),
     run: (userId, input) =>
       social.createPost(userId, {
         accountId: input.string("accountId"),
-        mediaUrl: input.string("mediaUrl"),
+        mediaUrl: input.optionalString("mediaUrl"),
+        media: input.strings("media"),
         caption: input.optionalString("caption"),
         scheduledAt: input.optionalString("scheduledAt"),
         leadMinutes: input.number("leadMinutes"),
@@ -181,6 +193,7 @@ export const socialTools: Tool[] = [
       {
         id: POST_ID,
         mediaUrl: { type: "string" },
+        media: MEDIA,
         caption: { type: "string" },
         scheduledAt: { type: "string", description: "ISO 8601 with timezone offset" },
         leadMinutes: { type: "number" },
@@ -191,11 +204,13 @@ export const socialTools: Tool[] = [
     run: (userId, input) => {
       const changes: social.EditPostInput = {};
       const mediaUrl = input.optionalString("mediaUrl");
+      const media = input.strings("media");
       const caption = input.optionalString("caption");
       const scheduledAt = input.optionalString("scheduledAt");
       const leadMinutes = input.number("leadMinutes");
       const metadata = input.object("metadata");
       if (mediaUrl !== undefined) changes.mediaUrl = mediaUrl;
+      if (media !== undefined) changes.media = media;
       if (caption !== undefined) changes.caption = caption;
       if (scheduledAt !== undefined) changes.scheduledAt = scheduledAt;
       if (leadMinutes !== undefined) changes.leadMinutes = leadMinutes;

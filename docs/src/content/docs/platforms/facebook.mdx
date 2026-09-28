@@ -1,6 +1,6 @@
 ---
 title: Facebook
-description: Videos and Reels on the Facebook Pages you manage.
+description: Videos, Reels, photos and albums on the Facebook Pages you manage.
 sidebar:
   order: 1
 ---
@@ -8,8 +8,11 @@ sidebar:
 **Connect:** sign in with the Facebook account that manages the Pages. When it manages several,
 you pick which to add. Posting goes to Pages only — never to a personal profile.
 
-**Posting:** uploaded unpublished `leadMinutes` early (30 by default; `0` or at least `15`),
-with a publish time; Facebook publishes it at `scheduledAt`.
+**Posting:** a video posts as a Page video or, with `format: "reel"`, a Reel; an image as a
+photo; several images (`media`) as one album post of up to 10. `description` is the text of
+all of them. The post is uploaded unpublished `leadMinutes` early (30 by default; `0` or at
+least `15`), with a publish time; Facebook publishes it at `scheduledAt`. Thumbnails,
+captions and video insights apply to videos.
 
 ## Metadata
 

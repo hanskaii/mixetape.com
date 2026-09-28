@@ -1,7 +1,7 @@
 import type { JsonValue } from "#/database/schema";
 import { InvalidInputError, type Metadata, type MetadataSpec } from "../types";
 
-/** A Threads video post's metadata. */
+/** A Threads post's metadata: a video, an image or a carousel. */
 export type ThreadsVideoMeta = {
   /** The post text (defaults to the post caption), ≤ 500 characters. */
   text?: string;
@@ -38,7 +38,7 @@ export const threadsMetadata: MetadataSpec = {
   schema: {
     type: "object",
     description:
-      "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+      "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
     properties: {
       text: { type: "string", maxLength: 500, description: "Defaults to the post caption" },
       firstComment: {

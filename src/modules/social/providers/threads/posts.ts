@@ -1,6 +1,7 @@
 import { publicMediaUrl } from "../media";
 import {
   PermanentPublishError,
+  type MediaItem,
   type Metadata,
   type PostWithMedia,
   type StatusCapability,
@@ -73,30 +74,59 @@ export async function publishText(token: string, userId: string, text: string, r
   return publishContainer(container.id, token, userId);
 }
 
-export async function uploadVideo(post: PostWithMedia, token: string, metadata: Metadata) {
+async function container(
+  token: string,
+  userId: string,
+  params: Record<string, string | number | boolean | undefined>,
+) {
+  try {
+    const created = await threads<{ id: string }>(token, `${userId}/threads`, {
+      method: "POST",
+      params,
+    });
+    return created.id;
+  } catch (error) {
+    throw refused(error);
+  }
+}
+
+const source = (item: MediaItem) =>
+  item.kind === "image"
+    ? { media_type: "IMAGE", image_url: publicMediaUrl(item.url) }
+    : { media_type: "VIDEO", video_url: publicMediaUrl(item.url) };
+
+/**
+ * A video, an image, or a carousel of both: each file of a carousel is its own item
+ * container, and one CAROUSEL container carries them and the text.
+ */
+export async function uploadMedia(post: PostWithMedia, token: string, metadata: Metadata) {
   const meta = metadata as ThreadsVideoMeta;
   const userId = post.platformAccountId;
   if (!userId) throw new PermanentPublishError("The post has no Threads profile to go to");
 
-  let container: string;
-  try {
-    const created = await threads<{ id: string }>(token, `${userId}/threads`, {
-      method: "POST",
-      params: { media_type: "VIDEO", video_url: publicMediaUrl(post.url), text: meta.text },
+  let prepared: string;
+  if (post.media.length > 1) {
+    const children: string[] = [];
+    for (const item of post.media) {
+      const child = await container(token, userId, { ...source(item), is_carousel_item: true });
+      await ready(child, token);
+      children.push(child);
+    }
+    prepared = await container(token, userId, {
+      media_type: "CAROUSEL",
+      children: children.join(","),
+      text: meta.text,
     });
-    container = created.id;
-  } catch (error) {
-    throw refused(error);
-  }
-  await ready(container, token);
+  } else prepared = await container(token, userId, { ...source(post.media[0]), text: meta.text });
+  await ready(prepared, token);
 
   if (meta.publishAt) {
     return {
-      platformPostId: container,
+      platformPostId: prepared,
       responseLog: `Post prepared; mixetape publishes it at ${meta.publishAt}`,
     };
   }
-  return { ...(await publishContainer(container, token, userId)), responseLog: "Post published" };
+  return { ...(await publishContainer(prepared, token, userId)), responseLog: "Post published" };
 }
 
 /** A published post's link, or where a prepared container stands. */

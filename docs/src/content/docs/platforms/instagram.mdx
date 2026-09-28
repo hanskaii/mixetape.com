@@ -1,6 +1,6 @@
 ---
 title: Instagram
-description: Reels on Instagram Business and Creator accounts.
+description: Reels, photos and carousels on Instagram Business and Creator accounts.
 sidebar:
   order: 2
 ---
@@ -9,9 +9,11 @@ sidebar:
 Facebook Page is needed. Access lasts 60 days; mixetape renews it whenever it posts or reads
 for the account in the last week, so an account left idle longer must be reconnected.
 
-**Posting:** videos post as Reels. Instagram cannot schedule through its API, so mixetape
-prepares the Reel `leadMinutes` early (15 by default) — Instagram uploads and processes it —
-and publishes it itself at `scheduledAt`.
+**Posting:** a video posts as a Reel (3 s–15 min, upright 9:16 shows best), a JPEG image as
+a photo, and several files (`media`) as a carousel of 2–10 photos and videos, in order.
+Instagram cannot schedule through its API, so mixetape prepares the post `leadMinutes` early
+(15 by default) — Instagram uploads and processes it — and publishes it itself at
+`scheduledAt`. The cover fields and `shareToFeed` apply to Reels only.
 
 ## Metadata
 

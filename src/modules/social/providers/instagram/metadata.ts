@@ -72,7 +72,7 @@ export const instagramMetadata: MetadataSpec = {
   schema: {
     type: "object",
     description:
-      "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+      "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
     properties: {
       caption: {
         type: "string",

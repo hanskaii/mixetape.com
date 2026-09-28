@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  CalendarPlus,
   DotsThree,
   MagnifyingGlass,
   PencilSimple,
@@ -31,11 +32,13 @@ export function ContentView({
   initial,
   onNew,
   onEdit,
+  onSchedule,
   onDelete,
 }: {
   initial: ItemPage;
   onNew: () => void;
   onEdit: (item: ItemView) => void;
+  onSchedule: (item: ItemView) => void;
   onDelete: (item: ItemView) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -111,6 +114,12 @@ export function ContentView({
                     <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
                       {item.createdBy === "agent" && <Robot size={13} aria-label="By an agent" />}
                       {item.files.length} file{item.files.length === 1 ? "" : "s"}
+                      {item.posts.length > 0 && (
+                        <span>
+                          · scheduled on {item.posts.length} channel
+                          {item.posts.length === 1 ? "" : "s"}
+                        </span>
+                      )}
                       {overrides.length > 0 && (
                         <span className="flex items-center gap-1" title="Has overrides for">
                           ·
@@ -125,6 +134,14 @@ export function ContentView({
                 <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">
                   <LocalTime date={item.updatedAt} format={DAY} />
                 </span>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  disabled={!item.files.length}
+                  onClick={() => onSchedule(item)}
+                >
+                  <CalendarPlus /> Schedule
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={

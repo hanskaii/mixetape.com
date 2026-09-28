@@ -22,6 +22,9 @@ export const youtube: SocialProvider = {
 
   connect: youtubeConnect,
   metadata: youtubeMetadata,
+  // Videos only: long videos, and Shorts (vertical, up to 3 minutes).
+  formats: { video: true, image: false },
+  textFields: { title: "title", description: "description" },
   status: youtubeStatus,
   thumbnails: youtubeThumbnails,
   editing: youtubeEditing,
