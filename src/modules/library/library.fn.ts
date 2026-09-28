@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { JsonValue } from "#/database/schema";
-import { currentUserId } from "#/modules/social/social.fn";
+import { currentUserId } from "#/modules/auth/auth.server";
 import * as files from "#/modules/storage/files.service";
 import * as library from "./library.service";
 

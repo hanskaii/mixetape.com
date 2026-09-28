@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { currentUserId } from "#/modules/social/social.fn";
+import { currentUserId } from "#/modules/auth/auth.server";
 import * as files from "./files.service";
 
 /**

@@ -155,3 +155,13 @@ export const getAuthSession = createServerFn({ method: "GET" }).handler(async ()
     return null;
   }
 });
+
+/** The signed-in user's id, for server functions; throws when nobody is signed in. */
+export async function currentUserId(): Promise<string> {
+  const headers = getRequestHeaders();
+  const session = headers
+    ? await (await getAuth()).api.getSession({ headers }).catch(() => null)
+    : null;
+  if (!session?.user) throw new Error("Unauthorized");
+  return session.user.id;
+}

@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
-import { getAuth } from "#/modules/auth/auth.server";
+import { currentUserId } from "#/modules/auth/auth.server";
 import { PROVIDER_LIST } from "./providers";
 import * as apiKeys from "#/modules/api/api-keys.service";
 import * as brands from "./brands.service";
@@ -10,15 +9,6 @@ import * as social from "./social.service";
  * Server functions behind the app's pages. Each one resolves the signed-in user and hands
  * off to social.service, the same code the REST API uses.
  */
-
-export async function currentUserId(): Promise<string> {
-  const headers = getRequestHeaders();
-  const session = headers
-    ? await (await getAuth()).api.getSession({ headers }).catch(() => null)
-    : null;
-  if (!session?.user) throw new Error("Unauthorized");
-  return session.user.id;
-}
 
 // ── queue ─────────────────────────────────────────────────────────────────────
 // Posts arrive from agents (MCP / API); the workspace only watches and steps in.
