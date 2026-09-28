@@ -63,14 +63,14 @@ export function SelectionBar({
         <PaperPlaneTilt weight="fill" /> Publish
       </Button>
       <Button size="sm" variant="outline" onClick={onGroup}>
-        <FolderSimplePlus /> Group
+        <FolderSimplePlus /> Carousel
       </Button>
       {groups.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button size="sm" variant="outline">
-                <Stack /> Move to <CaretDown size={12} />
+                <Stack /> Add to <CaretDown size={12} />
               </Button>
             }
           />
@@ -79,7 +79,7 @@ export function SelectionBar({
               <DropdownMenuItem key={group.id} onClick={() => onMove(group.id)}>
                 <Stack />
                 <span {...stylex.props(styles.groupName)}>
-                  {group.title || group.caption || "Untitled group"}
+                  {group.title || group.caption || "Untitled carousel"}
                 </span>
                 <span {...stylex.props(styles.groupCount)}>{group.files.length}</span>
               </DropdownMenuItem>

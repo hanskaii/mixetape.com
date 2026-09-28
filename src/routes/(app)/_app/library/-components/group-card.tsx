@@ -179,7 +179,7 @@ export const GroupCard = memo(function GroupCard({
       <button
         type="button"
         onClick={() => onOpen(group)}
-        aria-label={`Open ${title || "untitled group"}`}
+        aria-label={`Open ${title || "untitled carousel"}`}
         aria-expanded={false}
         {...stylex.props(styles.cover, group.files.length > 1 && styles.two)}
       >
@@ -189,14 +189,14 @@ export const GroupCard = memo(function GroupCard({
         </Badge>
         {over && (
           <span {...stylex.props(styles.drop)}>
-            <Plus weight="bold" /> Add to group
+            <Plus weight="bold" /> Add to carousel
           </span>
         )}
       </button>
       <div {...stylex.props(styles.foot)}>
         <div {...stylex.props(styles.text)}>
           <p {...stylex.props(styles.title, !title && styles.untitled)}>
-            {title || "Untitled group"}
+            {title || "Untitled carousel"}
           </p>
           <p {...stylex.props(styles.meta)}>
             {group.createdBy === "agent" && <Robot size={12} aria-label="Made by an agent" />}
@@ -219,7 +219,7 @@ export const GroupCard = memo(function GroupCard({
         {group.files.length > 0 && (
           <Button
             size="icon-sm"
-            aria-label="Publish this group"
+            aria-label="Publish this carousel"
             style={styles.publish}
             onClick={() => onPublish(group)}
           >

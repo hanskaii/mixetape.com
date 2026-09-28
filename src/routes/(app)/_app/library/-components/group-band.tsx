@@ -12,7 +12,6 @@ import {
   Trash,
   X,
 } from "@phosphor-icons/react";
-import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
@@ -20,16 +19,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import { Input } from "#/components/ui/input";
 import type { GroupView } from "#/modules/library/groups.service";
 import { saveGroup, ungroupFiles } from "#/modules/library/library.fn";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { formatDuration, selectionSummary } from "../-lib/format";
 import { FILES_TYPE, FROM_GROUP_TYPE } from "./group-card";
+import { Masonry } from "./masonry";
 import { MediaImage } from "./media-image";
-
-const TILE = 168; // px: the files' height in the band
 
 const open = stylex.keyframes({
   from: { opacity: 0, transform: "translateY(-0.25rem)" },
@@ -47,81 +44,108 @@ const styles = stylex.create({
     borderStyle: "dashed",
     borderWidth: "2px",
     display: "grid",
-    gap: "0.75rem",
-    padding: "0.75rem",
+    gap: "0.5rem",
+    marginTop: "0.75rem",
+    paddingBlock: "1.125rem 0.625rem",
+    paddingInline: "0.75rem",
+    position: "relative",
     scrollMarginBlock: "6rem",
   },
   bandOver: {
     backgroundColor: `color-mix(in oklab, ${colors.primary} 14%, transparent)`,
     borderColor: colors.primary,
   },
-  head: { alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" },
-  who: { alignItems: "center", display: "flex", flexGrow: 1, gap: "0.625rem", minWidth: "12rem" },
-  mark: {
+  // On the top edge, over the dashes: the page's card colour cuts the line behind them.
+  legend: {
     alignItems: "center",
-    backgroundColor: colors.primary,
-    borderRadius: radius.lg,
-    color: colors.primaryForeground,
+    backgroundColor: colors.card,
+    color: colors.foreground,
     display: "flex",
-    flexShrink: 0,
-    height: "2rem",
-    justifyContent: "center",
-    width: "2rem",
+    fontSize: "0.75rem",
+    gap: "0.375rem",
+    height: "1.5rem",
+    left: "0.875rem",
+    maxWidth: "calc(100% - 16rem)",
+    minWidth: 0,
+    paddingInline: "0.5rem",
+    position: "absolute",
+    top: 0,
+    transform: "translateY(-50%)",
   },
-  names: { display: "grid", gap: "0.125rem", minWidth: 0 },
+  icon: { color: colors.mutedForeground, display: "inline-flex", flexShrink: 0 },
   name: {
     backgroundColor: "transparent",
-    borderRadius: radius.sm,
     borderStyle: "none",
     color: colors.foreground,
     cursor: "text",
-    fontSize: "0.875rem",
+    fontSize: "0.75rem",
     fontWeight: 600,
+    minWidth: 0,
     overflow: "hidden",
     padding: 0,
-    textAlign: "start",
     textDecoration: { default: "none", ":hover": "underline dotted" },
     textOverflow: "ellipsis",
-    textUnderlineOffset: "4px",
+    textUnderlineOffset: "3px",
     whiteSpace: "nowrap",
   },
   untitled: { color: colors.mutedForeground },
-  rename: { height: "2rem", maxWidth: "20rem" },
-  meta: {
-    alignItems: "center",
-    color: colors.mutedForeground,
-    display: "flex",
-    flexWrap: "wrap",
+  rename: {
+    backgroundColor: "transparent",
+    borderColor: colors.ring,
+    borderRadius: radius.sm,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: colors.foreground,
     fontSize: "0.75rem",
-    gap: "0.375rem",
+    fontWeight: 600,
+    height: "1.375rem",
+    outline: "none",
+    paddingInline: "0.375rem",
+    width: "12rem",
   },
-  actions: { alignItems: "center", display: "flex", gap: "0.375rem", marginInlineStart: "auto" },
-  strip: {
-    alignItems: "stretch",
+  meta: {
+    color: colors.mutedForeground,
+    display: { default: "none", "@media (min-width: 640px)": "inline" },
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  },
+  actions: {
+    alignItems: "center",
+    backgroundColor: colors.card,
     display: "flex",
-    gap: "0.5rem",
-    minHeight: `${TILE}px`,
-    overflowX: "auto",
-    paddingBlock: "0.125rem 0.375rem",
-    scrollbarWidth: "thin",
+    gap: "0.25rem",
+    paddingInline: "0.25rem",
+    position: "absolute",
+    right: "0.75rem",
+    top: 0,
+    transform: "translateY(-50%)",
   },
   item: {
     backgroundColor: colors.muted,
-    borderRadius: radius.xl,
+    borderRadius: radius["2xl"],
     boxShadow: `0 0 0 1px ${colors.border}`,
     cursor: { default: "grab", ":active": "grabbing" },
-    flexShrink: 0,
-    height: `${TILE}px`,
+    height: "100%",
     outline: { default: "none", ":focus-visible": `2px solid ${colors.ring}` },
     overflow: "hidden",
     position: "relative",
     transitionDuration: "120ms",
-    transitionProperty: "box-shadow, opacity, margin",
+    transitionProperty: "box-shadow, opacity",
+    width: "100%",
   },
   picked: { boxShadow: `0 0 0 3px ${colors.primary}` },
   moving: { opacity: 0.35 },
-  // A gap opens where a dropped file would land.
-  before: { marginInlineStart: "1.5rem" },
+  // A yellow edge where a dropped file would land.
+  insert: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    bottom: "0.5rem",
+    position: "absolute",
+    top: "0.5rem",
+    width: "4px",
+  },
+  insertBefore: { left: "0.25rem" },
+  insertAfter: { right: "0.25rem" },
   number: {
     backgroundColor: "rgb(0 0 0 / 0.6)",
     borderRadius: radius.sm,
@@ -154,13 +178,12 @@ const styles = stylex.create({
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
-    flexShrink: 0,
     fontSize: "0.75rem",
     gap: "0.375rem",
-    height: `${TILE}px`,
+    height: "100%",
     justifyContent: "center",
     paddingInline: "1rem",
-    width: "7.5rem",
+    width: "100%",
   },
   addOver: { borderColor: colors.primary, color: colors.foreground },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
@@ -168,10 +191,10 @@ const styles = stylex.create({
   menu: { minWidth: "14rem" },
 });
 
-const width = (file: FileView) =>
-  Math.round(
-    TILE * Math.min(Math.max(file.width && file.height ? file.width / file.height : 1, 0.56), 1.78),
-  );
+type BandTile = { type: "file"; file: FileView; index: number } | { type: "add" };
+
+const fileHeight = (file: FileView, column: number) =>
+  column * Math.min(Math.max(file.width && file.height ? file.height / file.width : 1, 0.56), 1.78);
 
 /**
  * An open group, laid across the grid where its card was: its files in the order they go
@@ -260,12 +283,16 @@ export function GroupBand({
     event.dataTransfer.types.includes(FILES_TYPE) || event.dataTransfer.types.includes("Files");
 
   const pickedHere = picked.filter((id) => ids.includes(id));
+  const tiles: BandTile[] = [
+    ...files.map((file, index) => ({ type: "file" as const, file, index })),
+    { type: "add" as const },
+  ];
 
   return (
     <div
       ref={band}
       role="group"
-      aria-label={`Group: ${group.title || "untitled"}`}
+      aria-label={`Carousel: ${group.title || "untitled"}`}
       onDragOver={(event) => {
         if (!accepts(event)) return;
         event.preventDefault();
@@ -278,94 +305,115 @@ export function GroupBand({
       onDrop={(event) => dropAt(event, target ?? files.length)}
       {...stylex.props(styles.band, target !== null && styles.bandOver)}
     >
-      <div {...stylex.props(styles.head)}>
-        <div {...stylex.props(styles.who)}>
-          <span {...stylex.props(styles.mark)}>
-            <Stack size={16} weight="bold" />
-          </span>
-          <div {...stylex.props(styles.names)}>
-            {renaming ? (
-              <Input
-                autoFocus
-                aria-label="Group name"
-                value={title}
-                placeholder="Untitled group"
-                style={styles.rename}
-                onChange={(event) => setTitle(event.target.value)}
-                onBlur={() => void rename()}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void rename();
-                  if (event.key === "Escape") {
-                    setTitle(group.title ?? "");
-                    setRenaming(false);
-                  }
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                title="Rename"
-                onClick={() => setRenaming(true)}
-                {...stylex.props(styles.name, !group.title && styles.untitled)}
-              >
-                {group.title || "Untitled group"}
-              </button>
-            )}
-            <span {...stylex.props(styles.meta)}>
-              {group.createdBy === "agent" && <Robot size={12} aria-label="Made by an agent" />}
-              {files.length ? selectionSummary(files) : "Empty"}
-              {(group.caption || group.description) && (
-                <Badge variant="secondary">
-                  <PencilSimpleLine /> Caption ready
-                </Badge>
-              )}
-            </span>
-          </div>
-        </div>
-
-        <div {...stylex.props(styles.actions)}>
-          {pickedHere.length > 0 && (
-            <Button size="sm" variant="outline" onClick={() => void takeOut(pickedHere)}>
-              <ArrowSquareOut /> Take out {pickedHere.length}
-            </Button>
-          )}
-          <Button size="sm" disabled={!files.length} onClick={() => onPublish({ ...group, files })}>
-            <PaperPlaneTilt weight="fill" /> Publish
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button size="icon-sm" variant="ghost" aria-label="More">
-                  <DotsThree weight="bold" />
-                </Button>
+      {/* The name sits on the dashed edge, like a fieldset's legend; the actions opposite. */}
+      <div {...stylex.props(styles.legend)}>
+        <Stack size={13} weight="bold" {...stylex.props(styles.icon)} />
+        {renaming ? (
+          <input
+            autoFocus
+            aria-label="Carousel name"
+            value={title}
+            placeholder="Untitled carousel"
+            onChange={(event) => setTitle(event.target.value)}
+            onBlur={() => void rename()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void rename();
+              if (event.key === "Escape") {
+                setTitle(group.title ?? "");
+                setRenaming(false);
               }
-            />
-            <DropdownMenuContent align="end" style={styles.menu}>
-              <DropdownMenuItem onClick={() => onDelete(false)}>
-                <X /> Ungroup — keep the files
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => onDelete(true)}>
-                <Trash /> Delete the group and its files
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Collapse the group"
-            onClick={onCollapse}
+            }}
+            {...stylex.props(styles.rename)}
+          />
+        ) : (
+          <button
+            type="button"
+            title="Rename"
+            onClick={() => setRenaming(true)}
+            {...stylex.props(styles.name, !group.title && styles.untitled)}
           >
-            <CaretUp weight="bold" />
-          </Button>
-        </div>
+            {group.title || "Untitled carousel"}
+          </button>
+        )}
+        <span {...stylex.props(styles.meta)}>
+          · {files.length ? selectionSummary(files) : "empty"}
+        </span>
+        {group.createdBy === "agent" && (
+          <Robot size={12} aria-label="Made by an agent" {...stylex.props(styles.icon)} />
+        )}
+        {(group.caption || group.description) && (
+          <span title="Caption ready — it fills in when you publish" {...stylex.props(styles.icon)}>
+            <PencilSimpleLine size={12} aria-label="Caption ready" />
+          </span>
+        )}
       </div>
 
-      <div {...stylex.props(styles.strip)}>
-        {files.map((file, index) => {
+      <div {...stylex.props(styles.actions)}>
+        {pickedHere.length > 0 && (
+          <Button size="xs" variant="outline" onClick={() => void takeOut(pickedHere)}>
+            <ArrowSquareOut /> Take out {pickedHere.length}
+          </Button>
+        )}
+        <Button size="xs" disabled={!files.length} onClick={() => onPublish({ ...group, files })}>
+          <PaperPlaneTilt weight="fill" /> Publish
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button size="icon-xs" variant="ghost" aria-label="More">
+                <DotsThree weight="bold" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" style={styles.menu}>
+            <DropdownMenuItem onClick={() => onDelete(false)}>
+              <X /> Undo the carousel — keep the files
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => onDelete(true)}>
+              <Trash /> Delete the carousel and its files
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label="Collapse the carousel"
+          onClick={onCollapse}
+        >
+          <CaretUp weight="bold" />
+        </Button>
+      </div>
+
+      {/* The same masonry as the grid around it, in the carousel's order. */}
+      <Masonry
+        items={tiles}
+        getKey={(tile) => (tile.type === "file" ? tile.file.id : "add")}
+        height={(tile, column) =>
+          tile.type === "file" ? fileHeight(tile.file, column) : Math.round(column * 0.6)
+        }
+        render={(tile) => {
+          if (tile.type === "add")
+            return (
+              <button
+                type="button"
+                onClick={() => input.current?.click()}
+                onDragOver={(event) => {
+                  if (!accepts(event)) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (target !== files.length) setTarget(files.length);
+                }}
+                onDrop={(event) => dropAt(event, files.length)}
+                {...stylex.props(styles.add, target === files.length && styles.addOver)}
+              >
+                <Plus size={18} />
+                {files.length ? "Drop or add files" : "Drop files here"}
+              </button>
+            );
+          const { file, index } = tile;
           const on = picked.includes(file.id);
           return (
             <div
-              key={file.id}
               role="checkbox"
               aria-checked={on}
               aria-label={`${index + 1}. ${file.name}`}
@@ -410,38 +458,33 @@ export function GroupBand({
                 styles.item,
                 on && styles.picked,
                 moving.includes(file.id) && styles.moving,
-                target === index && styles.before,
               )}
-              style={{ width: width(file) }}
             >
               <MediaImage file={file} width={480} />
               <span {...stylex.props(styles.number)}>{index + 1}</span>
               {file.kind === "video" && file.durationMs ? (
                 <span {...stylex.props(styles.length)}>{formatDuration(file.durationMs)}</span>
               ) : null}
+              {/* Where a dropped file would land: before this one, or after it. */}
+              {target === index && <span {...stylex.props(styles.insert, styles.insertBefore)} />}
+              {target === index + 1 && index === files.length - 1 && (
+                <span {...stylex.props(styles.insert, styles.insertAfter)} />
+              )}
             </div>
           );
-        })}
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          {...stylex.props(styles.add, target === files.length && styles.addOver)}
-        >
-          <Plus size={18} />
-          {files.length ? "Drop or add files" : "Drop files here"}
-        </button>
-        <input
-          ref={input}
-          type="file"
-          multiple
-          accept="video/*,image/*"
-          {...stylex.props(styles.hidden)}
-          onChange={(event) => {
-            if (event.target.files?.length) onUpload([...event.target.files]);
-            event.target.value = "";
-          }}
-        />
-      </div>
+        }}
+      />
+      <input
+        ref={input}
+        type="file"
+        multiple
+        accept="video/*,image/*"
+        {...stylex.props(styles.hidden)}
+        onChange={(event) => {
+          if (event.target.files?.length) onUpload([...event.target.files]);
+          event.target.value = "";
+        }}
+      />
       <p {...stylex.props(styles.hint)}>
         Drag to reorder · drag a file out onto the grid to take it out · click files to pick several
       </p>

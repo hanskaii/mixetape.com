@@ -46,7 +46,7 @@ const KINDS: { value: Kind; label: string }[] = [
   { value: "all", label: "All" },
   { value: "video", label: "Videos" },
   { value: "image", label: "Images" },
-  { value: "group", label: "Groups" },
+  { value: "group", label: "Carousels" },
 ];
 
 /** One place in the grid: a group or a loose file, newest activity first. */
@@ -329,7 +329,7 @@ function LibraryPage() {
     attempt(async () => {
       await createGroupFromFiles({ data: { fileIds } });
       setSelected([]);
-    }, "Group made");
+    }, "Carousel made");
 
   const moveTo = (groupId: string, fileIds: string[]) =>
     attempt(
@@ -367,7 +367,7 @@ function LibraryPage() {
     setExpanded(null);
     void attempt(
       () => removeGroup({ data: { id: group.id, deleteFiles } }),
-      deleteFiles ? "Group and files deleted" : "Ungrouped",
+      deleteFiles ? "Carousel and files deleted" : "Carousel undone — files kept",
     );
   };
 
@@ -498,11 +498,11 @@ function LibraryPage() {
       <Page>
         <PageHeader
           title="Library"
-          description="Drop your videos and images here. Group what goes out together, then publish it to every channel it fits."
+          description="Drop your videos and images here. Put what goes out together in a carousel, then publish it to every channel it fits."
           actions={
             <>
               <Button size="sm" variant="outline" onClick={() => void emptyGroup()}>
-                <FolderSimplePlus /> New group
+                <FolderSimplePlus /> New carousel
               </Button>
               <Button size="sm" onClick={() => input.current?.click()}>
                 <UploadSimple /> Upload
@@ -541,8 +541,8 @@ function LibraryPage() {
                 </span>
                 <span {...stylex.props(styles.emptyTitle)}>Drop videos and images here</span>
                 <span {...stylex.props(styles.emptyText)}>
-                  Or ask your agent to upload them into a group with its captions written — then you
-                  only pick where it goes. Files stay {retentionDays} days.
+                  Or ask your agent to upload them into a carousel with its captions written — then
+                  you only pick where it goes. Files stay {retentionDays} days.
                 </span>
               </button>
             ) : (
@@ -582,7 +582,7 @@ function LibraryPage() {
                 ) : (
                   <p {...stylex.props(styles.nothing)}>
                     {kind === "group" && !words
-                      ? "No group yet. Select files and press Group, or drag them onto New group."
+                      ? "No carousel yet. Select files and press Carousel, or drag them onto New carousel."
                       : "Nothing matches."}
                   </p>
                 )}
@@ -596,21 +596,10 @@ function LibraryPage() {
 
       {dragging || dragFrom ? (
         <DragDock
-          groups={groups}
-          from={dragFrom}
-          onNewGroup={(ids) => {
+          onNewCarousel={(ids) => {
             setDragging(false);
             setDragFrom(null);
             void newGroup(ids);
-          }}
-          onMove={(groupId, ids) => {
-            setDragging(false);
-            setDragFrom(null);
-            void moveTo(groupId, ids);
-          }}
-          onTakeOut={(ids) => {
-            setDragFrom(null);
-            void takeOut(ids);
           }}
         />
       ) : (
@@ -628,7 +617,7 @@ function LibraryPage() {
       {dropping && (
         <div {...stylex.props(styles.overlay)}>
           <p {...stylex.props(styles.overlayText)}>
-            <UploadSimple size={18} /> Drop to upload — onto a group to put them in it
+            <UploadSimple size={18} /> Drop to upload — onto a carousel to put them in it
           </p>
         </div>
       )}
