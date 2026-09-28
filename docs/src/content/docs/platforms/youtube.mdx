@@ -1,0 +1,45 @@
+---
+title: YouTube
+description: Long videos and Shorts on your YouTube channels.
+sidebar:
+  order: 0
+---
+
+**Connect:** sign in with the Google account that owns the channel. Every channel it manages
+can be connected.
+
+**Posting:** uploaded as private `leadMinutes` early (30 by default), with a publish time;
+YouTube makes it public at `scheduledAt`. A vertical video under three minutes becomes a Short.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `title` | No `<` or `>` |
+| `description` | No `<` or `>` |
+| `category` | Category id, e.g. `"27"` Education, `"22"` People |
+| `tags` | At most 500 characters in total |
+| `privacyStatus` | `public`, `unlisted` or `private` |
+| `madeForKids` | `true` / `false` |
+| `notifySubscribers` | `true` / `false` |
+| `defaultLanguage` | Language of the title and description, e.g. `"en"`; needed for `localizations` |
+| `localizations` | Translations: `{ "id": { "title": "…", "description": "…" } }` |
+| `thumbnailUrl` | Public https JPEG/PNG, at most 2 MB, 1280×720; set right after upload |
+| `playlistIds` | Playlists (`list_collections`) the video joins right after upload |
+| `captions` | Subtitle files uploaded right after the video |
+| `firstComment` | Posted as the channel's own comment once the video is public |
+
+## After it is up
+
+Change its details (`edit_published_post`), set a thumbnail, manage playlists and captions,
+read and moderate comments, and read analytics — views, watch time, audience retention and
+traffic sources, per video and per channel.
+
+## Limits
+
+- **Quota:** per day, 100 uploads plus 10,000 units for everything else (a thumbnail or an
+  edit costs 50, a caption 400). mixetape reports a used-up quota as a failed post with the
+  reason; retry after it resets at midnight Pacific time.
+- **Custom thumbnails** need a verified channel.
+- The API cannot pin comments or set a Short's related video.
+- Analytics lag two to three days.

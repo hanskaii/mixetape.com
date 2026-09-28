@@ -21,6 +21,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiV1AccountsRouteImport } from './routes/api/v1/accounts'
+import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
@@ -90,6 +91,11 @@ const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
 const ApiV1AccountsRoute = ApiV1AccountsRouteImport.update({
   id: '/api/v1/accounts',
   path: '/api/v1/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
+  id: '/api/v1/openapi.json',
+  path: '/api/v1/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/settings/account': typeof appAppSettingsAccountRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/settings/account': typeof appAppSettingsAccountRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/api/connect/$provider'
     | '/api/storage/upload'
     | '/api/v1/accounts'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
     | '/api/v1/tools'
     | '/settings/account'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/connect/$provider'
     | '/api/storage/upload'
     | '/api/v1/accounts'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
     | '/api/v1/tools'
     | '/settings/account'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/connect/$provider'
     | '/api/storage/upload'
     | '/api/v1/accounts'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
     | '/api/v1/tools'
     | '/(app)/_app/settings/account'
@@ -316,6 +328,7 @@ export interface RootRouteChildren {
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
   ApiV1AccountsRoute: typeof ApiV1AccountsRoute
+  ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
   ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
   ApiStorageFileSplatRoute: typeof ApiStorageFileSplatRoute
@@ -405,6 +418,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/accounts'
       fullPath: '/api/v1/accounts'
       preLoaderRoute: typeof ApiV1AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/openapi.json': {
+      id: '/api/v1/openapi.json'
+      path: '/api/v1/openapi.json'
+      fullPath: '/api/v1/openapi.json'
+      preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/posts': {
@@ -577,6 +597,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
   ApiV1AccountsRoute: ApiV1AccountsRoute,
+  ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
   ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
   ApiStorageFileSplatRoute: ApiStorageFileSplatRoute,

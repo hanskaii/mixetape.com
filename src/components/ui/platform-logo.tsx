@@ -7,10 +7,11 @@ import {
   TiktokLogo,
   YoutubeLogo,
 } from "@phosphor-icons/react";
-import { colors } from "../../../../../components/ui/tokens.stylex";
+import { colors } from "./tokens.stylex";
 
 const styles = stylex.create({
   logo: { flexShrink: 0 },
+  xs: { fontSize: "0.8125rem" },
   sm: { fontSize: "1.125rem" },
   md: { fontSize: "1.5rem" },
   lg: { fontSize: "2rem" },
@@ -27,7 +28,7 @@ export function PlatformLogo({
   size = "lg",
 }: {
   provider: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
 }) {
   const props = (tint: stylex.StyleXStyles) => stylex.props(styles.logo, styles[size], tint);
   switch (provider) {

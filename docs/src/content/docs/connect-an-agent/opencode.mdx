@@ -1,0 +1,38 @@
+---
+title: OpenCode
+description: Add mixetape to OpenCode, the open-source terminal coding agent.
+sidebar:
+  order: 4
+---
+
+<Steps>
+  <Step title="Create an API key">
+    Create a key under **API keys** at [mixetape.com](https://mixetape.com/api-keys) with the permissions the agent needs — see [API keys and permissions](/concepts/api-keys). Copy it; it is shown once.
+  </Step>
+  <Step title="Add the server">
+    In `opencode.json` (the project) or `~/.config/opencode/opencode.json` (every project):
+
+    ```json
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "mcp": {
+        "mixetape": {
+          "type": "remote",
+          "url": "https://mixetape.com/mcp",
+          "headers": { "Authorization": "Bearer {env:MIXETAPE_API_KEY}" },
+          "enabled": true
+        }
+      }
+    }
+    ```
+
+    and set the key in that variable:
+
+    ```sh
+    export MIXETAPE_API_KEY="mxt_…"
+    ```
+  </Step>
+  <Step title="Try it">
+    Ask the agent to "list my mixetape channels". It calls `list_accounts` and answers with your connected channels. To add one from the agent, see [Connecting channels](/connect-an-agent/mcp#connecting-channels).
+  </Step>
+</Steps>

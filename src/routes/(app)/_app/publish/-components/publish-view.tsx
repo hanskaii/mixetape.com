@@ -31,7 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover
 import { Textarea } from "#/components/ui/textarea";
 import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
 import { useConfirmModal } from "#/components/providers/modal-providers";
-import { PlatformLogo } from "../../channels/-components/platform-logo";
+import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { cancelScheduledPost, getQueueData, retryFailedPost } from "#/modules/social/social.fn";
 
 export type PublishData = Awaited<ReturnType<typeof getQueueData>>;
@@ -231,7 +231,14 @@ export function PublishView({ accounts, posts }: PublishData) {
           }).format(date)}
         </time>
         <div className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted/30">
-          {account && <PlatformLogo provider={account.provider} size="sm" />}
+          {account && (
+            <ChannelAvatar
+              provider={account.provider}
+              avatar={account.avatar}
+              name={account.name}
+              size="sm"
+            />
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">{postTitle(post)}</p>
             <p className="truncate text-xs text-muted-foreground">
@@ -366,7 +373,12 @@ export function PublishView({ accounts, posts }: PublishData) {
                       checked={selected.includes(account.id)}
                       onCheckedChange={() => toggleAccount(account.id)}
                     >
-                      <PlatformLogo provider={account.provider} size="sm" />{" "}
+                      <ChannelAvatar
+                        provider={account.provider}
+                        avatar={account.avatar}
+                        name={account.name}
+                        size="sm"
+                      />{" "}
                       <span className="truncate">{account.name}</span>
                     </DropdownMenuCheckboxItem>
                   ))}

@@ -1,0 +1,30 @@
+---
+title: TikTok
+description: Videos on TikTok accounts.
+sidebar:
+  order: 4
+  badge: Soon
+---
+
+<Aside type="caution" title="Not connectable yet">
+  The integration is built, but mixetape's TikTok app is not set up yet, so TikTok shows as
+  "Soon" when you connect a channel.
+</Aside>
+
+**Posting:** TikTok cannot hold a post, so mixetape uploads it at `scheduledAt` (the lead is
+always `0`).
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `title` | The caption, at most 2,200 characters; defaults to the post caption |
+| `privacyLevel` | `PUBLIC_TO_EVERYONE`, `MUTUAL_FOLLOW_FRIENDS`, `FOLLOWER_OF_CREATOR` or `SELF_ONLY` (default) |
+| `disableComment`, `disableDuet`, `disableStitch` | `true` / `false` |
+| `coverFrameMs` | Cover frame, in milliseconds from the start |
+| `isAigc` | Label it as AI-generated content |
+
+## Limits
+
+- Until TikTok audits mixetape's app, posts can only be private (`SELF_ONLY`).
+- A post may only use a privacy level the account allows; others are refused before upload.

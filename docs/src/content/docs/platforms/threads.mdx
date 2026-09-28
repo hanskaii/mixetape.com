@@ -1,0 +1,31 @@
+---
+title: Threads
+description: Video posts on Threads profiles.
+sidebar:
+  order: 3
+  badge: Soon
+---
+
+<Aside type="caution" title="Not connectable yet">
+  The integration is built, but mixetape's Threads app is not set up yet, so Threads shows as
+  "Soon" when you connect a channel.
+</Aside>
+
+**Posting:** Threads cannot schedule through its API, so mixetape prepares the post
+`leadMinutes` early (10 by default) and publishes it at `scheduledAt`.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `text` | At most 500 characters; defaults to the post caption |
+| `firstComment` | Posted as the profile's own reply once the post is public |
+
+## After it is up
+
+Replies work like comments: read them, reply as the profile, and hide them. Post insights
+cover views, likes, replies, reposts, quotes and shares.
+
+## Limits
+
+- 250 posts per profile in 24 hours.

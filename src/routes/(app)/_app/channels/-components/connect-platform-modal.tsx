@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { CaretRight } from "@phosphor-icons/react";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { colors } from "../../../../../components/ui/tokens.stylex";
-import { PlatformLogo } from "./platform-logo";
+import { PlatformLogo } from "#/components/ui/platform-logo";
 
 /** What a consent on each platform reaches, so the user knows which account to sign in with. */
 const REACHES: Record<string, string> = {

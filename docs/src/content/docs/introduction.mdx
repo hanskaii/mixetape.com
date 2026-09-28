@@ -1,0 +1,53 @@
+---
+title: Introduction
+description: What mixetape is, and how a post travels from your agent to a platform.
+sidebar:
+  order: 0
+---
+
+mixetape is a social media scheduler built for agents. Claude Code, your own agent or a
+pipeline hands it a finished video, a caption and a time; mixetape holds the post, publishes
+it to the channel at that time, and reports back what happened.
+
+Everything a person can do in the workspace, an agent can do too — over
+[MCP](/connect-an-agent/mcp) or the [REST API](/connect-an-agent/rest-api), with the same
+names, rules and errors. The workspace at [mixetape.com](https://mixetape.com) is where you
+supervise: connect channels, watch the queue, cancel or retry a post.
+
+## How a post travels
+
+<Steps>
+  <Step title="Your agent schedules it">
+    `create_post` with an account, a media URL, a caption and `scheduledAt`. The post is
+    `scheduled` and waits in mixetape — still editable with `update_post`, still cancellable.
+  </Step>
+  <Step title="mixetape sends it shortly before its time">
+    `leadMinutes` before `scheduledAt` (30 by default on YouTube), mixetape uploads it, so the
+    platform has finished processing when it goes live. See [Posts and timing](/concepts/posts-and-timing).
+  </Step>
+  <Step title="It goes live on time">
+    The platform, or mixetape itself, publishes it at `scheduledAt`. Thumbnails, playlists,
+    captions and a first comment are applied on the way.
+  </Step>
+  <Step title="The agent hears back">
+    `get_post` answers `published` with the link — or `failed` with the reason, so the agent
+    can fix it and `retry_post`.
+  </Step>
+</Steps>
+
+## Where to go next
+
+<CardGrid>
+  <Card title="Quickstart" icon="ph:rocket-launch">
+    Connect a channel, give your agent a key and schedule a first post — [start here](/quickstart).
+  </Card>
+  <Card title="Tools" icon="ph:wrench">
+    All 28 tools, grouped by the permission they need — [browse them](/tools).
+  </Card>
+  <Card title="Platforms" icon="ph:broadcast">
+    What each platform supports, and its limits — [YouTube](/platforms/youtube) first.
+  </Card>
+  <Card title="API reference" icon="ph:code">
+    Every endpoint, generated from the OpenAPI document — [open it](/api).
+  </Card>
+</CardGrid>

@@ -1,0 +1,34 @@
+---
+title: Instagram
+description: Reels on Instagram Business and Creator accounts.
+sidebar:
+  order: 2
+---
+
+**Connect:** sign in on instagram.com with a professional (Business or Creator) account. No
+Facebook Page is needed. Access lasts 60 days; mixetape renews it whenever it posts or reads
+for the account in the last week, so an account left idle longer must be reconnected.
+
+**Posting:** videos post as Reels. Instagram cannot schedule through its API, so mixetape
+prepares the Reel `leadMinutes` early (15 by default) — Instagram uploads and processes it —
+and publishes it itself at `scheduledAt`.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `caption` | At most 2,200 characters, 30 hashtags and 20 @mentions; defaults to the post caption |
+| `thumbnailUrl` | Public https JPEG cover, set at creation |
+| `coverFrameMs` | Or a cover frame, in milliseconds from the start |
+| `shareToFeed` | Also show it in the feed grid (default `true`) |
+| `firstComment` | Posted as the account's own comment once the Reel is public |
+
+## After it is up
+
+Read comments, reply as the account, and hide comments (Instagram has no review queue and
+cannot ban from a comment). Reel insights are lifetime totals. The caption cannot be changed
+through the API once the Reel is up.
+
+## Limits
+
+- 100 posts through the API per account in 24 hours.

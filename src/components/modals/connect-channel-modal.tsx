@@ -9,6 +9,7 @@ import {
   chooseConnectChannels,
 } from "#/modules/social/social.fn";
 import type { ChannelChoice } from "#/modules/social/social.service";
+import { ChannelAvatar } from "#/components/ui/channel-avatar";
 
 export interface ConnectChannelModalProps {
   open?: boolean;
@@ -173,13 +174,7 @@ export function ConnectChannelModal({
                     onChange={() => toggle(option.platformAccountId)}
                     className="size-4 shrink-0 accent-primary"
                   />
-                  {option.avatar ? (
-                    <img src={option.avatar} alt="" className="size-8 shrink-0 rounded-full" />
-                  ) : (
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
-                      {option.name.slice(0, 1)}
-                    </span>
-                  )}
+                  <ChannelAvatar provider={provider} avatar={option.avatar} name={option.name} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{option.name}</span>
                     {option.handle && (

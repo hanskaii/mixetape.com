@@ -1,0 +1,29 @@
+---
+title: Claude Code
+description: Add mixetape to Claude Code, Anthropic's terminal coding agent.
+sidebar:
+  order: 1
+---
+
+<Steps>
+  <Step title="Create an API key">
+    Create a key under **API keys** at [mixetape.com](https://mixetape.com/api-keys) with the permissions the agent needs — see [API keys and permissions](/concepts/api-keys). Copy it; it is shown once.
+  </Step>
+  <Step title="Add the server">
+    ```sh
+    claude mcp add --transport http mixetape https://mixetape.com/mcp \
+      --header "Authorization: Bearer mxt_…" -s user
+    ```
+
+    `-s user` makes it available in every project; leave it out to add it to the current
+    one only. `claude mcp list` shows it as connected.
+  </Step>
+  <Step title="Try it">
+    Ask the agent to "list my mixetape channels". It calls `list_accounts` and answers with your connected channels. To add one from the agent, see [Connecting channels](/connect-an-agent/mcp#connecting-channels).
+  </Step>
+</Steps>
+
+<Aside type="tip">
+  In a session that was already running, reconnect the server (`/mcp`) or start a new one
+  to see the tools.
+</Aside>

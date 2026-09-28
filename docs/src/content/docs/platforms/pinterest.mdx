@@ -1,0 +1,34 @@
+---
+title: Pinterest
+description: Video and image Pins on Pinterest business accounts.
+sidebar:
+  order: 5
+  badge: Soon
+---
+
+<Aside type="caution" title="Not connectable yet">
+  The integration is built, but mixetape's Pinterest app is not set up yet, so Pinterest shows
+  as "Soon" when you connect a channel.
+</Aside>
+
+**Connect:** a Pinterest business account.
+
+**Posting:** Pinterest cannot hold a Pin, so mixetape creates it at `scheduledAt` (the lead is
+always `0`). A video URL makes a video Pin, an image URL an image Pin.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `boardId` | **Required.** A board id from `list_collections` |
+| `title` | |
+| `description` | Defaults to the post caption |
+| `link` | Where the Pin leads when clicked |
+| `altText` | |
+| `thumbnailUrl` | Video Pins: public https cover image |
+| `coverFrameSeconds` | Video Pins: cover frame, in seconds (default 1) |
+
+## After it is up
+
+Boards work as collections: list them, create one, and save a Pin to another board. Pin and
+account analytics are available.

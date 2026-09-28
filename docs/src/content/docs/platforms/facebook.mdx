@@ -1,0 +1,28 @@
+---
+title: Facebook
+description: Videos and Reels on the Facebook Pages you manage.
+sidebar:
+  order: 1
+---
+
+**Connect:** sign in with the Facebook account that manages the Pages. When it manages several,
+you pick which to add. Posting goes to Pages only — never to a personal profile.
+
+**Posting:** uploaded unpublished `leadMinutes` early (30 by default; `0` or at least `15`),
+with a publish time; Facebook publishes it at `scheduledAt`.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `format` | `"video"` for a Page video, `"reel"` for a Reel (vertical 9:16, 3–90 seconds) |
+| `title` | Page videos only — Reels have no title; put the text in `description` |
+| `description` | The post text; defaults to the caption |
+| `thumbnailUrl` | Public https JPEG/PNG, set right after upload |
+| `captions` | Subtitle files (public https `.srt`) uploaded right after the video |
+| `firstComment` | Posted as the Page's own comment once the post is public |
+
+## After it is up
+
+Change its title and description, set a thumbnail, upload captions, read, reply to and hide
+comments, and read video insights.

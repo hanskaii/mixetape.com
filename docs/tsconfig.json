@@ -1,0 +1,13 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    // Only this project's type packages: TypeScript would otherwise also load the ones in
+    // the app's node_modules one folder up (docs/ lives inside the mixetape.com repo).
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}

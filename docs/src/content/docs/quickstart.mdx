@@ -1,0 +1,51 @@
+---
+title: Quickstart
+description: Connect a channel, give your agent an API key and schedule its first post.
+sidebar:
+  order: 1
+  badge: Start here
+---
+
+<Steps>
+  <Step title="Sign in">
+    Open [mixetape.com](https://mixetape.com) and sign in with Google, GitHub or an email code.
+  </Step>
+  <Step title="Connect a channel">
+    In the workspace, go to **Channels → Connect**, pick the platform, and sign in there with
+    the account that owns the channel. There is nothing to set up on the platform's side:
+    every channel connects through mixetape's own app.
+
+    Your agent can do this too: `connect_channel` returns a sign-in link to hand you. See
+    [Connecting channels through an agent](/connect-an-agent/mcp#connecting-channels).
+  </Step>
+  <Step title="Create an API key">
+    Go to **API keys**, name the key after the agent that will use it, and tick the
+    permissions it needs — see [API keys and permissions](/concepts/api-keys). The key is
+    shown once; copy it.
+  </Step>
+  <Step title="Add mixetape to your agent">
+    For Claude Code:
+
+    ```sh
+    claude mcp add --transport http mixetape https://mixetape.com/mcp \
+      --header "Authorization: Bearer mxt_…"
+    ```
+
+    Any other MCP client works the same way; scripts can use the
+    [REST API](/connect-an-agent/rest-api) instead.
+  </Step>
+  <Step title="Schedule a post">
+    Ask your agent, for example:
+
+    > Schedule https://example.com/episode-12.mp4 on my YouTube channel for Friday 17:30 WIB,
+    > titled "Episode 12".
+
+    It calls `list_accounts` to find the channel, then `create_post`. The post appears under
+    **Publish** in the workspace, where you can cancel it until it goes out.
+  </Step>
+</Steps>
+
+<Aside type="tip" title="Media without a public URL">
+  If the video is on your machine, the agent uploads it to mixetape storage first
+  (`create_upload`) and schedules the `r2://` URL it gets back. See [Media and storage](/concepts/media).
+</Aside>

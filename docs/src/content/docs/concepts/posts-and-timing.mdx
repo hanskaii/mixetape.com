@@ -1,0 +1,58 @@
+---
+title: Posts and timing
+description: How mixetape holds a post, when it sends it, and the statuses it goes through.
+sidebar:
+  order: 0
+---
+
+A post is one piece of media, for one connected account, at one time. Like Buffer, mixetape
+**holds** it until shortly before that time, so it stays editable and cancellable for as
+long as possible — and still goes live exactly on time.
+
+## The lead
+
+`leadMinutes` before `scheduledAt`, mixetape sends the post to the platform, which then has
+time to process it (HD renditions on YouTube, for example) before it goes live. What
+"sending" means depends on what the platform can do:
+
+| Platform | Default lead | What happens at the lead | Who publishes at `scheduledAt` |
+|---|---|---|---|
+| YouTube | 30 min | Uploaded as private, with a publish time | YouTube |
+| Facebook | 30 min | Uploaded unpublished, with a publish time | Facebook |
+| Instagram | 15 min | Prepared as a processed Reel container | mixetape |
+| Threads | 10 min | Prepared as a processed post container | mixetape |
+| TikTok | 0 | — (TikTok cannot hold a post) | mixetape, uploading at that time |
+| Pinterest | 0 | — (Pinterest cannot hold a Pin) | mixetape, creating it at that time |
+
+Set `leadMinutes` on a post to change it; `0` sends it at go-live time. Facebook accepts `0`
+or at least `15`.
+
+**Post now:** leave out `scheduledAt`. The post goes out right away and is live once the lead
+has passed.
+
+Times are ISO 8601 **with a timezone offset**, e.g. `2026-10-02T17:30:00+07:00`.
+
+## Statuses
+
+| Status | Meaning | What you can do |
+|---|---|---|
+| `scheduled` | Waiting in mixetape | `update_post`, `cancel_post` |
+| `publishing` | Being uploaded | Wait |
+| `uploaded` | On the platform, not public yet | `edit_published_post`, `set_thumbnail` |
+| `published` | Live; `platformUrl` has the link | `edit_published_post`, comments, analytics |
+| `failed` | Did not go out; `error` says why | Fix it, then `retry_post` |
+| `cancelled` | Stopped before it went out | — |
+
+`retry_post` sends a failed post again — now, or at its original time if that is still ahead.
+
+## Durable by default
+
+Each post is a durable job: it survives restarts and deploys, retries transient errors on its
+own, and never publishes twice. A post that waits for days costs nothing while it waits.
+
+## After the upload
+
+Where the platform supports it, mixetape applies the post's extras right after uploading:
+the custom thumbnail (`metadata.thumbnailUrl`), playlists (`metadata.playlistIds`), caption
+files (`metadata.captions`), and — once the post is public — a first comment
+(`metadata.firstComment`). See each [platform](/platforms/youtube) for what it takes.

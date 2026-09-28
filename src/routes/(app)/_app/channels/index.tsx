@@ -32,7 +32,8 @@ import { useConfirmModal, useModal } from "#/components/providers/modal-provider
 import { getChannelsData, removeAccount } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
 import { ConnectPlatformModal } from "./-components/connect-platform-modal";
-import { PlatformLogo } from "./-components/platform-logo";
+import { ChannelAvatar } from "#/components/ui/channel-avatar";
+import { PlatformLogo } from "#/components/ui/platform-logo";
 import { channelUrl } from "./-lib/channel-url";
 
 export const Route = createFileRoute("/(app)/_app/channels/")({
@@ -43,13 +44,6 @@ export const Route = createFileRoute("/(app)/_app/channels/")({
 });
 
 const styles = stylex.create({
-  avatar: {
-    borderRadius: "9999px",
-    flexShrink: 0,
-    height: "2rem",
-    objectFit: "cover",
-    width: "2rem",
-  },
   actions: { alignItems: "center", display: "flex", gap: "0.25rem" },
 });
 
@@ -144,11 +138,11 @@ function ChannelsPage() {
                 <Row
                   key={account.id}
                   leading={
-                    account.avatar ? (
-                      <img src={account.avatar} alt="" {...stylex.props(styles.avatar)} />
-                    ) : (
-                      <PlatformLogo provider={account.provider} />
-                    )
+                    <ChannelAvatar
+                      provider={account.provider}
+                      avatar={account.avatar}
+                      name={account.name}
+                    />
                   }
                   title={account.name}
                   meta={account.handle ?? account.platformAccountId}

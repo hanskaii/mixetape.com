@@ -4,6 +4,8 @@ export const siteConfig = {
   description:
     "Let AI agents and pipelines schedule social posts through MCP or the API. mixetape holds each post, keeps it editable until it goes out, and reports back when it is live. YouTube today; X, Instagram, LinkedIn, TikTok and more coming.",
   url: process.env.SITE_URL || "http://localhost:3000",
+  /** The documentation site (its own project, in docs/). */
+  docsUrl: "https://docs.mixetape.com",
   author: {
     name: "Admin",
     handle: "admin",

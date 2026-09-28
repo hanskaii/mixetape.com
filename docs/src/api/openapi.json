@@ -1,0 +1,3933 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "mixetape API",
+    "version": "1.0.0",
+    "description": "Schedule and manage posts on connected social channels. Every action is also an MCP tool at /mcp, with the same names, inputs and errors. Authenticate with an API key from the workspace: `Authorization: Bearer mxt_\u2026`; each key carries only the permissions it was given."
+  },
+  "servers": [
+    {
+      "url": "https://mixetape.com"
+    }
+  ],
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Accounts and posts",
+      "description": "The plain REST resources; every tool below covers the rest."
+    },
+    {
+      "name": "read",
+      "description": "Tools under the **read** permission: see channels, posts, their status, playlists and captions."
+    },
+    {
+      "name": "publish",
+      "description": "Tools under the **publish** permission: schedule, change, cancel and retry posts, and set thumbnails."
+    },
+    {
+      "name": "manage",
+      "description": "Tools under the **manage** permission: edit videos already on the platform, manage playlists and upload captions."
+    },
+    {
+      "name": "comments",
+      "description": "Tools under the **comments** permission: read, post, reply to and moderate comments."
+    },
+    {
+      "name": "analytics",
+      "description": "Tools under the **analytics** permission: read post and channel analytics."
+    },
+    {
+      "name": "storage",
+      "description": "Tools under the **storage** permission: upload, import, list and delete files in mixetape's storage."
+    },
+    {
+      "name": "channels",
+      "description": "Tools under the **channels** permission: start connecting channels (you still approve each one on the platform)."
+    }
+  ],
+  "paths": {
+    "/api/v1/accounts": {
+      "get": {
+        "operationId": "listAccountsRest",
+        "summary": "List connected channels",
+        "description": "The channels this key can post to, with what each platform supports. Needs the **read** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "The connected channels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Account"
+                      }
+                    }
+                  },
+                  "required": [
+                    "accounts"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "operationId": "listPostsRest",
+        "summary": "List posts",
+        "description": "Posts, newest scheduled first. Needs the **read** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Comma-separated statuses, e.g. `scheduled,failed`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "ISO time; scheduled at or after",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "ISO time; scheduled at or before",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Default 100, max 500",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The posts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Post"
+                      }
+                    }
+                  },
+                  "required": [
+                    "posts"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPostRest",
+        "summary": "Schedule a post",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).\n\nNeeds the **publish** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "description": "mixetape account id (list_accounts)"
+                  },
+                  "mediaUrl": {
+                    "type": "string"
+                  },
+                  "caption": {
+                    "type": "string"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "description": "ISO 8601 with timezone offset \u2014 when it goes live. Omit to post now (live after leadMinutes)."
+                  },
+                  "leadMinutes": {
+                    "type": "number",
+                    "description": "Minutes before go-live that mixetape uploads or prepares it, so the platform finishes processing first (defaults: YouTube and Facebook 30, Instagram 15, Threads 10; TikTok and Pinterest always 0). 0 uploads at go-live time. Facebook needs 0 or at least 15."
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "description": "No < or >"
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 5000,
+                            "description": "No < or >"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "Category id, e.g. \"27\" Education, \"22\" People"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "\u2264 500 characters in total"
+                          },
+                          "privacyStatus": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ]
+                          },
+                          "madeForKids": {
+                            "type": "boolean"
+                          },
+                          "notifySubscribers": {
+                            "type": "boolean"
+                          },
+                          "defaultLanguage": {
+                            "type": "string",
+                            "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                          },
+                          "localizations": {
+                            "type": "object",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title"
+                              ]
+                            }
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                          },
+                          "playlistIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Playlists (list_collections) the video joins right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\""
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "Track name; empty is the default track"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Public https SRT or WebVTT"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                          }
+                        },
+                        "title": "YouTube"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "format": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "reel"
+                            ]
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "description": "Page videos only"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "The post text (defaults to caption)"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, set right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files (public https .srt) uploaded right after the video",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\", \"id\" or \"en_US\""
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the Page's own comment once the post is public"
+                          }
+                        },
+                        "title": "Facebook"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "caption": {
+                            "type": "string",
+                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG cover, set at creation"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Or the cover frame, ms from the start"
+                          },
+                          "shareToFeed": {
+                            "type": "boolean",
+                            "description": "Also show it in the feed grid (default true)"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own comment once the Reel is public"
+                          }
+                        },
+                        "title": "Instagram"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Defaults to the post caption"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Posted as the profile's own reply once the post is public"
+                          }
+                        },
+                        "title": "Threads"
+                      },
+                      {
+                        "type": "object",
+                        "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                          },
+                          "privacyLevel": {
+                            "type": "string",
+                            "enum": [
+                              "PUBLIC_TO_EVERYONE",
+                              "MUTUAL_FOLLOW_FRIENDS",
+                              "FOLLOWER_OF_CREATOR",
+                              "SELF_ONLY"
+                            ],
+                            "description": "Default SELF_ONLY (required until the app is audited)"
+                          },
+                          "disableComment": {
+                            "type": "boolean"
+                          },
+                          "disableDuet": {
+                            "type": "boolean"
+                          },
+                          "disableStitch": {
+                            "type": "boolean"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Cover frame, ms from the start"
+                          },
+                          "isAigc": {
+                            "type": "boolean",
+                            "description": "Label as AI-generated content"
+                          }
+                        },
+                        "title": "TikTok"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                        "properties": {
+                          "boardId": {
+                            "type": "string",
+                            "description": "Board id from list_collections (required)"
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 800,
+                            "description": "Defaults to the post caption"
+                          },
+                          "link": {
+                            "type": "string",
+                            "description": "Destination URL when the Pin is clicked"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Video Pins: public https cover image"
+                          },
+                          "coverFrameSeconds": {
+                            "type": "number",
+                            "description": "Video Pins: cover frame, seconds (default 1)"
+                          }
+                        },
+                        "title": "Pinterest"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "mediaUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The scheduled post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "$ref": "#/components/schemas/Post"
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getPostRest",
+        "summary": "Get a post",
+        "description": "One post and its status. Add `?insights=1` for its live platform status and metrics instead. Needs the **read** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "parameters": [
+          {
+            "name": "insights",
+            "in": "query",
+            "description": "Any value: answer with get_post_insights' result instead",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "$ref": "#/components/schemas/Post"
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updatePostRest",
+        "summary": "Change a scheduled post",
+        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post.\n\nNeeds the **publish** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mediaUrl": {
+                    "type": "string"
+                  },
+                  "caption": {
+                    "type": "string"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "description": "ISO 8601 with timezone offset"
+                  },
+                  "leadMinutes": {
+                    "type": "number"
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "description": "No < or >"
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 5000,
+                            "description": "No < or >"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "Category id, e.g. \"27\" Education, \"22\" People"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "\u2264 500 characters in total"
+                          },
+                          "privacyStatus": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ]
+                          },
+                          "madeForKids": {
+                            "type": "boolean"
+                          },
+                          "notifySubscribers": {
+                            "type": "boolean"
+                          },
+                          "defaultLanguage": {
+                            "type": "string",
+                            "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                          },
+                          "localizations": {
+                            "type": "object",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title"
+                              ]
+                            }
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                          },
+                          "playlistIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Playlists (list_collections) the video joins right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\""
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "Track name; empty is the default track"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Public https SRT or WebVTT"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                          }
+                        },
+                        "title": "YouTube"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "format": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "reel"
+                            ]
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "description": "Page videos only"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "The post text (defaults to caption)"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, set right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files (public https .srt) uploaded right after the video",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\", \"id\" or \"en_US\""
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the Page's own comment once the post is public"
+                          }
+                        },
+                        "title": "Facebook"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "caption": {
+                            "type": "string",
+                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG cover, set at creation"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Or the cover frame, ms from the start"
+                          },
+                          "shareToFeed": {
+                            "type": "boolean",
+                            "description": "Also show it in the feed grid (default true)"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own comment once the Reel is public"
+                          }
+                        },
+                        "title": "Instagram"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Defaults to the post caption"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Posted as the profile's own reply once the post is public"
+                          }
+                        },
+                        "title": "Threads"
+                      },
+                      {
+                        "type": "object",
+                        "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                          },
+                          "privacyLevel": {
+                            "type": "string",
+                            "enum": [
+                              "PUBLIC_TO_EVERYONE",
+                              "MUTUAL_FOLLOW_FRIENDS",
+                              "FOLLOWER_OF_CREATOR",
+                              "SELF_ONLY"
+                            ],
+                            "description": "Default SELF_ONLY (required until the app is audited)"
+                          },
+                          "disableComment": {
+                            "type": "boolean"
+                          },
+                          "disableDuet": {
+                            "type": "boolean"
+                          },
+                          "disableStitch": {
+                            "type": "boolean"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Cover frame, ms from the start"
+                          },
+                          "isAigc": {
+                            "type": "boolean",
+                            "description": "Label as AI-generated content"
+                          }
+                        },
+                        "title": "TikTok"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                        "properties": {
+                          "boardId": {
+                            "type": "string",
+                            "description": "Board id from list_collections (required)"
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 800,
+                            "description": "Defaults to the post caption"
+                          },
+                          "link": {
+                            "type": "string",
+                            "description": "Destination URL when the Pin is clicked"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Video Pins: public https cover image"
+                          },
+                          "coverFrameSeconds": {
+                            "type": "number",
+                            "description": "Video Pins: cover frame, seconds (default 1)"
+                          }
+                        },
+                        "title": "Pinterest"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The changed post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "$ref": "#/components/schemas/Post"
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelPostRest",
+        "summary": "Cancel a scheduled post",
+        "description": "Cancels a post that is still waiting in mixetape. Needs the **publish** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "The cancelled post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "$ref": "#/components/schemas/Post"
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "operationId": "retryPostRest",
+        "summary": "Retry a failed post, or set its thumbnail",
+        "description": "Without a body, sends a failed post again. With `{ thumbnailUrl }`, sets or replaces the thumbnail of a post already on the platform. Needs the **publish** permission.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "A public image URL or r2:// URL"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "$ref": "#/components/schemas/Post"
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools": {
+      "get": {
+        "operationId": "listTools",
+        "summary": "List the tools this key may call",
+        "description": "The same tools the MCP server offers, filtered by the key's permissions, with their input schemas.",
+        "tags": [
+          "Accounts and posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "The tools.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "inputSchema": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_accounts": {
+      "post": {
+        "operationId": "list_accounts",
+        "summary": "list_accounts",
+        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) \u2014 also after mixetape asks for new permissions.\n\nNeeds the **read** permission. Also available as the MCP tool `list_accounts`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_posts": {
+      "post": {
+        "operationId": "list_posts",
+        "summary": "list_posts",
+        "description": "List posts, newest scheduled time first. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled.\n\nNeeds the **read** permission. Also available as the MCP tool `list_posts`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Only these statuses"
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "ISO time; scheduled at or after"
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "ISO time; scheduled at or before"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "description": "Default 50, max 500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_post": {
+      "post": {
+        "operationId": "get_post",
+        "summary": "get_post",
+        "description": "One post with its status, error, platform link and attempts.\n\nNeeds the **read** permission. Also available as the MCP tool `get_post`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_post_insights": {
+      "post": {
+        "operationId": "get_post_insights",
+        "summary": "get_post_insights",
+        "description": "How a post that is on the platform stands right now: visibility, processing, scheduled publish time, any rejection, plus lifetime views, likes and comments. For watch time and retention use get_post_analytics.\n\nNeeds the **read** permission. Also available as the MCP tool `get_post_insights`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_collections": {
+      "post": {
+        "operationId": "list_collections",
+        "summary": "list_collections",
+        "description": "List the account's collections \u2014 playlists on YouTube, boards on Pinterest \u2014 with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.\n\nNeeds the **read** permission. Also available as the MCP tool `list_collections`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "description": "mixetape account id (list_accounts)"
+                  }
+                },
+                "required": [
+                  "accountId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_captions": {
+      "post": {
+        "operationId": "list_captions",
+        "summary": "list_captions",
+        "description": "List the caption tracks of a post on the platform (language, name, kind; 'asr' is automatic).\n\nNeeds the **read** permission. Also available as the MCP tool `list_captions`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/create_post": {
+      "post": {
+        "operationId": "create_post",
+        "summary": "create_post",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file).\n\nNeeds the **publish** permission. Also available as the MCP tool `create_post`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "description": "mixetape account id (list_accounts)"
+                  },
+                  "mediaUrl": {
+                    "type": "string"
+                  },
+                  "caption": {
+                    "type": "string"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "description": "ISO 8601 with timezone offset \u2014 when it goes live. Omit to post now (live after leadMinutes)."
+                  },
+                  "leadMinutes": {
+                    "type": "number",
+                    "description": "Minutes before go-live that mixetape uploads or prepares it, so the platform finishes processing first (defaults: YouTube and Facebook 30, Instagram 15, Threads 10; TikTok and Pinterest always 0). 0 uploads at go-live time. Facebook needs 0 or at least 15."
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "description": "No < or >"
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 5000,
+                            "description": "No < or >"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "Category id, e.g. \"27\" Education, \"22\" People"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "\u2264 500 characters in total"
+                          },
+                          "privacyStatus": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ]
+                          },
+                          "madeForKids": {
+                            "type": "boolean"
+                          },
+                          "notifySubscribers": {
+                            "type": "boolean"
+                          },
+                          "defaultLanguage": {
+                            "type": "string",
+                            "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                          },
+                          "localizations": {
+                            "type": "object",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title"
+                              ]
+                            }
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                          },
+                          "playlistIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Playlists (list_collections) the video joins right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\""
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "Track name; empty is the default track"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Public https SRT or WebVTT"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                          }
+                        },
+                        "title": "YouTube"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "format": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "reel"
+                            ]
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "description": "Page videos only"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "The post text (defaults to caption)"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, set right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files (public https .srt) uploaded right after the video",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\", \"id\" or \"en_US\""
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the Page's own comment once the post is public"
+                          }
+                        },
+                        "title": "Facebook"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "caption": {
+                            "type": "string",
+                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG cover, set at creation"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Or the cover frame, ms from the start"
+                          },
+                          "shareToFeed": {
+                            "type": "boolean",
+                            "description": "Also show it in the feed grid (default true)"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own comment once the Reel is public"
+                          }
+                        },
+                        "title": "Instagram"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Defaults to the post caption"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Posted as the profile's own reply once the post is public"
+                          }
+                        },
+                        "title": "Threads"
+                      },
+                      {
+                        "type": "object",
+                        "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                          },
+                          "privacyLevel": {
+                            "type": "string",
+                            "enum": [
+                              "PUBLIC_TO_EVERYONE",
+                              "MUTUAL_FOLLOW_FRIENDS",
+                              "FOLLOWER_OF_CREATOR",
+                              "SELF_ONLY"
+                            ],
+                            "description": "Default SELF_ONLY (required until the app is audited)"
+                          },
+                          "disableComment": {
+                            "type": "boolean"
+                          },
+                          "disableDuet": {
+                            "type": "boolean"
+                          },
+                          "disableStitch": {
+                            "type": "boolean"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Cover frame, ms from the start"
+                          },
+                          "isAigc": {
+                            "type": "boolean",
+                            "description": "Label as AI-generated content"
+                          }
+                        },
+                        "title": "TikTok"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                        "properties": {
+                          "boardId": {
+                            "type": "string",
+                            "description": "Board id from list_collections (required)"
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 800,
+                            "description": "Defaults to the post caption"
+                          },
+                          "link": {
+                            "type": "string",
+                            "description": "Destination URL when the Pin is clicked"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Video Pins: public https cover image"
+                          },
+                          "coverFrameSeconds": {
+                            "type": "number",
+                            "description": "Video Pins: cover frame, seconds (default 1)"
+                          }
+                        },
+                        "title": "Pinterest"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "mediaUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/update_post": {
+      "post": {
+        "operationId": "update_post",
+        "summary": "update_post",
+        "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post.\n\nNeeds the **publish** permission. Also available as the MCP tool `update_post`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "mediaUrl": {
+                    "type": "string"
+                  },
+                  "caption": {
+                    "type": "string"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "description": "ISO 8601 with timezone offset"
+                  },
+                  "leadMinutes": {
+                    "type": "number"
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "description": "No < or >"
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 5000,
+                            "description": "No < or >"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "Category id, e.g. \"27\" Education, \"22\" People"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "\u2264 500 characters in total"
+                          },
+                          "privacyStatus": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ]
+                          },
+                          "madeForKids": {
+                            "type": "boolean"
+                          },
+                          "notifySubscribers": {
+                            "type": "boolean"
+                          },
+                          "defaultLanguage": {
+                            "type": "string",
+                            "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                          },
+                          "localizations": {
+                            "type": "object",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title"
+                              ]
+                            }
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, \u2264 2 MB, 1280\u00d7720; set right after upload"
+                          },
+                          "playlistIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Playlists (list_collections) the video joins right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\""
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "Track name; empty is the default track"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Public https SRT or WebVTT"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the channel's own comment once the video is public \u2014 e.g. a link to the full video from a Short"
+                          }
+                        },
+                        "title": "YouTube"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "format": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "reel"
+                            ]
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "description": "Page videos only"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "The post text (defaults to caption)"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG/PNG, set right after upload"
+                          },
+                          "captions": {
+                            "type": "array",
+                            "description": "Subtitle files (public https .srt) uploaded right after the video",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "language": {
+                                  "type": "string",
+                                  "description": "e.g. \"en\", \"id\" or \"en_US\""
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "language",
+                                "url"
+                              ]
+                            }
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the Page's own comment once the post is public"
+                          }
+                        },
+                        "title": "Facebook"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "caption": {
+                            "type": "string",
+                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG cover, set at creation"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Or the cover frame, ms from the start"
+                          },
+                          "shareToFeed": {
+                            "type": "boolean",
+                            "description": "Also show it in the feed grid (default true)"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own comment once the Reel is public"
+                          }
+                        },
+                        "title": "Instagram"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Defaults to the post caption"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Posted as the profile's own reply once the post is public"
+                          }
+                        },
+                        "title": "Threads"
+                      },
+                      {
+                        "type": "object",
+                        "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                          },
+                          "privacyLevel": {
+                            "type": "string",
+                            "enum": [
+                              "PUBLIC_TO_EVERYONE",
+                              "MUTUAL_FOLLOW_FRIENDS",
+                              "FOLLOWER_OF_CREATOR",
+                              "SELF_ONLY"
+                            ],
+                            "description": "Default SELF_ONLY (required until the app is audited)"
+                          },
+                          "disableComment": {
+                            "type": "boolean"
+                          },
+                          "disableDuet": {
+                            "type": "boolean"
+                          },
+                          "disableStitch": {
+                            "type": "boolean"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Cover frame, ms from the start"
+                          },
+                          "isAigc": {
+                            "type": "boolean",
+                            "description": "Label as AI-generated content"
+                          }
+                        },
+                        "title": "TikTok"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                        "properties": {
+                          "boardId": {
+                            "type": "string",
+                            "description": "Board id from list_collections (required)"
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 800,
+                            "description": "Defaults to the post caption"
+                          },
+                          "link": {
+                            "type": "string",
+                            "description": "Destination URL when the Pin is clicked"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Video Pins: public https cover image"
+                          },
+                          "coverFrameSeconds": {
+                            "type": "number",
+                            "description": "Video Pins: cover frame, seconds (default 1)"
+                          }
+                        },
+                        "title": "Pinterest"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/cancel_post": {
+      "post": {
+        "operationId": "cancel_post",
+        "summary": "cancel_post",
+        "description": "Cancel a post that is still 'scheduled'.\n\nNeeds the **publish** permission. Also available as the MCP tool `cancel_post`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/retry_post": {
+      "post": {
+        "operationId": "retry_post",
+        "summary": "retry_post",
+        "description": "Send a 'failed' post again \u2014 now, or at its original time if that is still ahead.\n\nNeeds the **publish** permission. Also available as the MCP tool `retry_post`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/set_thumbnail": {
+      "post": {
+        "operationId": "set_thumbnail",
+        "summary": "set_thumbnail",
+        "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: \u2264 2 MB, 1280\u00d7720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.\n\nNeeds the **publish** permission. Also available as the MCP tool `set_thumbnail`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "imageUrl": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "imageUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/edit_published_post": {
+      "post": {
+        "operationId": "edit_published_post",
+        "summary": "edit_published_post",
+        "description": "Change the details of a post that is already on the platform (uploaded or published). YouTube: title, description, tags, category, privacy, made-for-kids, language and localizations (50 quota units). Facebook: title and description. Only the given fields change; null clears one.\n\nNeeds the **manage** permission. Also available as the MCP tool `edit_published_post`.",
+        "tags": [
+          "manage"
+        ],
+        "x-permission": "manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "description": "No < or >"
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 5000,
+                            "description": "No < or >"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "Category id, e.g. \"27\" Education, \"22\" People"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "\u2264 500 characters in total"
+                          },
+                          "privacyStatus": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ]
+                          },
+                          "madeForKids": {
+                            "type": "boolean"
+                          },
+                          "defaultLanguage": {
+                            "type": "string",
+                            "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                          },
+                          "localizations": {
+                            "type": "object",
+                            "description": "Translations keyed by language: { \"id\": { \"title\": \"\u2026\", \"description\": \"\u2026\" } }",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title"
+                              ]
+                            }
+                          }
+                        },
+                        "title": "YouTube"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3\u201390 s). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "description": "Page videos only"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "The post text (defaults to caption)"
+                          }
+                        },
+                        "title": "Facebook"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Instagram Reel fields (videos post as Reels: 3 s\u201315 min, \u2264 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "caption": {
+                            "type": "string",
+                            "description": "\u2264 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Public https JPEG cover, set at creation"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Or the cover frame, ms from the start"
+                          },
+                          "shareToFeed": {
+                            "type": "boolean",
+                            "description": "Also show it in the feed grid (default true)"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own comment once the Reel is public"
+                          }
+                        },
+                        "title": "Instagram"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Threads video fields (MP4/MOV, \u2264 5 min, \u2264 1 GB). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Defaults to the post caption"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Posted as the profile's own reply once the post is public"
+                          }
+                        },
+                        "title": "Threads"
+                      },
+                      {
+                        "type": "object",
+                        "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Caption, \u2264 2,200 characters; defaults to caption"
+                          },
+                          "privacyLevel": {
+                            "type": "string",
+                            "enum": [
+                              "PUBLIC_TO_EVERYONE",
+                              "MUTUAL_FOLLOW_FRIENDS",
+                              "FOLLOWER_OF_CREATOR",
+                              "SELF_ONLY"
+                            ],
+                            "description": "Default SELF_ONLY (required until the app is audited)"
+                          },
+                          "disableComment": {
+                            "type": "boolean"
+                          },
+                          "disableDuet": {
+                            "type": "boolean"
+                          },
+                          "disableStitch": {
+                            "type": "boolean"
+                          },
+                          "coverFrameMs": {
+                            "type": "number",
+                            "description": "Cover frame, ms from the start"
+                          },
+                          "isAigc": {
+                            "type": "boolean",
+                            "description": "Label as AI-generated content"
+                          }
+                        },
+                        "title": "TikTok"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                        "properties": {
+                          "boardId": {
+                            "type": "string",
+                            "description": "Board id from list_collections (required)"
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 800,
+                            "description": "Defaults to the post caption"
+                          },
+                          "link": {
+                            "type": "string",
+                            "description": "Destination URL when the Pin is clicked"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "thumbnailUrl": {
+                            "type": "string",
+                            "description": "Video Pins: public https cover image"
+                          },
+                          "coverFrameSeconds": {
+                            "type": "number",
+                            "description": "Video Pins: cover frame, seconds (default 1)"
+                          }
+                        },
+                        "title": "Pinterest"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "metadata"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/create_collection": {
+      "post": {
+        "operationId": "create_collection",
+        "summary": "create_collection",
+        "description": "Create a collection on the account: a YouTube playlist or a Pinterest board.\n\nNeeds the **manage** permission. Also available as the MCP tool `create_collection`.",
+        "tags": [
+          "manage"
+        ],
+        "x-permission": "manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "description": "mixetape account id (list_accounts)"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ]
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/add_to_collection": {
+      "post": {
+        "operationId": "add_to_collection",
+        "summary": "add_to_collection",
+        "description": "Add a post that is on the platform to a collection (YouTube playlist, or save a Pin to another Pinterest board). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead.\n\nNeeds the **manage** permission. Also available as the MCP tool `add_to_collection`.",
+        "tags": [
+          "manage"
+        ],
+        "x-permission": "manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "collectionId": {
+                    "type": "string"
+                  },
+                  "position": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "collectionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/upload_caption": {
+      "post": {
+        "operationId": "upload_caption",
+        "summary": "upload_caption",
+        "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400\u2013450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.\n\nNeeds the **manage** permission. Also available as the MCP tool `upload_caption`.",
+        "tags": [
+          "manage"
+        ],
+        "x-permission": "manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "BCP-47, e.g. \"en\", \"id\""
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Track name; empty is the default track"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "isDraft": {
+                    "type": "boolean",
+                    "description": "Upload without publishing the track"
+                  }
+                },
+                "required": [
+                  "id",
+                  "language",
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_comments": {
+      "post": {
+        "operationId": "list_comments",
+        "summary": "list_comments",
+        "description": "Read the comments on a post (with replies). Comment ids are what reply_to_comment and moderate_comment take. held: true lists comments held for review.\n\nNeeds the **comments** permission. Also available as the MCP tool `list_comments`.",
+        "tags": [
+          "comments"
+        ],
+        "x-permission": "comments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "description": "1\u2013100, default 20"
+                  },
+                  "order": {
+                    "type": "string",
+                    "enum": [
+                      "time",
+                      "relevance"
+                    ]
+                  },
+                  "held": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/post_comment": {
+      "post": {
+        "operationId": "post_comment",
+        "summary": "post_comment",
+        "description": "Post a comment on a public post as the channel itself \u2014 e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.\n\nNeeds the **comments** permission. Also available as the MCP tool `post_comment`.",
+        "tags": [
+          "comments"
+        ],
+        "x-permission": "comments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/reply_to_comment": {
+      "post": {
+        "operationId": "reply_to_comment",
+        "summary": "reply_to_comment",
+        "description": "Reply to a comment on one of the account's posts, as the channel.\n\nNeeds the **comments** permission. Also available as the MCP tool `reply_to_comment`.",
+        "tags": [
+          "comments"
+        ],
+        "x-permission": "comments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "commentId": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "commentId",
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/moderate_comment": {
+      "post": {
+        "operationId": "moderate_comment",
+        "summary": "moderate_comment",
+        "description": "Publish, hold for review, or reject (hide) a comment on one of the account's posts. banAuthor with 'rejected' also hides the author's future comments.\n\nNeeds the **comments** permission. Also available as the MCP tool `moderate_comment`.",
+        "tags": [
+          "comments"
+        ],
+        "x-permission": "comments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "commentId": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "published",
+                      "heldForReview",
+                      "rejected"
+                    ]
+                  },
+                  "banAuthor": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "commentId",
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/connect_channel": {
+      "post": {
+        "operationId": "connect_channel",
+        "summary": "connect_channel",
+        "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user \u2014 they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.\n\nNeeds the **channels** permission. Also available as the MCP tool `connect_channel`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "youtube",
+                      "facebook",
+                      "instagram",
+                      "threads",
+                      "tiktok",
+                      "pinterest"
+                    ],
+                    "description": "The platform to connect; one mixetape has no app for yet is refused"
+                  }
+                },
+                "required": [
+                  "platform"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_connection": {
+      "post": {
+        "operationId": "get_connection",
+        "summary": "get_connection",
+        "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) \u2014 ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.\n\nNeeds the **channels** permission. Also available as the MCP tool `get_connection`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "description": "The state connect_channel returned"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/choose_channels": {
+      "post": {
+        "operationId": "choose_channels",
+        "summary": "choose_channels",
+        "description": "Add the channels the user picked after get_connection answered 'choose'. The choice is held for 10 minutes after the sign-in; channels left out are not connected.\n\nNeeds the **channels** permission. Also available as the MCP tool `choose_channels`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "description": "The state connect_channel returned"
+                  },
+                  "platformAccountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "platformAccountId of each chosen channel, from get_connection's choices"
+                  }
+                },
+                "required": [
+                  "state",
+                  "platformAccountIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_post_analytics": {
+      "post": {
+        "operationId": "get_post_analytics",
+        "summary": "get_post_analytics",
+        "description": "A post's analytics: views, watch time, average view duration and percentage, likes, comments, shares, subscribers gained/lost, the audience-retention curve and traffic sources. Defaults to the day it went up through today; the last ~3 days are incomplete.\n\nNeeds the **analytics** permission. Also available as the MCP tool `get_post_analytics`.",
+        "tags": [
+          "analytics"
+        ],
+        "x-permission": "analytics",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "mixetape post id (list_posts)"
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "First day, YYYY-MM-DD"
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Last day, YYYY-MM-DD"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_account_analytics": {
+      "post": {
+        "operationId": "get_account_analytics",
+        "summary": "get_account_analytics",
+        "description": "An account's analytics: totals, day by day, its top 10 posts (with the mixetape post id when published through mixetape) and traffic sources. Defaults to the last 28 days; the last ~3 days are incomplete.\n\nNeeds the **analytics** permission. Also available as the MCP tool `get_account_analytics`.",
+        "tags": [
+          "analytics"
+        ],
+        "x-permission": "analytics",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "description": "mixetape account id (list_accounts)"
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "First day, YYYY-MM-DD"
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Last day, YYYY-MM-DD"
+                  }
+                },
+                "required": [
+                  "accountId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/create_upload": {
+      "post": {
+        "operationId": "create_upload",
+        "summary": "create_upload",
+        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header \u2014 the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://\u2026) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file.\n\nNeeds the **storage** permission. Also available as the MCP tool `create_upload`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "description": "e.g. \"video/mp4\", \"image/jpeg\""
+                  },
+                  "size": {
+                    "type": "number",
+                    "description": "Size in bytes, to refuse files over 5 GB early"
+                  }
+                },
+                "required": [
+                  "fileName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/import_file": {
+      "post": {
+        "operationId": "import_file",
+        "summary": "import_file",
+        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage \u2014 e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://\u2026).\n\nNeeds the **storage** permission. Also available as the MCP tool `import_file`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "description": "Defaults to the URL's file name"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_files": {
+      "post": {
+        "operationId": "list_files",
+        "summary": "list_files",
+        "description": "List the files in your mixetape storage, newest first, with url (r2://\u2026) and size.\n\nNeeds the **storage** permission. Also available as the MCP tool `list_files`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "number",
+                    "description": "Default 50, max 1000"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/delete_file": {
+      "post": {
+        "operationId": "delete_file",
+        "summary": "delete_file",
+        "description": "Delete a file from mixetape storage. A post that still points at it will fail to upload, so only delete files you no longer need.\n\nNeeds the **storage** permission. Also available as the MCP tool `delete_file`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "r2://\u2026 from list_files"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An API key from the workspace (API keys page), starting with `mxt_`."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request is invalid; `error` says why.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "No valid API key.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The key lacks the permission this needs.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not found, or not yours.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "What went wrong, in plain words"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape account id, used as accountId"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "youtube",
+              "facebook",
+              "instagram",
+              "threads",
+              "tiktok",
+              "pinterest"
+            ]
+          },
+          "platformAccountId": {
+            "type": "string",
+            "description": "The platform's own id"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "reconnect"
+            ],
+            "description": "`reconnect`: connect the channel again before posting to it"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What its platform supports, e.g. comments, analytics"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "platformAccountId",
+          "name",
+          "status",
+          "capabilities"
+        ]
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "mediaUrl": {
+            "type": "string"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "The platform's own fields"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it goes live"
+          },
+          "leadMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Uploaded or prepared this long before scheduledAt"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "publishing",
+              "uploaded",
+              "published",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "platformPostId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "platformUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it failed, when it did"
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "provider",
+          "mediaUrl",
+          "scheduledAt",
+          "status"
+        ]
+      }
+    }
+  }
+}

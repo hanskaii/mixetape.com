@@ -1,0 +1,38 @@
+---
+title: Media and storage
+description: Where a post's video comes from — a public URL, or a file in mixetape storage.
+sidebar:
+  order: 2
+---
+
+A post's `mediaUrl` is either:
+
+- a **public https URL** that the platform can fetch, or
+- an **`r2://` URL** of a file in mixetape storage.
+
+Use storage when the file is on your machine, or when its link expires before the post goes
+out.
+
+## Uploading a file
+
+`create_upload` returns a presigned `uploadUrl`, valid for 6 hours. Send the whole file (up to
+5 GB) in **one PUT**, with exactly the `Content-Type` it returns — no API key is needed for
+the PUT itself. The tool also returns a ready `curl` command:
+
+```sh
+curl -X PUT "<uploadUrl>" -H "Content-Type: video/mp4" --data-binary @episode-12.mp4
+```
+
+Then schedule the post with the returned `url` (`r2://…`).
+
+## Importing from a URL
+
+`import_file` copies a file from a public https URL (up to 5 GB, with a `Content-Length`) into
+storage — for example a render service's link that expires. mixetape fetches it; nothing is
+sent from your machine.
+
+## Housekeeping
+
+`list_files` lists your files, newest first, with their `r2://` URL and size. `delete_file`
+removes one — a post that still points at it will fail to upload, so only delete files you no
+longer need.

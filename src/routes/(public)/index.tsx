@@ -29,7 +29,7 @@ function HomePage() {
       <Platforms />
       <WorkspacePreview />
       <HowItWorks />
-      <ForAgents signedIn={signedIn} />
+      <ForAgents />
     </>
   );
 }

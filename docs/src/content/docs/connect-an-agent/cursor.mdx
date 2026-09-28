@@ -1,0 +1,36 @@
+---
+title: Cursor
+description: Add mixetape to Cursor, the AI-first editor.
+sidebar:
+  order: 3
+---
+
+<Steps>
+  <Step title="Create an API key">
+    Create a key under **API keys** at [mixetape.com](https://mixetape.com/api-keys) with the permissions the agent needs — see [API keys and permissions](/concepts/api-keys). Copy it; it is shown once.
+  </Step>
+  <Step title="Add the server">
+    In `~/.cursor/mcp.json` (every project) or `.cursor/mcp.json` (one project):
+
+    ```json
+    {
+      "mcpServers": {
+        "mixetape": {
+          "url": "https://mixetape.com/mcp",
+          "headers": { "Authorization": "Bearer mxt_…" }
+        }
+      }
+    }
+    ```
+
+    Cursor shows it in its settings, in the MCP section; make sure it is switched on.
+  </Step>
+  <Step title="Try it">
+    Ask the agent to "list my mixetape channels". It calls `list_accounts` and answers with your connected channels. To add one from the agent, see [Connecting channels](/connect-an-agent/mcp#connecting-channels).
+  </Step>
+</Steps>
+
+<Aside type="caution">
+  A project's `.cursor/mcp.json` holding the key should not be committed — keep the key in
+  the global file, or out of the repository.
+</Aside>

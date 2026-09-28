@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The docs site: static assets only, on its own subdomain (the app is mixetape.com).
+  "name": "mixetape-docs",
+  "compatibility_date": "2026-09-28",
+  "workers_dev": false,
+  "routes": [{ "pattern": "docs.mixetape.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { CalendarDots, Gear, Key, PlugsConnected, Robot, ShieldCheck } from "@phosphor-icons/react";
+import {
+  CalendarDots,
+  FileText,
+  Gear,
+  Key,
+  PlugsConnected,
+  Robot,
+  ShieldCheck,
+} from "@phosphor-icons/react";
 import {
   Sidebar,
   SidebarGroup,
@@ -18,6 +26,7 @@ import {
 } from "../ui/sidebar";
 import { colors } from "../ui/tokens.stylex";
 import { Route as RootRoute } from "#/routes/__root";
+import { siteConfig } from "#/config/site";
 import { HeaderUser } from "./header-user";
 import ThemeToggle from "./theme-toggle";
 
@@ -166,6 +175,19 @@ export function WorkspaceLayout({
         <SidebarNav label="Workspace">
           <NavGroup label="Workspace" items={WORKSPACE} pathname={pathname} />
           <NavGroup label="Account" items={ACCOUNT} pathname={pathname} />
+          <SidebarGroup>
+            <SidebarGroupLabel>Support</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<a href={siteConfig.docsUrl} target="_blank" rel="noreferrer" />}
+                  icon={<FileText />}
+                >
+                  Docs
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
         </SidebarNav>
       </Sidebar>
 

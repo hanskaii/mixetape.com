@@ -17,6 +17,7 @@
     ".nitro/**",
     ".output/**",
     ".claude/**",
-    ".agents/**"
+    ".agents/**",
+    "docs/**"
   ]
 }
