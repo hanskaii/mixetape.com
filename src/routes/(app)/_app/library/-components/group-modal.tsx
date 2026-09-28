@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { DotsThree, PaperPlaneTilt, Robot, Trash, UploadSimple, X } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import {
@@ -7,13 +8,100 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { Field } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { Textarea } from "#/components/ui/textarea";
 import type { GroupView } from "#/modules/library/groups.service";
 import { saveGroup, ungroupFiles } from "#/modules/library/library.fn";
-import { FileThumb } from "./file-thumb";
+import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { selectionSummary } from "../-lib/format";
+import { FileThumb } from "./file-thumb";
+
+const styles = stylex.create({
+  modal: { maxWidth: "36rem" },
+  body: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    maxHeight: "84vh",
+    overflowY: "auto",
+  },
+  keep: { flexShrink: 0 },
+  title: { alignItems: "center", display: "flex", gap: "0.5rem" },
+  agent: { color: colors.mutedForeground },
+  strip: {
+    display: "flex",
+    flexShrink: 0,
+    gap: "0.5rem",
+    marginInline: "-0.25rem",
+    overflowX: "auto",
+    paddingBlock: "0.5rem 0.25rem",
+    paddingInline: "0.25rem",
+  },
+  thumb: {
+    "--reveal": { default: "0", ":hover": "1", ":focus-within": "1" },
+    cursor: { default: "grab", ":active": "grabbing" },
+    flexShrink: 0,
+    position: "relative",
+  },
+  dragged: { opacity: 0.4 },
+  number: {
+    backgroundColor: "rgb(0 0 0 / 0.6)",
+    borderRadius: radius.sm,
+    bottom: "0.25rem",
+    color: "white",
+    fontFamily: '"Geist Mono Variable", ui-monospace, monospace',
+    fontSize: "0.625rem",
+    left: "0.25rem",
+    paddingInline: "0.25rem",
+    position: "absolute",
+  },
+  remove: {
+    alignItems: "center",
+    backgroundColor: colors.foreground,
+    borderRadius: radius.full,
+    borderStyle: "none",
+    color: colors.background,
+    cursor: "pointer",
+    display: "flex",
+    height: "1.25rem",
+    justifyContent: "center",
+    opacity: "var(--reveal)",
+    padding: 0,
+    position: "absolute",
+    right: "-0.375rem",
+    top: "-0.375rem",
+    transitionDuration: "150ms",
+    transitionProperty: "opacity",
+    width: "1.25rem",
+  },
+  add: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderColor: { default: colors.border, ":hover": colors.mutedForeground },
+    borderRadius: radius.lg,
+    borderStyle: "dashed",
+    borderWidth: "2px",
+    color: { default: colors.mutedForeground, ":hover": colors.foreground },
+    cursor: "pointer",
+    display: "flex",
+    flexShrink: 0,
+    height: "3.5rem",
+    justifyContent: "center",
+    width: "3.5rem",
+  },
+  hidden: { display: "none" },
+  menu: { minWidth: "14rem" },
+  footer: {
+    alignItems: "center",
+    display: "flex",
+    flexShrink: 0,
+    gap: "0.5rem",
+    paddingTop: "0.25rem",
+  },
+  push: { marginInlineStart: "auto" },
+});
 
 /**
  * A group, opened: its files in the order they go out (drag to reorder, × to take one out),
@@ -77,26 +165,33 @@ export function GroupModal({
     onChanged();
   };
 
-  const current = { ...group, files, title, caption, description };
+  const close = () => {
+    saveWords();
+    onClose();
+  };
 
   return (
-    <Modal open onOpenChange={(open) => !open && (saveWords(), onClose())} className="max-w-xl">
-      <div className="flex max-h-[84vh] flex-col gap-4 overflow-y-auto [&>*]:shrink-0">
-        <ModalHeader>
-          <ModalTitle className="flex items-center gap-2">
-            {group.createdBy === "agent" && (
-              <Robot size={16} className="text-muted-foreground" aria-label="Made by an agent" />
-            )}
-            {title || "Untitled group"}
-          </ModalTitle>
-          <ModalDescription>
-            {files.length ? selectionSummary(files) : "Empty"} · drag to reorder
-            {saving && " · saving…"}
-          </ModalDescription>
-        </ModalHeader>
+    <Modal open onOpenChange={(open) => !open && close()} style={styles.modal}>
+      <div {...stylex.props(styles.body)}>
+        <div {...stylex.props(styles.keep)}>
+          <ModalHeader>
+            <ModalTitle>
+              <span {...stylex.props(styles.title)}>
+                {group.createdBy === "agent" && (
+                  <Robot size={16} aria-label="Made by an agent" {...stylex.props(styles.agent)} />
+                )}
+                {title || "Untitled group"}
+              </span>
+            </ModalTitle>
+            <ModalDescription>
+              {files.length ? selectionSummary(files) : "Empty"} · drag to reorder
+              {saving && " · saving…"}
+            </ModalDescription>
+          </ModalHeader>
+        </div>
 
         <div
-          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-2"
+          {...stylex.props(styles.strip)}
           onDragOver={(event) => {
             if (event.dataTransfer.types.includes("Files")) event.preventDefault();
           }}
@@ -112,8 +207,7 @@ export function GroupModal({
               draggable
               onDragStart={() => setDragged(index)}
               onDragOver={(event) => {
-                if (dragged === null) return;
-                event.preventDefault();
+                if (dragged !== null) event.preventDefault();
               }}
               onDrop={(event) => {
                 if (dragged === null) return;
@@ -122,17 +216,15 @@ export function GroupModal({
                 setDragged(null);
               }}
               onDragEnd={() => setDragged(null)}
-              className={`group relative shrink-0 cursor-grab active:cursor-grabbing ${dragged === index ? "opacity-40" : ""}`}
+              {...stylex.props(styles.thumb, dragged === index && styles.dragged)}
             >
               <FileThumb file={file} size="md" />
-              <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 font-mono text-[10px] text-white">
-                {index + 1}
-              </span>
+              <span {...stylex.props(styles.number)}>{index + 1}</span>
               <button
                 type="button"
                 aria-label={`Take ${file.name} out of the group`}
                 onClick={() => void takeOut(file.id)}
-                className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-foreground text-background opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                {...stylex.props(styles.remove)}
               >
                 <X size={11} weight="bold" />
               </button>
@@ -141,8 +233,8 @@ export function GroupModal({
           <button
             type="button"
             onClick={() => input.current?.click()}
-            className="grid size-14 shrink-0 place-items-center rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
             aria-label="Upload files into this group"
+            {...stylex.props(styles.add)}
           >
             <UploadSimple size={18} />
           </button>
@@ -151,7 +243,7 @@ export function GroupModal({
             type="file"
             multiple
             accept="video/*,image/*"
-            hidden
+            {...stylex.props(styles.hidden)}
             onChange={(event) => {
               if (event.target.files?.length) onUpload([...event.target.files]);
               event.target.value = "";
@@ -159,17 +251,15 @@ export function GroupModal({
           />
         </div>
 
-        <label className="grid gap-1.5 text-[13px] font-medium">
-          Title
+        <Field label="Title" style={styles.keep}>
           <Input
             value={title}
             placeholder="Untitled group"
             onChange={(event) => setTitle(event.target.value)}
             onBlur={saveWords}
           />
-        </label>
-        <label className="grid gap-1.5 text-[13px] font-medium">
-          Caption
+        </Field>
+        <Field label="Caption" style={styles.keep}>
           <Textarea
             rows={3}
             value={caption}
@@ -177,9 +267,8 @@ export function GroupModal({
             onChange={(event) => setCaption(event.target.value)}
             onBlur={saveWords}
           />
-        </label>
-        <label className="grid gap-1.5 text-[13px] font-medium">
-          Description
+        </Field>
+        <Field label="Description" style={styles.keep}>
           <Textarea
             rows={2}
             value={description}
@@ -187,9 +276,9 @@ export function GroupModal({
             onChange={(event) => setDescription(event.target.value)}
             onBlur={saveWords}
           />
-        </label>
+        </Field>
 
-        <div className="flex items-center gap-2 pt-1">
+        <div {...stylex.props(styles.footer)}>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -198,7 +287,7 @@ export function GroupModal({
                 </Button>
               }
             />
-            <DropdownMenuContent align="start" className="min-w-56">
+            <DropdownMenuContent align="start" style={styles.menu}>
               <DropdownMenuItem onClick={() => onDelete(false)}>
                 <X /> Ungroup — keep the files
               </DropdownMenuItem>
@@ -207,10 +296,16 @@ export function GroupModal({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" className="ml-auto" onClick={() => (saveWords(), onClose())}>
+          <Button variant="outline" style={styles.push} onClick={close}>
             Done
           </Button>
-          <Button disabled={!files.length} onClick={() => (saveWords(), onPublish(current))}>
+          <Button
+            disabled={!files.length}
+            onClick={() => {
+              saveWords();
+              onPublish({ ...group, files, title, caption, description });
+            }}
+          >
             <PaperPlaneTilt weight="fill" /> Publish
           </Button>
         </div>

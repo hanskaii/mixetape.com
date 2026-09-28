@@ -1,20 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { Check, CheckCircle, SpinnerGap, Warning, WarningCircle } from "@phosphor-icons/react";
+import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
+import { Field } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { PlatformLogo } from "#/components/ui/platform-logo";
+import { Segmented } from "#/components/ui/segmented";
+import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import type { JsonValue } from "#/database/schema";
 import { planSelection, publishSelection } from "#/modules/library/library.fn";
 import type { PlanRow } from "#/modules/library/publish.service";
-import type { Field } from "#/modules/social/fields";
+import type { Field as FieldSpec } from "#/modules/social/fields";
 import type { FileView } from "#/modules/storage/files.service";
+import { colors, radius } from "../../../../../components/ui/tokens.stylex";
+import { selectionSummary } from "../-lib/format";
 import { FileThumb } from "./file-thumb";
 import { PlatformForm } from "./platform-form";
-import { selectionSummary } from "../-lib/format";
 
 type Values = Record<string, JsonValue>;
 type Account = {
@@ -28,7 +34,7 @@ type Brand = { id: string; name: string; accountIds: string[] };
 type Platform = {
   id: string;
   name: string;
-  fields: Field[];
+  fields: FieldSpec[];
   takesTitle: boolean;
   takesDescription: boolean;
 };
@@ -51,8 +57,226 @@ function tomorrow() {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:00`;
 }
 
-const section = "grid gap-2.5";
-const heading = "text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground";
+const turn = stylex.keyframes({ to: { transform: "rotate(360deg)" } });
+
+const styles = stylex.create({
+  spin: {
+    animationDuration: "900ms",
+    animationIterationCount: "infinite",
+    animationName: turn,
+    animationTimingFunction: "linear",
+  },
+  modal: { maxWidth: "42rem", padding: 0 },
+  frame: { display: "flex", flexDirection: "column", maxHeight: "88vh" },
+  body: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+    overflowY: "auto",
+    padding: "1.5rem",
+  },
+  keep: { flexShrink: 0 },
+  strip: { display: "flex", gap: "0.5rem", marginTop: "-0.25rem", overflowX: "auto" },
+  section: { display: "grid", flexShrink: 0, gap: "0.625rem" },
+  heading: {
+    color: colors.mutedForeground,
+    fontSize: "0.6875rem",
+    fontWeight: 600,
+    letterSpacing: "0.12em",
+    margin: 0,
+    textTransform: "uppercase",
+  },
+  headRow: {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "space-between",
+  },
+  link: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    color: { default: colors.mutedForeground, ":hover": colors.foreground },
+    cursor: "pointer",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    padding: 0,
+    textDecoration: { default: "none", ":hover": "underline" },
+    textUnderlineOffset: "4px",
+  },
+  chips: { display: "flex", flexWrap: "wrap", gap: "0.375rem" },
+  chip: {
+    backgroundColor: { default: "transparent", ":hover": colors.muted },
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: colors.foreground,
+    cursor: "pointer",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    height: "2rem",
+    paddingInline: "0.875rem",
+  },
+  chipOn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: colors.primaryForeground,
+  },
+  channels: {
+    display: "grid",
+    gap: "0.5rem",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 640px)": "1fr 1fr" },
+  },
+  channel: {
+    backgroundColor: { default: "transparent", ":hover": colors.muted },
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: colors.foreground,
+    cursor: "pointer",
+    display: "grid",
+    gap: "0.25rem",
+    paddingBlock: "0.625rem",
+    paddingInline: "0.75rem",
+    textAlign: "start",
+  },
+  channelOn: {
+    backgroundColor: `color-mix(in oklab, ${colors.primary} 12%, transparent)`,
+    borderColor: colors.primary,
+    boxShadow: `0 0 0 1px ${colors.primary}`,
+  },
+  channelRow: { alignItems: "center", display: "flex", gap: "0.625rem" },
+  channelName: {
+    flexGrow: 1,
+    fontSize: "0.8125rem",
+    fontWeight: 500,
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  tick: {
+    alignItems: "center",
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    borderStyle: "solid",
+    borderWidth: "2px",
+    color: "transparent",
+    display: "flex",
+    flexShrink: 0,
+    height: "1.25rem",
+    justifyContent: "center",
+    width: "1.25rem",
+  },
+  tickOn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: colors.primaryForeground,
+  },
+  note: { alignItems: "flex-start", display: "flex", fontSize: "0.6875rem", gap: "0.25rem" },
+  problem: { color: colors.destructive },
+  warning: { color: colors.editorial },
+  noteIcon: { flexShrink: 0, marginTop: "0.125rem" },
+  quiet: {
+    alignItems: "center",
+    color: colors.mutedForeground,
+    display: "flex",
+    fontSize: "0.75rem",
+    gap: "0.5rem",
+    margin: 0,
+    paddingBlock: "0.75rem",
+  },
+  callout: {
+    backgroundColor: colors.muted,
+    borderRadius: radius.xl,
+    color: colors.mutedForeground,
+    fontSize: "0.75rem",
+    margin: 0,
+    padding: "0.75rem",
+  },
+  details: { color: colors.mutedForeground, fontSize: "0.75rem" },
+  summary: { cursor: "pointer", paddingBlock: "0.25rem", userSelect: "none" },
+  unfitList: {
+    display: "grid",
+    gap: "0.375rem",
+    listStyle: "none",
+    margin: "0.25rem 0 0",
+    padding: 0,
+  },
+  unfit: { alignItems: "flex-start", display: "flex", gap: "0.5rem", opacity: 0.75 },
+  strong: { color: colors.foreground, fontWeight: 500 },
+  dot: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    height: "0.375rem",
+    width: "0.375rem",
+  },
+  tab: { alignItems: "center", display: "inline-flex", gap: "0.375rem" },
+  when: { alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" },
+  date: { width: "auto" },
+  hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
+  clear: {
+    alignItems: "center",
+    backgroundColor: `color-mix(in oklab, ${colors.muted} 60%, transparent)`,
+    borderRadius: radius.xl,
+    cursor: "pointer",
+    display: "flex",
+    gap: "0.75rem",
+    justifyContent: "space-between",
+    paddingBlock: "0.625rem",
+    paddingInline: "0.75rem",
+  },
+  clearText: { display: "grid", gap: "0.125rem" },
+  clearLabel: { fontSize: "0.8125rem", fontWeight: 500 },
+  footer: {
+    alignItems: "center",
+    borderTopColor: colors.border,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    display: "flex",
+    flexShrink: 0,
+    gap: "0.5rem",
+    paddingBlock: "1rem",
+    paddingInline: "1.5rem",
+  },
+  status: { fontSize: "0.75rem", margin: 0, marginInlineEnd: "auto" },
+  push: { marginInlineStart: "auto" },
+  done: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    textAlign: "center",
+  },
+  doneIcon: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    color: colors.primaryForeground,
+    display: "flex",
+    height: "3rem",
+    justifyContent: "center",
+    width: "3rem",
+  },
+  leftList: {
+    backgroundColor: colors.muted,
+    borderRadius: radius.xl,
+    display: "grid",
+    fontSize: "0.75rem",
+    gap: "0.375rem",
+    listStyle: "none",
+    margin: 0,
+    padding: "0.75rem",
+    textAlign: "start",
+    width: "100%",
+  },
+  actions: { display: "flex", gap: "0.5rem" },
+});
+
+const Heading = ({ children }: { children: React.ReactNode }) => (
+  <h3 {...stylex.props(styles.heading)}>{children}</h3>
+);
 
 /**
  * Publishing a selection. It knows what the files are, so it shows at once where they fit
@@ -81,19 +305,21 @@ export function PublishModal({
   onClose: () => void;
   onPublished: () => void;
 }) {
-  const { platforms: draftPlatforms, ...draftShared } = draft.metadata ?? {};
+  // What the dialog opened with; it does not follow later changes to the draft.
+  const [start] = useState(() => {
+    const { platforms: drafted, ...shared } = draft.metadata ?? {};
+    const overrides = isObject(drafted)
+      ? Object.fromEntries(
+          Object.entries(drafted).filter((entry): entry is [string, Values] => isObject(entry[1])),
+        )
+      : {};
+    return { shared, overrides, fileIds: files.map((file) => file.id) };
+  });
+  const { fileIds } = start;
   const [caption, setCaption] = useState(draft.caption ?? "");
   const [title, setTitle] = useState(draft.title ?? "");
   const [description, setDescription] = useState(draft.description ?? "");
-  const [overrides, setOverrides] = useState<Record<string, Values>>(() =>
-    isObject(draftPlatforms)
-      ? Object.fromEntries(
-          Object.entries(draftPlatforms).filter((entry): entry is [string, Values] =>
-            isObject(entry[1]),
-          ),
-        )
-      : {},
-  );
+  const [overrides, setOverrides] = useState<Record<string, Values>>(start.overrides);
   const [chosen, setChosen] = useState<string[]>([]);
   const [tab, setTab] = useState<string | null>(null);
   const [when, setWhen] = useState<"now" | "later">("later");
@@ -103,59 +329,64 @@ export function PublishModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const planned = useRef("");
 
-  const fileIds = files.map((file) => file.id);
   const singleVideo = files.length === 1 && files[0].kind === "video";
   const metadata = useMemo(
-    () => ({ ...draftShared, platforms: overrides }),
-    // draftShared is derived from the draft, which does not change while the dialog is open.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [overrides],
+    () => ({ ...start.shared, platforms: overrides }),
+    [start.shared, overrides],
   );
 
   // Every channel is planned, so the fit is known before anything is chosen; the plan follows
-  // the words, since a platform can need one (a YouTube title).
+  // the words, since a platform can need one (a YouTube title). The first plan goes at once,
+  // later ones once typing pauses, and one the last already answered is not sent again.
+  const first = plan === null;
   useEffect(() => {
     if (!accounts.length) return;
+    const data = {
+      fileIds,
+      groupId,
+      draft: { title, caption, description, metadata },
+      brandIds: [],
+      accountIds: accounts.map((account) => account.id),
+    };
+    const key = JSON.stringify(data);
+    if (key === planned.current) return;
     let live = true;
-    const wait = setTimeout(async () => {
-      try {
-        const planned = await planSelection({
-          data: {
-            fileIds,
-            groupId,
-            draft: { title, caption, description, metadata },
-            brandIds: [],
-            accountIds: accounts.map((account) => account.id),
-          },
-        });
-        if (live) setPlan(planned.channels);
-      } catch (err) {
-        if (live) setError(err instanceof Error ? err.message : "Could not check the channels");
-      }
-    }, 250);
+    const wait = setTimeout(
+      async () => {
+        try {
+          const result = await planSelection({ data });
+          if (!live) return;
+          planned.current = key;
+          setPlan(result.channels);
+        } catch (err) {
+          if (live) setError(err instanceof Error ? err.message : "Could not check the channels");
+        }
+      },
+      first ? 0 : 400,
+    );
     return () => {
       live = false;
       clearTimeout(wait);
     };
-    // fileIds are fixed for the dialog's life.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [accounts, groupId, title, caption, description, metadata]);
+  }, [accounts, fileIds, groupId, title, caption, description, metadata, first]);
 
-  const rowOf = (id: string) => plan?.find((row) => row.accountId === id);
-  const fits = (id: string) => Boolean(rowOf(id)?.fits);
+  const rows = useMemo(() => new Map(plan?.map((row) => [row.accountId, row])), [plan]);
+  const fits = (id: string) => Boolean(rows.get(id)?.fits);
   const fitting = accounts.filter((account) => fits(account.id));
   const unfit = plan ? accounts.filter((account) => !fits(account.id)) : [];
+  const chosenSet = new Set(chosen);
 
   const toggle = (id: string) =>
     setChosen((current) =>
       current.includes(id) ? current.filter((other) => other !== id) : [...current, id],
     );
+  const fittingOf = (brand: Brand) => brand.accountIds.filter(fits);
   const brandOn = (brand: Brand) =>
-    brand.accountIds.filter(fits).length > 0 &&
-    brand.accountIds.filter(fits).every((id) => chosen.includes(id));
+    fittingOf(brand).length > 0 && fittingOf(brand).every((id) => chosenSet.has(id));
   const toggleBrand = (brand: Brand) => {
-    const ids = brand.accountIds.filter(fits);
+    const ids = fittingOf(brand);
     setChosen((current) =>
       brandOn(brand)
         ? current.filter((id) => !ids.includes(id))
@@ -163,7 +394,7 @@ export function PublishModal({
     );
   };
 
-  const chosenRows = chosen.map(rowOf).filter((row): row is PlanRow => Boolean(row));
+  const chosenRows = chosen.flatMap((id) => rows.get(id) ?? []);
   const ready = chosenRows.filter((row) => row.ready);
   const chosenPlatforms = platforms.filter((platform) =>
     chosenRows.some((row) => row.provider === platform.id),
@@ -220,11 +451,11 @@ export function PublishModal({
     ];
     return (
       <Modal open onOpenChange={(open) => !open && onClose()}>
-        <div className="flex flex-col items-center gap-4 text-center">
-          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground">
+        <div {...stylex.props(styles.done)}>
+          <span {...stylex.props(styles.doneIcon)}>
             <CheckCircle size={26} weight="fill" />
           </span>
-          <ModalHeader className="items-center text-center">
+          <ModalHeader>
             <ModalTitle>
               {when === "now" ? "On its way to" : "Scheduled on"} {result.scheduled.length} channel
               {result.scheduled.length === 1 ? "" : "s"}
@@ -237,16 +468,15 @@ export function PublishModal({
             </ModalDescription>
           </ModalHeader>
           {left.length > 0 && (
-            <ul className="grid w-full gap-1.5 rounded-xl bg-muted p-3 text-left text-xs">
+            <ul {...stylex.props(styles.leftList)}>
               {left.map((row) => (
                 <li key={row.accountId}>
-                  <span className="font-medium">{row.name}</span>{" "}
-                  <span className="text-muted-foreground">not posted: {row.reason}</span>
+                  <span {...stylex.props(styles.strong)}>{row.name}</span> not posted: {row.reason}
                 </li>
               ))}
             </ul>
           )}
-          <div className="flex gap-2">
+          <div {...stylex.props(styles.actions)}>
             <Button variant="outline" onClick={onClose}>
               Done
             </Button>
@@ -258,28 +488,30 @@ export function PublishModal({
   }
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()} className="max-w-2xl !p-0">
-      <div className="flex max-h-[88vh] flex-col">
-        <div className="flex flex-col gap-5 overflow-y-auto p-6 [&>*]:shrink-0">
-          <ModalHeader>
-            <ModalTitle>Publish</ModalTitle>
-            <ModalDescription>{selectionSummary(files)}</ModalDescription>
-          </ModalHeader>
+    <Modal open onOpenChange={(open) => !open && onClose()} style={styles.modal}>
+      <div {...stylex.props(styles.frame)}>
+        <div {...stylex.props(styles.body)}>
+          <div {...stylex.props(styles.keep)}>
+            <ModalHeader>
+              <ModalTitle>Publish</ModalTitle>
+              <ModalDescription>{selectionSummary(files)}</ModalDescription>
+            </ModalHeader>
+          </div>
 
-          <div className="-mt-1 flex gap-2 overflow-x-auto pb-1">
+          <div {...stylex.props(styles.strip, styles.keep)}>
             {files.map((file) => (
               <FileThumb key={file.id} file={file} size="md" />
             ))}
           </div>
 
-          {/* ── where ───────────────────────────────────────────────────────── */}
-          <section className={section}>
-            <div className="flex items-center justify-between gap-2">
-              <h3 className={heading}>Post to</h3>
+          {/* ── where ─────────────────────────────────────────────────────────── */}
+          <section {...stylex.props(styles.section)}>
+            <div {...stylex.props(styles.headRow)}>
+              <Heading>Post to</Heading>
               {fitting.length > 1 && (
                 <button
                   type="button"
-                  className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  {...stylex.props(styles.link)}
                   onClick={() =>
                     setChosen(
                       chosen.length === fitting.length ? [] : fitting.map((account) => account.id),
@@ -291,17 +523,17 @@ export function PublishModal({
               )}
             </div>
 
-            {brands.some((brand) => brand.accountIds.some(fits)) && (
-              <div className="flex flex-wrap gap-1.5">
+            {brands.some((brand) => fittingOf(brand).length) && (
+              <div {...stylex.props(styles.chips)}>
                 {brands
-                  .filter((brand) => brand.accountIds.some(fits))
+                  .filter((brand) => fittingOf(brand).length)
                   .map((brand) => (
                     <button
                       key={brand.id}
                       type="button"
                       aria-pressed={brandOn(brand)}
                       onClick={() => toggleBrand(brand)}
-                      className={`h-8 rounded-full px-3.5 text-xs font-medium ring-1 transition-colors ${brandOn(brand) ? "bg-primary text-primary-foreground ring-primary" : "ring-border hover:bg-muted"}`}
+                      {...stylex.props(styles.chip, brandOn(brand) && styles.chipOn)}
                     >
                       {brand.name}
                     </button>
@@ -310,57 +542,47 @@ export function PublishModal({
             )}
 
             {!plan ? (
-              <p className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
-                <SpinnerGap className="animate-spin" /> Checking where this fits…
+              <p {...stylex.props(styles.quiet)}>
+                <SpinnerGap {...stylex.props(styles.spin)} /> Checking where this fits…
               </p>
             ) : fitting.length ? (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div {...stylex.props(styles.channels)}>
                 {fitting.map((account) => {
-                  const row = rowOf(account.id)!;
-                  const on = chosen.includes(account.id);
+                  const row = rows.get(account.id)!;
+                  const on = chosenSet.has(account.id);
                   return (
                     <button
                       key={account.id}
                       type="button"
                       aria-pressed={on}
                       onClick={() => toggle(account.id)}
-                      className={`flex flex-col gap-1 rounded-xl px-3 py-2.5 text-left ring-1 transition-colors ${on ? "bg-primary/10 ring-2 ring-primary" : "ring-border hover:bg-muted/60"}`}
+                      {...stylex.props(styles.channel, on && styles.channelOn)}
                     >
-                      <span className="flex items-center gap-2.5">
+                      <span {...stylex.props(styles.channelRow)}>
                         <ChannelAvatar
                           provider={account.provider}
                           avatar={account.avatar}
                           name={account.name}
                           size="sm"
                         />
-                        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                          {account.name}
-                        </span>
-                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium">
-                          {row.label}
-                        </span>
-                        <span
-                          className={`grid size-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
-                        >
+                        <span {...stylex.props(styles.channelName)}>{account.name}</span>
+                        <Badge variant="secondary">{row.label}</Badge>
+                        <span {...stylex.props(styles.tick, on && styles.tickOn)}>
                           <Check size={11} weight="bold" />
                         </span>
                       </span>
                       {on &&
                         row.problems.map((problem) => (
-                          <span
-                            key={problem}
-                            className="flex items-start gap-1 text-[11px] text-destructive"
-                          >
-                            <WarningCircle className="mt-0.5 shrink-0" weight="fill" /> {problem}
+                          <span key={problem} {...stylex.props(styles.note, styles.problem)}>
+                            <WarningCircle weight="fill" {...stylex.props(styles.noteIcon)} />
+                            {problem}
                           </span>
                         ))}
                       {on &&
                         row.warnings.map((warning) => (
-                          <span
-                            key={warning}
-                            className="flex items-start gap-1 text-[11px] text-amber-700 dark:text-amber-400"
-                          >
-                            <Warning className="mt-0.5 shrink-0" /> {warning}
+                          <span key={warning} {...stylex.props(styles.note, styles.warning)}>
+                            <Warning {...stylex.props(styles.noteIcon)} />
+                            {warning}
                           </span>
                         ))}
                     </button>
@@ -368,31 +590,26 @@ export function PublishModal({
                 })}
               </div>
             ) : (
-              <p className="rounded-xl bg-muted px-3 py-3 text-xs text-muted-foreground">
+              <p {...stylex.props(styles.callout)}>
                 {accounts.length
                   ? "None of your channels takes this as it is."
                   : "No channel yet — connect one first."}{" "}
-                <Link
-                  to="/channels"
-                  className="font-medium text-foreground underline underline-offset-4"
-                >
-                  Channels
-                </Link>
+                <Link to="/channels">Channels</Link>
               </p>
             )}
 
             {unfit.length > 0 && (
-              <details className="group text-xs text-muted-foreground">
-                <summary className="cursor-pointer select-none py-1 hover:text-foreground">
+              <details {...stylex.props(styles.details)}>
+                <summary {...stylex.props(styles.summary)}>
                   {unfit.length} channel{unfit.length === 1 ? "" : "s"} can't take this
                 </summary>
-                <ul className="mt-1 grid gap-1.5">
+                <ul {...stylex.props(styles.unfitList)}>
                   {unfit.map((account) => (
-                    <li key={account.id} className="flex items-start gap-2 opacity-70">
+                    <li key={account.id} {...stylex.props(styles.unfit)}>
                       <PlatformLogo provider={account.provider} size="xs" />
                       <span>
-                        <span className="font-medium text-foreground">{account.name}</span> —{" "}
-                        {rowOf(account.id)?.problems[0]}
+                        <span {...stylex.props(styles.strong)}>{account.name}</span> —{" "}
+                        {rows.get(account.id)?.problems[0]}
                       </span>
                     </li>
                   ))}
@@ -401,66 +618,60 @@ export function PublishModal({
             )}
           </section>
 
-          {/* ── words ───────────────────────────────────────────────────────── */}
-          <section className={section}>
-            <h3 className={heading}>Words</h3>
+          {/* ── words ─────────────────────────────────────────────────────────── */}
+          <section {...stylex.props(styles.section)}>
+            <Heading>Words</Heading>
             {showTitle && (
-              <label className="grid gap-1.5 text-[13px] font-medium">
-                Title
+              <Field label="Title">
                 <Input
                   value={title}
                   placeholder="For YouTube, Facebook videos and Pins"
                   onChange={(event) => setTitle(event.target.value)}
                 />
-              </label>
+              </Field>
             )}
-            <label className="grid gap-1.5 text-[13px] font-medium">
-              Caption
+            <Field label="Caption">
               <Textarea
                 rows={3}
                 value={caption}
                 placeholder="What the post says — every platform starts from this"
                 onChange={(event) => setCaption(event.target.value)}
               />
-            </label>
+            </Field>
             {showDescription && (
-              <label className="grid gap-1.5 text-[13px] font-medium">
-                Description
+              <Field label="Description">
                 <Textarea
                   rows={3}
                   value={description}
                   placeholder="The longer text, where the platform has one"
                   onChange={(event) => setDescription(event.target.value)}
                 />
-              </label>
+              </Field>
             )}
           </section>
 
-          {/* ── per platform ────────────────────────────────────────────────── */}
+          {/* ── per platform ──────────────────────────────────────────────────── */}
           {activeTab && (
-            <section className={section}>
-              <h3 className={heading}>Per platform</h3>
-              <div role="tablist" className="flex gap-1 overflow-x-auto rounded-xl bg-muted p-1">
-                {chosenPlatforms.map((platform) => {
-                  const edited = Object.keys(overrides[platform.id] ?? {}).length > 0;
-                  return (
-                    <button
-                      key={platform.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={platform.id === activeTab.id}
-                      onClick={() => setTab(platform.id)}
-                      className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors ${platform.id === activeTab.id ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
+            <section {...stylex.props(styles.section)}>
+              <Heading>Per platform</Heading>
+              <Segmented
+                role="tablist"
+                label="Platform"
+                value={activeTab.id}
+                onChange={setTab}
+                options={chosenPlatforms.map((platform) => ({
+                  value: platform.id,
+                  label: (
+                    <span {...stylex.props(styles.tab)}>
                       <PlatformLogo provider={platform.id} size="xs" />
                       {platform.name}
-                      {edited && (
-                        <span className="size-1.5 rounded-full bg-primary" aria-label="edited" />
+                      {Object.keys(overrides[platform.id] ?? {}).length > 0 && (
+                        <span aria-label="edited" {...stylex.props(styles.dot)} />
                       )}
-                    </button>
-                  );
-                })}
-              </div>
+                    </span>
+                  ),
+                }))}
+              />
               <PlatformForm
                 key={activeTab.id}
                 fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
@@ -471,71 +682,61 @@ export function PublishModal({
             </section>
           )}
 
-          {/* ── when ────────────────────────────────────────────────────────── */}
-          <section className={section}>
-            <h3 className={heading}>When</h3>
-            <div className="flex flex-wrap items-center gap-2">
-              <div role="radiogroup" className="flex rounded-xl bg-muted p-1">
-                {(["now", "later"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    role="radio"
-                    aria-checked={when === option}
-                    onClick={() => setWhen(option)}
-                    className={`h-8 rounded-lg px-4 text-xs font-medium transition-colors ${when === option ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {option === "now" ? "Now" : "Schedule"}
-                  </button>
-                ))}
-              </div>
+          {/* ── when ──────────────────────────────────────────────────────────── */}
+          <section {...stylex.props(styles.section)}>
+            <Heading>When</Heading>
+            <div {...stylex.props(styles.when)}>
+              <Segmented
+                label="When"
+                value={when}
+                onChange={setWhen}
+                options={[
+                  { value: "now", label: "Now" },
+                  { value: "later", label: "Schedule" },
+                ]}
+              />
               {when === "later" && (
                 <Input
                   type="datetime-local"
                   value={at}
                   onChange={(event) => setAt(event.target.value)}
-                  className="w-auto"
+                  style={styles.date}
                 />
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p {...stylex.props(styles.hint)}>
               {when === "now"
                 ? "Goes out right away and is live as soon as each platform has processed it."
                 : `${Intl.DateTimeFormat().resolvedOptions().timeZone} — each platform gets it early enough to be ready on time.`}
             </p>
-            <label className="flex items-start gap-2.5 rounded-xl bg-muted/60 px-3 py-2.5">
-              <input
-                type="checkbox"
-                checked={!keepFiles}
-                onChange={(event) => setKeepFiles(!event.target.checked)}
-                className="mt-0.5 size-4 shrink-0 accent-primary"
-              />
-              <span className="grid gap-0.5">
-                <span className="text-[13px] font-medium">Clear the files once they're out</span>
-                <span className="text-[11px] text-muted-foreground">
+            <label {...stylex.props(styles.clear)}>
+              <span {...stylex.props(styles.clearText)}>
+                <span {...stylex.props(styles.clearLabel)}>Clear the files once they're out</span>
+                <span {...stylex.props(styles.hint)}>
                   Keeps your library tidy. Anything left goes after {retentionDays} days anyway.
                 </span>
               </span>
+              <Switch checked={!keepFiles} onCheckedChange={(checked) => setKeepFiles(!checked)} />
             </label>
           </section>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-border px-6 py-4">
+        <div {...stylex.props(styles.footer)}>
           {error ? (
-            <p className="mr-auto text-xs text-destructive">{error}</p>
+            <p {...stylex.props(styles.status, styles.problem)}>{error}</p>
           ) : (
             chosenRows.length > ready.length && (
-              <p className="mr-auto text-xs text-muted-foreground">
+              <p {...stylex.props(styles.status, styles.hint)}>
                 {chosenRows.length - ready.length} need
                 {chosenRows.length - ready.length === 1 ? "s" : ""} something first
               </p>
             )
           )}
-          <Button variant="outline" onClick={onClose} className="ml-auto">
+          <Button variant="outline" onClick={onClose} style={styles.push}>
             Cancel
           </Button>
           <Button onClick={submit} disabled={busy || !ready.length || past}>
-            {busy && <SpinnerGap className="animate-spin" />}
+            {busy && <SpinnerGap {...stylex.props(styles.spin)} />}
             {ready.length
               ? `${when === "now" ? "Publish" : "Schedule"} on ${ready.length} channel${ready.length === 1 ? "" : "s"}`
               : "Choose channels"}

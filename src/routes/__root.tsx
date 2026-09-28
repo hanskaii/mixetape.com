@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, createRootRouteWithContext, Link } from "@tanstack/react-router";
 import { getAuthSession } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
+import { Toaster } from "../components/ui/sonner";
 import { StyleXDev } from "../components/providers/stylex-dev";
 
 import { siteConfig } from "#/config/site";
@@ -153,6 +154,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/45">
         {/* Each area brings its own chrome: (public)/route.tsx and (app)/_app/route.tsx. */}
         <ModalProvider>{children}</ModalProvider>
+        <Toaster position="bottom-right" />
         <Scripts />
       </body>
     </html>

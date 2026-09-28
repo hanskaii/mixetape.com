@@ -1,14 +1,17 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   FolderSimplePlus,
   MagnifyingGlass,
   UploadSimple,
   WarningCircle,
 } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
-import { Notice, Page, PageHeader } from "#/components/layouts/workspace-page";
+import { Segmented } from "#/components/ui/segmented";
+import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
 import type { GroupView } from "#/modules/library/groups.service";
@@ -21,14 +24,14 @@ import {
 } from "#/modules/library/library.fn";
 import type { FileView } from "#/modules/storage/files.service";
 import { removeFiles } from "#/modules/storage/storage.fn";
+import { colors, radius } from "../../../../components/ui/tokens.stylex";
 import { DragDock } from "./-components/drag-dock";
 import { FileCard } from "./-components/file-card";
-import { FILES_TYPE, GroupCard } from "./-components/group-card";
+import { FILES_TYPE, GROUP_FOOTER, GroupCard } from "./-components/group-card";
 import { GroupModal } from "./-components/group-modal";
 import { Masonry } from "./-components/masonry";
 import { PublishModal, type PublishDraft } from "./-components/publish-modal";
 import { SelectionBar } from "./-components/selection-bar";
-import { UploadTray } from "./-components/upload-tray";
 import { useUploads } from "./-lib/use-uploads";
 
 export const Route = createFileRoute("/(app)/_app/library/")({
@@ -37,14 +40,130 @@ export const Route = createFileRoute("/(app)/_app/library/")({
   component: LibraryPage,
 });
 
-type Kind = "all" | "video" | "image";
-const KINDS: { id: Kind; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "video", label: "Videos" },
-  { id: "image", label: "Images" },
+type Kind = "all" | "video" | "image" | "group";
+const KINDS: { value: Kind; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "video", label: "Videos" },
+  { value: "image", label: "Images" },
+  { value: "group", label: "Groups" },
 ];
 
-const ratio = (file: FileView) => (file.width && file.height ? file.height / file.width : 1);
+/** One place in the grid: a group or a loose file, newest activity first. */
+type Tile =
+  | { type: "group"; key: string; at: number; group: GroupView }
+  | { type: "file"; key: string; at: number; file: FileView };
+
+const styles = stylex.create({
+  root: { minHeight: "70vh", position: "relative" },
+  body: {
+    alignContent: "start",
+    display: "grid",
+    gap: "1rem",
+    minHeight: "24rem",
+    paddingBlock: "0.5rem 1.5rem",
+    paddingInline: { default: "1rem", "@media (min-width: 640px)": "1.5rem" },
+  },
+  toolbar: {
+    alignItems: "center",
+    borderBottomColor: colors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+    justifyContent: "space-between",
+    paddingBlock: "0.5rem 0.75rem",
+  },
+  search: {
+    position: "relative",
+    width: { default: "100%", "@media (min-width: 640px)": "16rem" },
+  },
+  searchIcon: {
+    color: colors.mutedForeground,
+    left: "0.625rem",
+    pointerEvents: "none",
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+  },
+  searchInput: { paddingInlineStart: "2rem" },
+  empty: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderColor: { default: colors.border, ":hover": colors.mutedForeground },
+    borderRadius: radius["2xl"],
+    borderStyle: "dashed",
+    borderWidth: "2px",
+    color: colors.foreground,
+    cursor: "pointer",
+    display: "grid",
+    justifyItems: "center",
+    minHeight: "18rem",
+    paddingInline: "1.5rem",
+    rowGap: "0.75rem",
+    textAlign: "center",
+    transitionDuration: "150ms",
+    transitionProperty: "border-color",
+    width: "100%",
+    alignContent: "center",
+  },
+  emptyIcon: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
+    color: colors.primaryForeground,
+    display: "flex",
+    height: "3.5rem",
+    justifyContent: "center",
+    width: "3.5rem",
+  },
+  emptyTitle: { fontSize: "1rem", fontWeight: 600 },
+  emptyText: {
+    color: colors.mutedForeground,
+    fontSize: "0.8125rem",
+    lineHeight: 1.6,
+    maxWidth: "24rem",
+  },
+  nothing: {
+    color: colors.mutedForeground,
+    fontSize: "0.8125rem",
+    margin: 0,
+    paddingBlock: "3rem",
+    textAlign: "center",
+  },
+  room: { height: "5rem" },
+  hidden: { display: "none" },
+  overlay: {
+    alignItems: "center",
+    backdropFilter: "blur(4px)",
+    backgroundColor: `color-mix(in oklab, ${colors.background} 70%, transparent)`,
+    display: "flex",
+    inset: 0,
+    justifyContent: "center",
+    pointerEvents: "none",
+    position: "fixed",
+    zIndex: 50,
+  },
+  overlayText: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radius["2xl"],
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 18px 40px -12px rgb(0 0 0 / 0.35)",
+    display: "flex",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    gap: "0.5rem",
+    margin: 0,
+    paddingBlock: "1rem",
+    paddingInline: "1.25rem",
+  },
+});
+
+const fileHeight = (file: FileView, column: number) =>
+  column * Math.min(Math.max(file.width && file.height ? file.height / file.width : 1, 0.56), 1.78);
 
 function LibraryPage() {
   const router = useRouter();
@@ -61,44 +180,50 @@ function LibraryPage() {
   const [anchor, setAnchor] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dropping, setDropping] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "danger" | "success"; text: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const loading = useRef(false);
 
   const refresh = useCallback(() => router.invalidate(), [router]);
-  const filtered = Boolean(search.trim()) || kind !== "all";
-  const filter = () => ({
-    search: search.trim() || undefined,
-    kind: kind === "all" ? undefined : [kind],
-  });
+  const words = search.trim().toLowerCase();
+  const fileKind = kind === "video" || kind === "image" ? kind : undefined;
+  const serverFiltered = Boolean(words) || Boolean(fileKind);
 
   // The loader's first page, unless a search or a kind asks the server for another.
   useEffect(() => {
-    if (!filtered) {
+    if (!serverFiltered) {
       setList(data.files);
       return;
     }
     let live = true;
     const wait = setTimeout(async () => {
-      const page = await listLooseFiles({ data: filter() });
+      const page = await listLooseFiles({
+        data: { search: words || undefined, kind: fileKind && [fileKind] },
+      });
       if (live) setList(page);
     }, 250);
     return () => {
       live = false;
       clearTimeout(wait);
     };
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- filter() reads search and kind
-  }, [data.files, search, kind, filtered]);
+  }, [data.files, words, fileKind, serverFiltered]);
+
+  const filesById = useMemo(() => new Map(list.files.map((file) => [file.id, file])), [list]);
 
   // Files that left (grouped, deleted) leave the selection too.
   useEffect(() => {
-    setSelected((current) => current.filter((id) => list.files.some((file) => file.id === id)));
-  }, [list]);
+    setSelected((current) => {
+      const kept = current.filter((id) => filesById.has(id));
+      return kept.length === current.length ? current : kept;
+    });
+  }, [filesById]);
 
   const more = useCallback(async () => {
     if (!list.nextCursor || loading.current) return;
     loading.current = true;
     try {
-      const page = await listLooseFiles({ data: { ...filter(), cursor: list.nextCursor } });
+      const page = await listLooseFiles({
+        data: { search: words || undefined, kind: fileKind && [fileKind], cursor: list.nextCursor },
+      });
       setList((current) => ({
         files: [...current.files, ...page.files],
         nextCursor: page.nextCursor,
@@ -106,37 +231,62 @@ function LibraryPage() {
     } finally {
       loading.current = false;
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- filter() reads search and kind
-  }, [list.nextCursor, search, kind]);
+  }, [list.nextCursor, words, fileKind]);
 
-  const { uploads, add, clearFinished } = useUploads(
+  const upload = useUploads(
     useCallback(
       (file: FileView) => {
         // A loose file shows at once; a group's shows when the page refreshes.
-        if (!file.groupId && !filtered)
+        if (!file.groupId && !serverFiltered)
           setList((current) => ({ ...current, files: [file, ...current.files] }));
       },
-      [filtered],
+      [serverFiltered],
     ),
     refresh,
   );
+
+  // Groups and loose files share the grid, most recent activity first.
+  const tiles = useMemo<Tile[]>(() => {
+    const shownGroups =
+      kind === "all" || kind === "group"
+        ? groups.filter(
+            (group) =>
+              !words || `${group.title ?? ""} ${group.caption ?? ""}`.toLowerCase().includes(words),
+          )
+        : [];
+    const shownFiles = kind === "group" ? [] : list.files;
+    return [
+      ...shownGroups.map((group) => ({
+        type: "group" as const,
+        key: `g:${group.id}`,
+        at: new Date(group.updatedAt).getTime(),
+        group,
+      })),
+      ...shownFiles.map((file) => ({
+        type: "file" as const,
+        key: file.id,
+        at: new Date(file.createdAt).getTime(),
+        file,
+      })),
+    ].sort((a, b) => b.at - a.at);
+  }, [groups, list.files, kind, words]);
 
   const attempt = async (action: () => Promise<unknown>, done?: string) => {
     setNotice(null);
     try {
       await action();
-      if (done) setNotice({ tone: "success", text: done });
+      if (done) toast.success(done);
       await refresh();
     } catch (err) {
-      setNotice({
-        tone: "danger",
-        text: err instanceof Error ? err.message : "Something went wrong",
-      });
+      setNotice(err instanceof Error ? err.message : "Something went wrong");
     }
   };
 
   // ── selection ─────────────────────────────────────────────────────────────
   // The order files are picked in is the order a carousel gets.
+  const order = useMemo(() => new Map(selected.map((id, index) => [id, index + 1])), [selected]);
+  const selectedFiles = selected.flatMap((id) => filesById.get(id) ?? []);
+
   const toggle = (file: FileView, event: React.MouseEvent | React.KeyboardEvent) => {
     if (event.shiftKey && anchor) {
       const from = list.files.findIndex((item) => item.id === anchor);
@@ -151,9 +301,6 @@ function LibraryPage() {
       );
     setAnchor(file.id);
   };
-  const selectedFiles = selected
-    .map((id) => list.files.find((file) => file.id === id))
-    .filter((file): file is FileView => Boolean(file));
 
   // ── actions ───────────────────────────────────────────────────────────────
   const publish = (files: FileView[], draft: PublishDraft = {}, groupId?: string) =>
@@ -178,13 +325,16 @@ function LibraryPage() {
     attempt(async () => {
       await createGroupFromFiles({ data: { fileIds } });
       setSelected([]);
-    });
+    }, "Group made");
 
   const moveTo = (groupId: string, fileIds: string[]) =>
-    attempt(async () => {
-      await addFilesToGroup({ data: { groupId, fileIds } });
-      setSelected([]);
-    });
+    attempt(
+      async () => {
+        await addFilesToGroup({ data: { groupId, fileIds } });
+        setSelected([]);
+      },
+      `Moved ${fileIds.length} file${fileIds.length === 1 ? "" : "s"}`,
+    );
 
   const deleteSelected = () =>
     confirm({
@@ -197,7 +347,7 @@ function LibraryPage() {
           const result = await removeFiles({ data: { ids: selected } });
           setSelected([]);
           if (result.kept.length) throw new Error(`Kept ${result.kept.length}: ${result.kept[0]}`);
-        }),
+        }, "Deleted"),
     });
 
   const openGroup = (group: GroupView) =>
@@ -206,38 +356,67 @@ function LibraryPage() {
         group={group}
         onClose={closeModal}
         onChanged={() => void refresh()}
-        onUpload={(files) => add(files, group.id)}
+        onUpload={(files) => upload(files, group.id)}
         onPublish={(current) => {
           closeModal();
           publish(current.files, current, current.id);
         }}
         onDelete={(deleteFiles) => {
           closeModal();
-          void attempt(() => removeGroup({ data: { id: group.id, deleteFiles } }));
+          void attempt(
+            () => removeGroup({ data: { id: group.id, deleteFiles } }),
+            deleteFiles ? "Group and files deleted" : "Ungrouped",
+          );
         }}
       />,
     );
 
   const emptyGroup = () =>
-    attempt(async () => {
-      const group = await createGroupFromFiles({ data: { fileIds: [] } });
-      openGroup(group);
-    });
+    attempt(async () => openGroup(await createGroupFromFiles({ data: { fileIds: [] } })));
 
-  // ── dragging ──────────────────────────────────────────────────────────────
   const dragStart = (file: FileView, event: React.DragEvent) => {
-    const ids = selected.includes(file.id) ? selected : [file.id];
+    const ids = order.has(file.id) ? selected : [file.id];
     event.dataTransfer.setData(FILES_TYPE, JSON.stringify(ids));
     event.dataTransfer.effectAllowed = "move";
     setDragging(true);
   };
 
-  const empty = !list.files.length && !groups.length && !filtered;
+  // Cards get callbacks that never change, so selecting one card re-renders only it; they
+  // reach the current handlers through this ref, refreshed after each render.
+  const handlers = useRef({ toggle, dragStart, openGroup, publish, moveTo, upload });
+  useLayoutEffect(() => {
+    handlers.current = { toggle, dragStart, openGroup, publish, moveTo, upload };
+  });
+  const cardToggle = useCallback(
+    (file: FileView, event: React.MouseEvent | React.KeyboardEvent) =>
+      handlers.current.toggle(file, event),
+    [],
+  );
+  const cardDragStart = useCallback(
+    (file: FileView, event: React.DragEvent) => handlers.current.dragStart(file, event),
+    [],
+  );
+  const cardDragEnd = useCallback(() => setDragging(false), []);
+  const groupOpen = useCallback((group: GroupView) => handlers.current.openGroup(group), []);
+  const groupPublish = useCallback(
+    (group: GroupView) => handlers.current.publish(group.files, group, group.id),
+    [],
+  );
+  const groupDropFiles = useCallback(
+    (group: GroupView, ids: string[]) => void handlers.current.moveTo(group.id, ids),
+    [],
+  );
+  const groupDropUploads = useCallback(
+    (group: GroupView, files: File[]) => handlers.current.upload(files, group.id),
+    [],
+  );
+
+  const empty = !list.files.length && !groups.length && !serverFiltered && kind === "all";
 
   return (
     // The whole page takes files from the computer.
     <div
-      className="relative min-h-[70vh]"
+      {...stylex.props(styles.root)}
       onDragOver={(event) => {
         if (!event.dataTransfer.types.includes("Files")) return;
         event.preventDefault();
@@ -251,7 +430,7 @@ function LibraryPage() {
       onDrop={(event) => {
         if (!event.dataTransfer.files.length) return;
         event.preventDefault();
-        add([...event.dataTransfer.files]);
+        upload([...event.dataTransfer.files]);
       }}
     >
       <Page>
@@ -271,9 +450,9 @@ function LibraryPage() {
                 type="file"
                 multiple
                 accept="video/*,image/*"
-                hidden
+                {...stylex.props(styles.hidden)}
                 onChange={(event) => {
-                  if (event.target.files?.length) add([...event.target.files]);
+                  if (event.target.files?.length) upload([...event.target.files]);
                   event.target.value = "";
                 }}
               />
@@ -282,116 +461,91 @@ function LibraryPage() {
         />
 
         {notice && (
-          <Notice tone={notice.tone}>
-            {notice.tone === "danger" && <WarningCircle />} {notice.text}
+          <Notice tone="danger">
+            <WarningCircle /> {notice}
           </Notice>
         )}
 
-        <UploadTray uploads={uploads} onClear={clearFinished} />
-
-        {empty ? (
-          <button
-            type="button"
-            onClick={() => input.current?.click()}
-            className="grid min-h-80 place-items-center rounded-3xl border-2 border-dashed border-border bg-card/50 px-6 text-center transition-colors hover:border-foreground/30"
-          >
-            <span className="grid justify-items-center gap-3">
-              <span className="grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
-                <UploadSimple size={26} weight="bold" />
-              </span>
-              <span className="text-base font-semibold">Drop videos and images here</span>
-              <span className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
-                Or ask your agent to upload them into a group with its captions written — then you
-                only pick where it goes. Files stay {retentionDays} days.
-              </span>
-            </span>
-          </button>
-        ) : (
-          <>
-            {groups.length > 0 && (
-              <section className="grid gap-3">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Groups · {groups.length}
-                </h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {groups.map((group) => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      onOpen={() => openGroup(group)}
-                      onPublish={() => publish(group.files, group, group.id)}
-                      onDropFiles={(ids) => void moveTo(group.id, ids)}
-                      onDropUploads={(files) => add(files, group.id)}
+        <Panel>
+          <div {...stylex.props(styles.body)}>
+            {empty ? (
+              <button
+                type="button"
+                onClick={() => input.current?.click()}
+                {...stylex.props(styles.empty)}
+              >
+                <span {...stylex.props(styles.emptyIcon)}>
+                  <UploadSimple size={26} weight="bold" />
+                </span>
+                <span {...stylex.props(styles.emptyTitle)}>Drop videos and images here</span>
+                <span {...stylex.props(styles.emptyText)}>
+                  Or ask your agent to upload them into a group with its captions written — then you
+                  only pick where it goes. Files stay {retentionDays} days.
+                </span>
+              </button>
+            ) : (
+              <>
+                <div {...stylex.props(styles.toolbar)}>
+                  <Segmented label="Show" value={kind} onChange={setKind} options={KINDS} />
+                  <label {...stylex.props(styles.search)}>
+                    <MagnifyingGlass size={15} {...stylex.props(styles.searchIcon)} />
+                    <Input
+                      type="search"
+                      aria-label="Search the library"
+                      placeholder="Search by name"
+                      style={styles.searchInput}
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
                     />
-                  ))}
+                  </label>
                 </div>
-              </section>
+
+                {tiles.length ? (
+                  <Masonry
+                    items={tiles}
+                    getKey={(tile) => tile.key}
+                    height={(tile, column) =>
+                      tile.type === "group"
+                        ? Math.round(column * 0.75) + GROUP_FOOTER
+                        : fileHeight(tile.file, column)
+                    }
+                    onEnd={list.nextCursor && kind !== "group" ? more : undefined}
+                    render={(tile) =>
+                      tile.type === "group" ? (
+                        <GroupCard
+                          group={tile.group}
+                          onOpen={groupOpen}
+                          onPublish={groupPublish}
+                          onDropFiles={groupDropFiles}
+                          onDropUploads={groupDropUploads}
+                        />
+                      ) : (
+                        <FileCard
+                          file={tile.file}
+                          selected={order.has(tile.file.id)}
+                          order={selected.length > 1 ? (order.get(tile.file.id) ?? 0) : 0}
+                          selecting={selected.length > 0}
+                          scheduled={scheduled[tile.file.url] ?? 0}
+                          onToggle={cardToggle}
+                          onDragStart={cardDragStart}
+                          onDragEnd={cardDragEnd}
+                        />
+                      )
+                    }
+                  />
+                ) : (
+                  <p {...stylex.props(styles.nothing)}>
+                    {kind === "group" && !words
+                      ? "No group yet. Select files and press Group, or drag them onto New group."
+                      : "Nothing matches."}
+                  </p>
+                )}
+              </>
             )}
-
-            <section className="grid gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="mr-auto text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Files
-                </h2>
-                <label className="relative w-full sm:w-64">
-                  <span className="sr-only">Search files</span>
-                  <MagnifyingGlass
-                    size={15}
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
-                  <Input
-                    type="search"
-                    placeholder="Search by name"
-                    className="pl-8"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                </label>
-                <div role="radiogroup" aria-label="Kind" className="flex rounded-xl bg-muted p-1">
-                  {KINDS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={kind === option.id}
-                      onClick={() => setKind(option.id)}
-                      className={`h-7 rounded-lg px-3 text-xs font-medium transition-colors ${kind === option.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {list.files.length ? (
-                <Masonry
-                  items={list.files}
-                  getKey={(file) => file.id}
-                  ratio={ratio}
-                  onEnd={list.nextCursor ? more : undefined}
-                  render={(file) => (
-                    <FileCard
-                      file={file}
-                      selected={selected.includes(file.id)}
-                      order={selected.length > 1 ? selected.indexOf(file.id) + 1 : 0}
-                      selecting={selected.length > 0}
-                      scheduled={scheduled[file.url] ?? 0}
-                      onToggle={(event) => toggle(file, event)}
-                      onDragStart={(event) => dragStart(file, event)}
-                      onDragEnd={() => setDragging(false)}
-                    />
-                  )}
-                />
-              ) : (
-                <p className="py-12 text-center text-[13px] text-muted-foreground">
-                  {filtered ? "No file matches." : "Every file is in a group."}
-                </p>
-              )}
-            </section>
-          </>
-        )}
+          </div>
+        </Panel>
         {/* Room for the selection bar. */}
-        <div className="h-20" />
+        <div {...stylex.props(styles.room)} />
       </Page>
 
       {dragging ? (
@@ -419,8 +573,8 @@ function LibraryPage() {
       )}
 
       {dropping && (
-        <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center bg-background/70 backdrop-blur-sm">
-          <p className="flex items-center gap-2 rounded-2xl bg-card px-5 py-4 text-sm font-semibold shadow-xl ring-1 ring-border">
+        <div {...stylex.props(styles.overlay)}>
+          <p {...stylex.props(styles.overlayText)}>
             <UploadSimple size={18} /> Drop to upload — onto a group to put them in it
           </p>
         </div>

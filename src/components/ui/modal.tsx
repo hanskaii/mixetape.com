@@ -2,6 +2,7 @@ import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
 
+import type { StyleXStyles } from "@stylexjs/stylex";
 import { colors, radius } from "./tokens.stylex";
 import { customClassName } from "./stylex-utils";
 
@@ -81,6 +82,8 @@ export interface ModalProps {
   preventDefaultClose?: boolean;
   backdropClassName?: string;
   zIndex?: number;
+  /** StyleX overrides for the dialog panel (width, padding). */
+  style?: StyleXStyles;
 }
 
 export function Modal({
@@ -94,6 +97,7 @@ export function Modal({
   preventDefaultClose,
   backdropClassName,
   zIndex = 100,
+  style,
 }: ModalProps) {
   const isControlled = open !== undefined || showModal !== undefined;
   const isOpen = open ?? showModal ?? true;
@@ -135,8 +139,12 @@ export function Modal({
         />
         <DialogPrimitive.Popup
           className={(state) =>
-            stylex.props(styles.popup, state.open && styles.popupOpen, customClassName(className))
-              .className
+            stylex.props(
+              styles.popup,
+              state.open && styles.popupOpen,
+              customClassName(className),
+              style,
+            ).className
           }
           style={{ zIndex: zIndex + 1 }}
         >

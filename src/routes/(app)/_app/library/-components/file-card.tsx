@@ -1,13 +1,117 @@
-import { useRef } from "react";
-import { CalendarCheck, Check, File as FileIcon, Hourglass, Play } from "@phosphor-icons/react";
+import { memo, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { CalendarCheck, Check, Hourglass, Play } from "@phosphor-icons/react";
+import { Badge } from "#/components/ui/badge";
 import type { FileView } from "#/modules/storage/files.service";
+import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { daysLeft, formatDuration } from "../-lib/format";
+import { MediaImage } from "./media-image";
+
+const MONO = '"Geist Mono Variable", ui-monospace, monospace';
+
+const styles = stylex.create({
+  card: {
+    // Children reveal themselves through this on hover and keyboard focus.
+    "--reveal": { default: "0", ":hover": "1", ":focus-visible": "1" },
+    backgroundColor: colors.muted,
+    borderRadius: radius["2xl"],
+    boxShadow: `0 0 0 1px ${colors.border}`,
+    cursor: "pointer",
+    height: "100%",
+    outline: "none",
+    overflow: "hidden",
+    position: "relative",
+    transform: { default: null, ":active": "scale(0.99)" },
+    transitionDuration: "150ms",
+    transitionProperty: "box-shadow, transform",
+    width: "100%",
+  },
+  focus: { boxShadow: { default: null, ":focus-visible": `0 0 0 2px ${colors.ring}` } },
+  selected: { boxShadow: `0 0 0 3px ${colors.primary}` },
+  selecting: { "--reveal": "1" },
+  video: { height: "100%", inset: 0, objectFit: "cover", position: "absolute", width: "100%" },
+  check: {
+    alignItems: "center",
+    backgroundColor: "rgb(0 0 0 / 0.25)",
+    borderColor: "rgb(255 255 255 / 0.9)",
+    borderRadius: radius.full,
+    borderStyle: "solid",
+    borderWidth: "2px",
+    color: "transparent",
+    display: "flex",
+    height: "1.5rem",
+    justifyContent: "center",
+    left: "0.5rem",
+    opacity: "var(--reveal)",
+    position: "absolute",
+    top: "0.5rem",
+    transitionDuration: "150ms",
+    transitionProperty: "opacity",
+    width: "1.5rem",
+  },
+  checked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: colors.primaryForeground,
+    opacity: 1,
+  },
+  order: { fontSize: "0.6875rem", fontVariantNumeric: "tabular-nums", fontWeight: 700 },
+  badges: {
+    alignItems: "flex-end",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+    position: "absolute",
+    right: "0.5rem",
+    top: "0.5rem",
+  },
+  dark: {
+    backdropFilter: "blur(4px)",
+    backgroundColor: "rgb(0 0 0 / 0.6)",
+    color: "white",
+  },
+  foot: {
+    alignItems: "flex-end",
+    backgroundImage: "linear-gradient(to top, rgb(0 0 0 / 0.6), transparent)",
+    bottom: 0,
+    color: "white",
+    display: "flex",
+    gap: "0.5rem",
+    insetInline: 0,
+    justifyContent: "space-between",
+    paddingBlock: "2rem 0.5rem",
+    paddingInline: "0.625rem",
+    pointerEvents: "none",
+    position: "absolute",
+  },
+  name: {
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    minWidth: 0,
+    opacity: "var(--reveal)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    transitionDuration: "150ms",
+    transitionProperty: "opacity",
+    whiteSpace: "nowrap",
+  },
+  duration: {
+    alignItems: "center",
+    display: "flex",
+    flexShrink: 0,
+    fontFamily: MONO,
+    fontSize: "0.6875rem",
+    fontVariantNumeric: "tabular-nums",
+    gap: "0.25rem",
+  },
+});
 
 /**
- * A file in the masonry: the picture itself, a video that plays silently on hover, and just
- * enough on top of it — its length, whether it is scheduled, when storage lets it go.
+ * A file in the masonry: its edge-made thumbnail, a video that plays silently while hovered
+ * (fetched only then), and just enough on top — its length, whether it is scheduled, when
+ * storage lets it go. Memoized: selecting one card leaves the others alone.
  */
-export function FileCard({
+export const FileCard = memo(function FileCard({
   file,
   selected,
   order,
@@ -25,11 +129,11 @@ export function FileCard({
   selecting: boolean;
   /** Posts not yet out that use this file. */
   scheduled: number;
-  onToggle: (event: React.MouseEvent | React.KeyboardEvent) => void;
-  onDragStart: (event: React.DragEvent) => void;
+  onToggle: (file: FileView, event: React.MouseEvent | React.KeyboardEvent) => void;
+  onDragStart: (file: FileView, event: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
-  const video = useRef<HTMLVideoElement>(null);
+  const [hovered, setHovered] = useState(false);
   const left = daysLeft(file.expiresAt);
 
   return (
@@ -39,85 +143,68 @@ export function FileCard({
       aria-label={file.name}
       tabIndex={0}
       draggable
-      onDragStart={onDragStart}
+      onDragStart={(event) => onDragStart(file, event)}
       onDragEnd={onDragEnd}
-      onClick={onToggle}
+      onClick={(event) => onToggle(file, event)}
       onKeyDown={(event) => {
         if (event.key === " " || event.key === "Enter") {
           event.preventDefault();
-          onToggle(event);
+          onToggle(file, event);
         }
       }}
-      onMouseEnter={() => void video.current?.play().catch(() => {})}
-      onMouseLeave={() => {
-        if (!video.current) return;
-        video.current.pause();
-        video.current.currentTime = 0.5;
-      }}
-      className={`group relative size-full cursor-pointer overflow-hidden rounded-2xl bg-muted outline-none transition-[box-shadow,transform] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99] ${selected ? "ring-[3px] ring-primary" : "ring-1 ring-border"}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      {...stylex.props(
+        styles.card,
+        styles.focus,
+        selected && styles.selected,
+        selecting && styles.selecting,
+      )}
     >
-      {file.kind === "image" ? (
-        <img
-          src={file.publicUrl}
-          alt=""
-          loading="lazy"
-          draggable={false}
-          className="size-full object-cover"
-        />
-      ) : file.kind === "video" ? (
+      <MediaImage file={file} width={480} />
+      {hovered && file.kind === "video" && (
         <video
-          ref={video}
-          src={`${file.publicUrl}#t=0.5`}
-          preload="metadata"
+          src={file.publicUrl}
+          autoPlay
           muted
           loop
           playsInline
-          className="size-full object-cover"
+          {...stylex.props(styles.video)}
         />
-      ) : (
-        <span className="grid size-full place-items-center text-muted-foreground">
-          <FileIcon size={28} />
-        </span>
       )}
 
-      {/* The checkbox: always there once something is selected, else on hover. */}
-      <span
-        aria-hidden
-        className={`absolute left-2 top-2 grid size-6 place-items-center rounded-full border-2 transition-opacity ${selected ? "border-primary bg-primary text-primary-foreground opacity-100" : `border-white/90 bg-black/25 text-transparent ${selecting ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"}`}`}
-      >
+      <span aria-hidden {...stylex.props(styles.check, selected && styles.checked)}>
         {order > 0 ? (
-          <span className="text-[11px] font-bold tabular-nums">{order}</span>
+          <span {...stylex.props(styles.order)}>{order}</span>
         ) : (
           <Check size={13} weight="bold" />
         )}
       </span>
 
-      <span className="absolute right-2 top-2 flex flex-col items-end gap-1">
+      <span {...stylex.props(styles.badges)}>
         {scheduled > 0 && (
-          <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-            <CalendarCheck size={12} weight="bold" /> Scheduled
-          </span>
+          <Badge>
+            <CalendarCheck weight="bold" /> Scheduled
+          </Badge>
         )}
         {left <= 7 && (
-          <span
+          <Badge
+            style={styles.dark}
             title={`Storage deletes it in ${left} day${left === 1 ? "" : "s"}`}
-            className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm"
           >
-            <Hourglass size={12} /> {left}d
-          </span>
+            <Hourglass /> {left}d
+          </Badge>
         )}
       </span>
 
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-8 text-white">
-        <span className="min-w-0 truncate text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100">
-          {file.name}
-        </span>
+      <span {...stylex.props(styles.foot)}>
+        <span {...stylex.props(styles.name)}>{file.name}</span>
         {file.kind === "video" && file.durationMs ? (
-          <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] tabular-nums">
+          <span {...stylex.props(styles.duration)}>
             <Play size={10} weight="fill" /> {formatDuration(file.durationMs)}
           </span>
         ) : null}
       </span>
     </div>
   );
-}
+});

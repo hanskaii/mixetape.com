@@ -1,28 +1,27 @@
-import { File as FileIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 import type { FileView } from "#/modules/storage/files.service";
+import { colors, radius } from "../../../../../components/ui/tokens.stylex";
+import { MediaImage } from "./media-image";
 
-const SIZES = { sm: "size-10", md: "size-14" } as const;
+const styles = stylex.create({
+  box: {
+    backgroundColor: colors.muted,
+    borderRadius: radius.lg,
+    display: "block",
+    flexShrink: 0,
+    outline: `1px solid ${colors.border}`,
+    outlineOffset: "-1px",
+    overflow: "hidden",
+  },
+  sm: { height: "2.5rem", width: "2.5rem" },
+  md: { height: "3.5rem", width: "3.5rem" },
+});
 
-/** A small square preview of a stored file: its picture, a video's first frame, or an icon. */
-export function FileThumb({ file, size = "sm" }: { file?: FileView; size?: keyof typeof SIZES }) {
-  const box = `${SIZES[size]} shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border`;
-  if (file?.kind === "image")
-    return <img src={file.publicUrl} alt="" loading="lazy" className={`${box} object-cover`} />;
-  if (file?.kind === "video")
-    return (
-      // #t skips a black first frame; metadata is all the browser fetches.
-      <video
-        src={`${file.publicUrl}#t=0.5`}
-        preload="metadata"
-        muted
-        playsInline
-        aria-hidden
-        className={`${box} object-cover`}
-      />
-    );
+/** A small square preview of a stored file. */
+export function FileThumb({ file, size = "sm" }: { file: FileView; size?: "sm" | "md" }) {
   return (
-    <span className={`${box} grid place-items-center text-muted-foreground`}>
-      <FileIcon size={18} />
+    <span {...stylex.props(styles.box, styles[size])}>
+      <MediaImage file={file} width={160} />
     </span>
   );
 }
