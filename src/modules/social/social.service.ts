@@ -447,10 +447,14 @@ export async function resolveMedia(
       throw new ServiceError(`${file.name} is not ready — finish its upload first`, 409);
     return file;
   });
-  const media = checked.map((url, index) => ({
-    url,
-    kind: facts[index].kind === "image" ? ("image" as const) : ("video" as const),
-  }));
+  const media = checked.map((url, index): MediaItem => {
+    const { kind, contentType } = facts[index];
+    return {
+      url,
+      kind: kind === "image" ? "image" : "video",
+      ...(contentType && { type: contentType }),
+    };
+  });
   return { media, facts };
 }
 

@@ -7,7 +7,7 @@ import {
 import { threads as call } from "./api";
 import { threadsConnect } from "./connect";
 import { threadsMetadata } from "./metadata";
-import { publishContainer, publishText, threadsStatus, uploadMedia } from "./posts";
+import { IMAGE_TYPES, publishContainer, publishText, threadsStatus, uploadMedia } from "./posts";
 
 /**
  * Threads profiles: video posts prepared ahead and published by mixetape at go-live, with
@@ -115,7 +115,8 @@ export const threads: SocialProvider = {
     video: true,
     image: true,
     carousel: { min: 2, max: 20, kinds: ["image", "video"] },
-    imageTypes: ["image/jpeg", "image/png"],
+    imageTypes: IMAGE_TYPES,
+    convertsImages: ["image/webp", "image/gif"],
     maxVideoMs: 5 * 60_000,
   },
   status: threadsStatus,

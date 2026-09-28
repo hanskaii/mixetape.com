@@ -71,10 +71,19 @@ export function checkFormat(
       file.kind === "image" &&
       formats.imageTypes &&
       file.contentType &&
-      !formats.imageTypes.includes(file.contentType)
+      !formats.imageTypes.includes(file.contentType) &&
+      !formats.convertsImages?.includes(file.contentType)
     )
       problems.push(
         `${which}: ${name} takes ${formats.imageTypes.map((type) => type.replace("image/", "").toUpperCase()).join(" or ")} images, not ${file.contentType.replace("image/", "").toUpperCase()}`,
+      );
+    if (
+      file.kind === "image" &&
+      file.contentType &&
+      formats.convertsImages?.includes(file.contentType)
+    )
+      warnings.push(
+        `${which} goes to ${name} as JPEG (${name} takes no ${file.contentType.replace("image/", "").toUpperCase()})`,
       );
     if (file.kind === "video" && file.durationMs) {
       if (formats.minVideoMs && file.durationMs < formats.minVideoMs)

@@ -20,7 +20,7 @@ import type { Field as FieldSpec } from "#/modules/social/fields";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { selectionSummary } from "../-lib/format";
-import { FileThumb } from "./file-thumb";
+import { PostPreview } from "./post-preview";
 import { PlatformForm } from "./platform-form";
 
 type Values = Record<string, JsonValue>;
@@ -67,17 +67,44 @@ const styles = stylex.create({
     animationName: turn,
     animationTimingFunction: "linear",
   },
-  modal: { maxWidth: "42rem", padding: 0 },
-  frame: { display: "flex", flexDirection: "column", maxHeight: "88vh" },
+  modal: { maxWidth: "64rem", padding: 0 },
+  frame: { display: "flex", flexDirection: "column", maxHeight: "90vh" },
+  // The form, and beside it on wide screens the post as it will look.
+  main: {
+    display: "grid",
+    flexGrow: 1,
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "minmax(0, 1fr) 22rem" },
+    minHeight: 0,
+    overflowY: { default: "auto", "@media (min-width: 900px)": "hidden" },
+  },
+  aside: {
+    alignContent: "start",
+    backgroundColor: `color-mix(in oklab, ${colors.muted} 45%, transparent)`,
+    borderColor: colors.border,
+    borderStyle: "solid",
+    borderWidth: {
+      default: "1px 0 0 0",
+      "@media (min-width: 900px)": "0 0 0 1px",
+    },
+    display: "grid",
+    gap: "0.75rem",
+    overflowY: { default: "visible", "@media (min-width: 900px)": "auto" },
+    padding: "1.25rem",
+  },
+  asideHead: {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "space-between",
+  },
   body: {
     display: "flex",
     flexDirection: "column",
     gap: "1.25rem",
-    overflowY: "auto",
+    overflowY: { default: "visible", "@media (min-width: 900px)": "auto" },
     padding: "1.5rem",
   },
   keep: { flexShrink: 0 },
-  strip: { display: "flex", gap: "0.5rem", marginTop: "-0.25rem", overflowX: "auto" },
   section: { display: "grid", flexShrink: 0, gap: "0.625rem" },
   heading: {
     color: colors.mutedForeground,
@@ -217,8 +244,19 @@ const styles = stylex.create({
     width: "0.375rem",
   },
   tab: { alignItems: "center", display: "inline-flex", gap: "0.375rem" },
-  when: { alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" },
-  date: { width: "auto" },
+  when: { alignItems: "center", display: "flex", flex: "1 1 auto", gap: "0.5rem", minWidth: 0 },
+  date: {
+    flex: { default: "1 1 auto", "@media (min-width: 900px)": "0 0 auto" },
+    minWidth: 0,
+    width: "auto",
+  },
+  buttons: {
+    display: "flex",
+    flex: { default: "1 0 100%", "@media (min-width: 640px)": "0 0 auto" },
+    gap: "0.5rem",
+    justifyContent: "flex-end",
+    marginInlineStart: "auto",
+  },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
   clear: {
     alignItems: "center",
@@ -235,6 +273,7 @@ const styles = stylex.create({
   clearLabel: { fontSize: "0.8125rem", fontWeight: 500 },
   footer: {
     alignItems: "center",
+    flexWrap: "wrap",
     borderTopColor: colors.border,
     borderTopStyle: "solid",
     borderTopWidth: "1px",
@@ -244,7 +283,13 @@ const styles = stylex.create({
     paddingBlock: "1rem",
     paddingInline: "1.5rem",
   },
-  status: { fontSize: "0.75rem", margin: 0, marginInlineEnd: "auto" },
+  // Its own line above the buttons on a phone; beside them on a wide screen.
+  status: {
+    flexBasis: { default: "100%", "@media (min-width: 900px)": "auto" },
+    fontSize: "0.75rem",
+    margin: 0,
+    order: { default: -1, "@media (min-width: 900px)": 0 },
+  },
   push: { marginInlineStart: "auto" },
   done: {
     alignItems: "center",
@@ -429,6 +474,29 @@ export function PublishModal({
   const showDescription = relevant.some((platform) => platform.takesDescription);
   const activeTab = chosenPlatforms.find((platform) => platform.id === tab) ?? chosenPlatforms[0];
 
+  // The preview follows the tab: the chosen platforms, or before any is chosen, those that fit.
+  const previewPlatforms = chosenPlatforms.length ? chosenPlatforms : relevant;
+  const preview = previewPlatforms.find((platform) => platform.id === tab) ?? previewPlatforms[0];
+  const previewAccount = preview
+    ? (chosenRows.find((row) => row.provider === preview.id) ??
+      fitting.map((account) => rows.get(account.id)).find((row) => row?.provider === preview.id))
+    : undefined;
+  const previewChannel = previewAccount
+    ? (accountsById.get(previewAccount.accountId) ?? null)
+    : null;
+  const previewLabel = previewAccount?.label ?? "";
+  const previewText = (() => {
+    const own = (preview && overrides[preview.id]) ?? {};
+    const text = (key: string | undefined) =>
+      key && typeof own[key] === "string" && own[key] ? (own[key] as string) : undefined;
+    const captionKey = preview?.fields.find((field) => field.caption)?.key;
+    return {
+      caption: text(captionKey) ?? caption,
+      title: text("title") ?? title,
+      description: text("description") ?? description,
+    };
+  })();
+
   const time = new Date(at);
   const past =
     when === "later" && (!at || Number.isNaN(time.getTime()) || time.getTime() < Date.now());
@@ -512,243 +580,279 @@ export function PublishModal({
   return (
     <Modal open onOpenChange={(open) => !open && onClose()} style={styles.modal}>
       <div {...stylex.props(styles.frame)}>
-        <div {...stylex.props(styles.body)}>
-          <div {...stylex.props(styles.keep)}>
-            <ModalHeader>
-              <ModalTitle>Publish</ModalTitle>
-              <ModalDescription>{selectionSummary(files)}</ModalDescription>
-            </ModalHeader>
-          </div>
-
-          <div {...stylex.props(styles.strip, styles.keep)}>
-            {files.map((file) => (
-              <FileThumb key={file.id} file={file} size="md" />
-            ))}
-          </div>
-
-          {/* ── where ─────────────────────────────────────────────────────────── */}
-          <section {...stylex.props(styles.section)}>
-            <div {...stylex.props(styles.headRow)}>
-              <Heading>Post to</Heading>
-              {fitting.length > 1 && (
-                <button
-                  type="button"
-                  {...stylex.props(styles.link)}
-                  onClick={() =>
-                    setChosen(
-                      chosen.length === fitting.length ? [] : fitting.map((account) => account.id),
-                    )
-                  }
-                >
-                  {chosen.length === fitting.length ? "Clear" : `All ${fitting.length} that fit`}
-                </button>
-              )}
+        <div {...stylex.props(styles.main)}>
+          <div {...stylex.props(styles.body)}>
+            <div {...stylex.props(styles.keep)}>
+              <ModalHeader>
+                <ModalTitle>Publish</ModalTitle>
+                <ModalDescription>{selectionSummary(files)}</ModalDescription>
+              </ModalHeader>
             </div>
 
-            {brands.some((brand) => fittingOf(brand).length) && (
-              <div {...stylex.props(styles.chips)}>
-                {brands
-                  .filter((brand) => fittingOf(brand).length)
-                  .map((brand) => (
-                    <button
-                      key={brand.id}
-                      type="button"
-                      aria-pressed={brandOn(brand)}
-                      onClick={() => toggleBrand(brand)}
-                      {...stylex.props(styles.chip, brandOn(brand) && styles.chipOn)}
-                    >
-                      <AvatarStack
-                        focusable={false}
-                        channels={fittingOf(brand).flatMap((id) => accountsById.get(id) ?? [])}
-                      />
-                      {brand.name}
-                    </button>
-                  ))}
+            {/* ── where ─────────────────────────────────────────────────────────── */}
+            <section {...stylex.props(styles.section)}>
+              <div {...stylex.props(styles.headRow)}>
+                <Heading>Post to</Heading>
+                {fitting.length > 1 && (
+                  <button
+                    type="button"
+                    {...stylex.props(styles.link)}
+                    onClick={() =>
+                      setChosen(
+                        chosen.length === fitting.length
+                          ? []
+                          : fitting.map((account) => account.id),
+                      )
+                    }
+                  >
+                    {chosen.length === fitting.length ? "Clear" : `All ${fitting.length} that fit`}
+                  </button>
+                )}
               </div>
-            )}
 
-            {!plan ? (
-              <p {...stylex.props(styles.quiet)}>
-                <SpinnerGap {...stylex.props(styles.spin)} /> Checking where this fits…
-              </p>
-            ) : fitting.length ? (
-              <div {...stylex.props(styles.channels)}>
-                {fitting.map((account) => {
-                  const row = rows.get(account.id)!;
-                  const on = chosenSet.has(account.id);
-                  return (
-                    <button
-                      key={account.id}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => toggle(account.id)}
-                      {...stylex.props(styles.channel, on && styles.channelOn)}
-                    >
-                      <span {...stylex.props(styles.channelRow)}>
-                        <ChannelAvatar
-                          provider={account.provider}
-                          avatar={account.avatar}
-                          name={account.name}
-                          size="sm"
+              {brands.some((brand) => fittingOf(brand).length) && (
+                <div {...stylex.props(styles.chips)}>
+                  {brands
+                    .filter((brand) => fittingOf(brand).length)
+                    .map((brand) => (
+                      <button
+                        key={brand.id}
+                        type="button"
+                        aria-pressed={brandOn(brand)}
+                        onClick={() => toggleBrand(brand)}
+                        {...stylex.props(styles.chip, brandOn(brand) && styles.chipOn)}
+                      >
+                        <AvatarStack
+                          focusable={false}
+                          channels={fittingOf(brand).flatMap((id) => accountsById.get(id) ?? [])}
                         />
-                        <span {...stylex.props(styles.channelName)}>{account.name}</span>
-                        <Badge variant="secondary">{row.label}</Badge>
-                        <span {...stylex.props(styles.tick, on && styles.tickOn)}>
-                          <Check size={11} weight="bold" />
+                        {brand.name}
+                      </button>
+                    ))}
+                </div>
+              )}
+
+              {!plan ? (
+                <p {...stylex.props(styles.quiet)}>
+                  <SpinnerGap {...stylex.props(styles.spin)} /> Checking where this fits…
+                </p>
+              ) : fitting.length ? (
+                <div {...stylex.props(styles.channels)}>
+                  {fitting.map((account) => {
+                    const row = rows.get(account.id)!;
+                    const on = chosenSet.has(account.id);
+                    return (
+                      <button
+                        key={account.id}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggle(account.id)}
+                        {...stylex.props(styles.channel, on && styles.channelOn)}
+                      >
+                        <span {...stylex.props(styles.channelRow)}>
+                          <ChannelAvatar
+                            provider={account.provider}
+                            avatar={account.avatar}
+                            name={account.name}
+                            size="sm"
+                          />
+                          <span {...stylex.props(styles.channelName)}>{account.name}</span>
+                          <Badge variant="secondary">{row.label}</Badge>
+                          <span {...stylex.props(styles.tick, on && styles.tickOn)}>
+                            <Check size={11} weight="bold" />
+                          </span>
                         </span>
-                      </span>
-                      {on &&
-                        row.problems.map((problem) => (
-                          <span key={problem} {...stylex.props(styles.note, styles.problem)}>
-                            <WarningCircle weight="fill" {...stylex.props(styles.noteIcon)} />
-                            {problem}
-                          </span>
-                        ))}
-                      {on &&
-                        row.warnings.map((warning) => (
-                          <span key={warning} {...stylex.props(styles.note, styles.warning)}>
-                            <Warning {...stylex.props(styles.noteIcon)} />
-                            {warning}
-                          </span>
-                        ))}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <p {...stylex.props(styles.callout)}>
-                {accounts.length
-                  ? "None of your channels takes this as it is."
-                  : "No channel yet — connect one first."}{" "}
-                <Link to="/channels">Channels</Link>
-              </p>
-            )}
+                        {on &&
+                          row.problems.map((problem) => (
+                            <span key={problem} {...stylex.props(styles.note, styles.problem)}>
+                              <WarningCircle weight="fill" {...stylex.props(styles.noteIcon)} />
+                              {problem}
+                            </span>
+                          ))}
+                        {on &&
+                          row.warnings.map((warning) => (
+                            <span key={warning} {...stylex.props(styles.note, styles.warning)}>
+                              <Warning {...stylex.props(styles.noteIcon)} />
+                              {warning}
+                            </span>
+                          ))}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p {...stylex.props(styles.callout)}>
+                  {accounts.length
+                    ? "None of your channels takes this as it is."
+                    : "No channel yet — connect one first."}{" "}
+                  <Link to="/channels">Channels</Link>
+                </p>
+              )}
 
-            {unfitPlatforms.length > 0 && (
-              <details {...stylex.props(styles.details)}>
-                <summary {...stylex.props(styles.summary)}>
-                  Not for {unfitPlatforms.map((platform) => platform.name).join(", ")}
-                </summary>
-                <ul {...stylex.props(styles.unfitList)}>
-                  {unfitPlatforms.map((platform) => (
-                    <li key={platform.provider} {...stylex.props(styles.unfit)}>
-                      <PlatformLogo provider={platform.provider} size="xs" />
-                      <span>
-                        <span {...stylex.props(styles.strong)}>{platform.name}</span>
-                        {platform.channels > 1 && ` (${platform.channels} channels)`} —{" "}
-                        {platform.reasons.join("; ")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-          </section>
+              {unfitPlatforms.length > 0 && (
+                <details {...stylex.props(styles.details)}>
+                  <summary {...stylex.props(styles.summary)}>
+                    Not for {unfitPlatforms.map((platform) => platform.name).join(", ")}
+                  </summary>
+                  <ul {...stylex.props(styles.unfitList)}>
+                    {unfitPlatforms.map((platform) => (
+                      <li key={platform.provider} {...stylex.props(styles.unfit)}>
+                        <PlatformLogo provider={platform.provider} size="xs" />
+                        <span>
+                          <span {...stylex.props(styles.strong)}>{platform.name}</span>
+                          {platform.channels > 1 && ` (${platform.channels} channels)`} —{" "}
+                          {platform.reasons.join("; ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </section>
 
-          {/* ── words ─────────────────────────────────────────────────────────── */}
-          <section {...stylex.props(styles.section)}>
-            <Heading>Words</Heading>
-            {showTitle && (
-              <Field label="Title">
-                <Input
-                  value={title}
-                  placeholder="For YouTube, Facebook videos and Pins"
-                  onChange={(event) => setTitle(event.target.value)}
-                />
-              </Field>
-            )}
-            <Field label="Caption">
-              <Textarea
-                rows={3}
-                value={caption}
-                placeholder="What the post says — every platform starts from this"
-                onChange={(event) => setCaption(event.target.value)}
-              />
-            </Field>
-            {showDescription && (
-              <Field label="Description">
+            {/* ── words ─────────────────────────────────────────────────────────── */}
+            <section {...stylex.props(styles.section)}>
+              <Heading>Words</Heading>
+              {showTitle && (
+                <Field label="Title">
+                  <Input
+                    value={title}
+                    placeholder="For YouTube, Facebook videos and Pins"
+                    onChange={(event) => setTitle(event.target.value)}
+                  />
+                </Field>
+              )}
+              <Field label="Caption">
                 <Textarea
                   rows={3}
-                  value={description}
-                  placeholder="The longer text, where the platform has one"
-                  onChange={(event) => setDescription(event.target.value)}
+                  value={caption}
+                  placeholder="What the post says — every platform starts from this"
+                  onChange={(event) => setCaption(event.target.value)}
                 />
               </Field>
-            )}
-          </section>
-
-          {/* ── per platform ──────────────────────────────────────────────────── */}
-          {activeTab && (
-            <section {...stylex.props(styles.section)}>
-              <Heading>Per platform</Heading>
-              <Segmented
-                role="tablist"
-                label="Platform"
-                value={activeTab.id}
-                onChange={setTab}
-                options={chosenPlatforms.map((platform) => ({
-                  value: platform.id,
-                  label: (
-                    <span {...stylex.props(styles.tab)}>
-                      <PlatformLogo provider={platform.id} size="xs" />
-                      {platform.name}
-                      {Object.keys(overrides[platform.id] ?? {}).length > 0 && (
-                        <span aria-label="edited" {...stylex.props(styles.dot)} />
-                      )}
-                    </span>
-                  ),
-                }))}
-              />
-              <PlatformForm
-                key={activeTab.id}
-                fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
-                values={overrides[activeTab.id] ?? {}}
-                caption={caption}
-                onChange={(key, value) => setOverride(activeTab.id, key, value)}
-              />
-            </section>
-          )}
-
-          {/* ── when ──────────────────────────────────────────────────────────── */}
-          <section {...stylex.props(styles.section)}>
-            <Heading>When</Heading>
-            <div {...stylex.props(styles.when)}>
-              <Segmented
-                label="When"
-                value={when}
-                onChange={setWhen}
-                options={[
-                  { value: "now", label: "Now" },
-                  { value: "later", label: "Schedule" },
-                ]}
-              />
-              {when === "later" && (
-                <Input
-                  type="datetime-local"
-                  value={at}
-                  onChange={(event) => setAt(event.target.value)}
-                  style={styles.date}
-                />
+              {showDescription && (
+                <Field label="Description">
+                  <Textarea
+                    rows={3}
+                    value={description}
+                    placeholder="The longer text, where the platform has one"
+                    onChange={(event) => setDescription(event.target.value)}
+                  />
+                </Field>
               )}
-            </div>
-            <p {...stylex.props(styles.hint)}>
-              {when === "now"
-                ? "Goes out right away and is live as soon as each platform has processed it."
-                : `${Intl.DateTimeFormat().resolvedOptions().timeZone} — each platform gets it early enough to be ready on time.`}
-            </p>
-            <label {...stylex.props(styles.clear)}>
-              <span {...stylex.props(styles.clearText)}>
-                <span {...stylex.props(styles.clearLabel)}>Clear the files once they're out</span>
-                <span {...stylex.props(styles.hint)}>
-                  Keeps your library tidy. Anything left goes after {retentionDays} days anyway.
+            </section>
+
+            {/* ── per platform ──────────────────────────────────────────────────── */}
+            {activeTab && (
+              <section {...stylex.props(styles.section)}>
+                <Heading>Per platform</Heading>
+                <Segmented
+                  role="tablist"
+                  label="Platform"
+                  value={activeTab.id}
+                  onChange={setTab}
+                  options={chosenPlatforms.map((platform) => ({
+                    value: platform.id,
+                    label: (
+                      <span {...stylex.props(styles.tab)}>
+                        <PlatformLogo provider={platform.id} size="xs" />
+                        {platform.name}
+                        {Object.keys(overrides[platform.id] ?? {}).length > 0 && (
+                          <span aria-label="edited" {...stylex.props(styles.dot)} />
+                        )}
+                      </span>
+                    ),
+                  }))}
+                />
+                <PlatformForm
+                  key={activeTab.id}
+                  fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
+                  values={overrides[activeTab.id] ?? {}}
+                  caption={caption}
+                  onChange={(key, value) => setOverride(activeTab.id, key, value)}
+                />
+              </section>
+            )}
+
+            {/* ── afterwards ────────────────────────────────────────────────────── */}
+            <section {...stylex.props(styles.section)}>
+              <label {...stylex.props(styles.clear)}>
+                <span {...stylex.props(styles.clearText)}>
+                  <span {...stylex.props(styles.clearLabel)}>Clear the files once they're out</span>
+                  <span {...stylex.props(styles.hint)}>
+                    Keeps your library tidy. Anything left goes after {retentionDays} days anyway.
+                  </span>
                 </span>
-              </span>
-              <Switch checked={!keepFiles} onCheckedChange={(checked) => setKeepFiles(!checked)} />
-            </label>
-          </section>
+                <Switch
+                  checked={!keepFiles}
+                  onCheckedChange={(checked) => setKeepFiles(!checked)}
+                />
+              </label>
+            </section>
+          </div>
+
+          {/* ── preview ─────────────────────────────────────────────────────────── */}
+          <aside aria-label="Preview" {...stylex.props(styles.aside)}>
+            {preview ? (
+              <>
+                <div {...stylex.props(styles.asideHead)}>
+                  <Heading>Preview</Heading>
+                  {previewPlatforms.length > 1 && (
+                    <Segmented
+                      role="tablist"
+                      label="Preview on"
+                      value={preview.id}
+                      onChange={setTab}
+                      options={previewPlatforms.map((platform) => ({
+                        value: platform.id,
+                        label: <PlatformLogo provider={platform.id} size="xs" />,
+                      }))}
+                    />
+                  )}
+                </div>
+                <PostPreview
+                  key={preview.id}
+                  provider={preview.id}
+                  label={previewLabel}
+                  channel={previewChannel}
+                  files={files}
+                  caption={previewText.caption}
+                  title={previewText.title}
+                  description={previewText.description}
+                />
+              </>
+            ) : (
+              <p {...stylex.props(styles.hint)}>
+                The preview shows here once a channel can take these files.
+              </p>
+            )}
+          </aside>
         </div>
 
         <div {...stylex.props(styles.footer)}>
+          <div
+            {...stylex.props(styles.when)}
+            title={`${Intl.DateTimeFormat().resolvedOptions().timeZone} — each platform gets it early enough to be ready on time`}
+          >
+            <Segmented
+              label="When"
+              value={when}
+              onChange={setWhen}
+              options={[
+                { value: "now", label: "Now" },
+                { value: "later", label: "Schedule" },
+              ]}
+            />
+            {when === "later" && (
+              <Input
+                type="datetime-local"
+                aria-label="Goes live"
+                value={at}
+                onChange={(event) => setAt(event.target.value)}
+                style={styles.date}
+              />
+            )}
+          </div>
           {error ? (
             <p {...stylex.props(styles.status, styles.problem)}>{error}</p>
           ) : (
@@ -759,15 +863,17 @@ export function PublishModal({
               </p>
             )
           )}
-          <Button variant="outline" onClick={onClose} style={styles.push}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={busy || !ready.length || past}>
-            {busy && <SpinnerGap {...stylex.props(styles.spin)} />}
-            {ready.length
-              ? `${when === "now" ? "Publish" : "Schedule"} on ${ready.length} channel${ready.length === 1 ? "" : "s"}`
-              : "Choose channels"}
-          </Button>
+          <div {...stylex.props(styles.buttons)}>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={busy || !ready.length || past}>
+              {busy && <SpinnerGap {...stylex.props(styles.spin)} />}
+              {ready.length
+                ? `${when === "now" ? "Publish" : "Schedule"} on ${ready.length} channel${ready.length === 1 ? "" : "s"}`
+                : "Choose channels"}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

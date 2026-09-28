@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import type { MediaItem } from "./types";
 
 /**
  * Reads the media of a post in ranges, wherever it lives.
@@ -90,4 +91,26 @@ export async function mediaStream(
   const size = Number(res.headers.get("content-length") ?? 0);
   if (!res.ok || !res.body || !size) throw new Error(`Cannot read media URL: ${res.status}`);
   return { stream: res.body, size, contentType: res.headers.get("content-type") ?? "video/mp4" };
+}
+
+/**
+ * A stored image as JPEG, made at the edge by Cloudflare Image Transformations from the
+ * public URL — for platforms that take JPEG only. At most 1440 px wide, Instagram's limit.
+ */
+export function jpegUrl(url: string): string {
+  const key = bucketKey(url);
+  if (!key) return url;
+  const base = (env.MEDIA_PUBLIC_URL ?? "").replace(/\/$/, "");
+  if (!base) throw new Error("MEDIA_PUBLIC_URL is not set, so stored media has no public URL");
+  const path = key.split("/").map(encodeURIComponent).join("/");
+  return `${base}/cdn-cgi/image/format=jpeg,quality=92,fit=scale-down,width=1440/${path}`;
+}
+
+/**
+ * The URL a platform should fetch an image from: as stored when it takes that type, turned
+ * into JPEG on the way when not (a PNG for Instagram). Unknown types go as they are.
+ */
+export function imageUrlFor(item: MediaItem, accepted: readonly string[] | undefined): string {
+  if (!accepted || !item.type || accepted.includes(item.type)) return publicMediaUrl(item.url);
+  return jpegUrl(item.url);
 }

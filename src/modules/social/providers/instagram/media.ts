@@ -1,4 +1,4 @@
-import { publicMediaUrl } from "../media";
+import { imageUrlFor, publicMediaUrl } from "../media";
 import {
   PermanentPublishError,
   type Metadata,
@@ -18,6 +18,9 @@ import type { InstagramReelMeta } from "./metadata";
  * A carousel is a container of containers: each file becomes a carousel item, and those
  * go into one CAROUSEL container that carries the caption.
  */
+
+/** Instagram takes JPEG only; anything else goes through the edge as JPEG. */
+export const IMAGE_TYPES = ["image/jpeg"];
 
 const POLL_MS = 10_000;
 const MAX_WAIT_MS = 20 * 60_000;
@@ -96,13 +99,12 @@ async function prepare(
   if (post.media.length > 1) {
     const children: string[] = [];
     for (const item of post.media) {
-      const url = publicMediaUrl(item.url);
       const child = await container(
         token,
         igUserId,
         item.kind === "image"
-          ? { image_url: url, is_carousel_item: true }
-          : { media_type: "VIDEO", video_url: url, is_carousel_item: true },
+          ? { image_url: imageUrlFor(item, IMAGE_TYPES), is_carousel_item: true }
+          : { media_type: "VIDEO", video_url: publicMediaUrl(item.url), is_carousel_item: true },
       );
       await ready(child, token);
       children.push(child);
@@ -116,7 +118,7 @@ async function prepare(
   const [item] = post.media;
   if (item.kind === "image")
     return container(token, igUserId, {
-      image_url: publicMediaUrl(item.url),
+      image_url: imageUrlFor(item, IMAGE_TYPES),
       caption: meta.caption,
     });
   return container(token, igUserId, {

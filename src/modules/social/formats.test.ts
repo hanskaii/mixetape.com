@@ -7,6 +7,7 @@ const instagram: MediaFormats = {
   image: true,
   carousel: { min: 2, max: 10, kinds: ["image", "video"] },
   imageTypes: ["image/jpeg"],
+  convertsImages: ["image/png", "image/webp"],
   minVideoMs: 3_000,
   maxVideoMs: 15 * 60_000,
   vertical: true,
@@ -67,10 +68,14 @@ describe("whether files fit a platform", () => {
     );
   });
 
-  it("names the image type a platform takes", () => {
-    expect(checkFormat("Instagram", instagram, [png]).problems[0]).toMatch(
-      "takes JPEG images, not PNG",
-    );
+  it("takes images mixetape turns into JPEG, and names the ones it cannot", () => {
+    const check = checkFormat("Instagram", instagram, [png]);
+    expect(check.problems).toEqual([]);
+    expect(check.warnings[0]).toMatch("goes to Instagram as JPEG");
+    expect(
+      checkFormat("Instagram", instagram, [{ kind: "image", contentType: "image/heic" }])
+        .problems[0],
+    ).toMatch("takes JPEG images, not HEIC");
   });
 
   it("checks video length", () => {

@@ -1,4 +1,4 @@
-import { publicMediaUrl } from "../media";
+import { imageUrlFor, publicMediaUrl } from "../media";
 import {
   PermanentPublishError,
   type MediaItem,
@@ -15,6 +15,9 @@ import type { ThreadsVideoMeta } from "./metadata";
  * go-live time is prepared as a processed container and published by mixetape on the
  * minute. A text-only container (a reply) needs no processing wait.
  */
+
+/** Threads takes JPEG and PNG; anything else goes through the edge as JPEG. */
+export const IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 const POLL_MS = 10_000;
 const MAX_WAIT_MS = 20 * 60_000;
@@ -92,7 +95,7 @@ async function container(
 
 const source = (item: MediaItem) =>
   item.kind === "image"
-    ? { media_type: "IMAGE", image_url: publicMediaUrl(item.url) }
+    ? { media_type: "IMAGE", image_url: imageUrlFor(item, IMAGE_TYPES) }
     : { media_type: "VIDEO", video_url: publicMediaUrl(item.url) };
 
 /**

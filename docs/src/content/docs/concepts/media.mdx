@@ -72,12 +72,14 @@ is made for upright media.
 |---|---|---|---|
 | YouTube | Long videos and Shorts | — | — |
 | Facebook | Page video or Reel | Photo | Album of 2–10 images |
-| Instagram | Reel, 3 s–15 min | JPEG photo | Carousel of 2–10 images and videos |
-| Threads | Up to 5 min | JPEG or PNG | Carousel of 2–20 images and videos |
+| Instagram | Reel, 3 s–15 min | Photo (JPEG; PNG, WebP, GIF sent as JPEG) | Carousel of 2–10 images and videos |
+| Threads | Up to 5 min | JPEG or PNG (WebP, GIF sent as JPEG) | Carousel of 2–20 images and videos |
 | TikTok | 3 s–10 min | — | — |
 | Pinterest | 4 s–15 min | Image Pin | Carousel Pin of 2–5 images |
 
 Files in mixetape storage are checked against this when a post is created, so a post the
 platform cannot take is refused at once — not at go-live. A horizontal video where upright is
-expected is allowed; `plan_group` warns about it.
+expected is allowed; `plan_group` warns about it. An image in storage that a platform takes
+only as JPEG — a PNG for Instagram — is turned into JPEG on its way there (at the edge, at most
+1440 px wide); the original stays as it is.
 

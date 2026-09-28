@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { env } from "cloudflare:workers";
 import { kindFromUrl } from "../formats";
 import { PermanentPublishError, type PostWithMedia } from "./types";
 import { instagram } from "./instagram";
@@ -326,5 +327,34 @@ describe("photos and carousels", () => {
         { url: "https://media.example.com/b.jpg" },
       ],
     });
+  });
+});
+
+describe("images a platform takes only as JPEG", () => {
+  it("sends Instagram a stored PNG through the edge as JPEG, and a JPEG as it is", async () => {
+    env.MEDIA_PUBLIC_URL = "https://media.mixetape.com";
+    const calls = scriptFetch([
+      Response.json({ id: "c1" }),
+      Response.json({ status_code: "FINISHED" }),
+      Response.json({ id: "c2" }),
+      Response.json({ status_code: "FINISHED" }),
+      Response.json({ id: "carousel" }),
+      Response.json({ status_code: "FINISHED" }),
+    ]);
+    const carousel = {
+      id: "p1",
+      url: "r2://media/u1/a.png",
+      media: [
+        { url: "r2://media/u1/a.png", kind: "image", type: "image/png" },
+        { url: "r2://media/u1/b.jpg", kind: "image", type: "image/jpeg" },
+      ],
+      caption: null,
+      platformAccountId: "ig-1",
+    } as unknown as PostWithMedia;
+    await instagram.upload(carousel, "t", { publishAt: "2026-10-02T10:00:00Z" });
+    expect(form(calls[0]).get("image_url")).toBe(
+      "https://media.mixetape.com/cdn-cgi/image/format=jpeg,quality=92,fit=scale-down,width=1440/media/u1/a.png",
+    );
+    expect(form(calls[2]).get("image_url")).toBe("https://media.mixetape.com/media/u1/b.jpg");
   });
 });

@@ -95,7 +95,12 @@ export interface MetadataSpec {
 export type MediaKind = "video" | "image";
 
 /** One file of a post, as stored (`r2://…` or https) with what kind it is. */
-export type MediaItem = { url: string; kind: MediaKind };
+export type MediaItem = {
+  url: string;
+  kind: MediaKind;
+  /** Its content type, when mixetape read the file (files in storage). */
+  type?: string;
+};
 
 /**
  * What a platform takes in one post. A post with several files is a carousel (Instagram,
@@ -109,6 +114,11 @@ export interface MediaFormats {
   readonly carousel?: { min: number; max: number; kinds: readonly MediaKind[] };
   /** Image content types the platform accepts, when it is pickier than "any image". */
   readonly imageTypes?: readonly string[];
+  /**
+   * Other image types mixetape turns into JPEG on the way (at the edge, from storage), so the
+   * platform takes them anyway: a PNG for Instagram.
+   */
+  readonly convertsImages?: readonly string[];
   /** Video length the platform accepts, in milliseconds. */
   readonly minVideoMs?: number;
   readonly maxVideoMs?: number;

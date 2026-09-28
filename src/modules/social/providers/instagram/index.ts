@@ -2,7 +2,7 @@ import type { SocialProvider } from "../types";
 import { instagramAnalytics } from "./analytics";
 import { instagramComments } from "./comments";
 import { instagramConnect } from "./connect";
-import { publishContainer, instagramStatus, uploadMedia } from "./media";
+import { IMAGE_TYPES, publishContainer, instagramStatus, uploadMedia } from "./media";
 import { instagramMetadata } from "./metadata";
 
 export type { InstagramReelMeta } from "./metadata";
@@ -27,7 +27,8 @@ export const instagram: SocialProvider = {
     video: true,
     image: true,
     carousel: { min: 2, max: 10, kinds: ["image", "video"] },
-    imageTypes: ["image/jpeg"],
+    imageTypes: IMAGE_TYPES,
+    convertsImages: ["image/png", "image/webp", "image/gif"],
     minVideoMs: 3_000,
     maxVideoMs: 15 * 60_000,
     vertical: true,
