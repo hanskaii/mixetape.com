@@ -1,0 +1,18 @@
+/**
+ * mixetape's mark: the two paths behind /favicon.svg, the workspace sidebar and the docs
+ * header. Single-color (`currentColor`), so it takes whatever foreground a badge gives it.
+ */
+export function BrandMark(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 298 233" fill="none" aria-hidden {...props}>
+      <path
+        fill="currentColor"
+        d="M253.5 0c25 0 44 11 43.5 49.5s3.89 137.429-6.5 166c-6 16.5-25 21.13-42.5 14-13.5-5.5-51.5-37.5-56.5-49-4.999-11.5 3.001-16 15.5-15s38 4.5 38-23.5 4-47.5-20.5-47.5H73.004c-24.5 0-20.5 19.5-20.5 47.5s25.5 24.5 38 23.5 20.5 3.5 15.5 15-43 43.5-56.5 49c-17.5 7.129-36.5 2.5-42.5-14-10.39-28.571-6-127.5-6.5-166S19.004 0 44.004 0c18.345 0 69.221 36.738 98.224 59.668 2.69 2.127 10.36 2.127 13.05 0C184.28 36.738 235.155.001 253.5 0"
+      />
+      <path
+        fill="currentColor"
+        d="M77 132.5c0-9.113 7.387-16.5 16.5-16.5s16.5 7.387 16.5 16.5-7.387 16.5-16.5 16.5S77 141.613 77 132.5m110 0c0-9.113 7.387-16.5 16.5-16.5s16.5 7.387 16.5 16.5-7.387 16.5-16.5 16.5-16.5-7.387-16.5-16.5"
+      />
+    </svg>
+  );
+}

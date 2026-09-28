@@ -25,6 +25,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "../ui/sidebar";
+import { BrandMark } from "../ui/brand-mark";
 import { colors } from "../ui/tokens.stylex";
 import { Route as RootRoute } from "#/routes/__root";
 import { siteConfig } from "#/config/site";
@@ -78,13 +79,11 @@ const styles = stylex.create({
     color: colors.sidebarPrimaryForeground,
     display: "flex",
     flexShrink: 0,
-    fontSize: "1rem",
-    fontWeight: 800,
     height: "1.75rem",
     justifyContent: "center",
-    letterSpacing: "-0.06em",
     width: "1.75rem",
   },
+  markIcon: { height: "1rem", width: "1rem" },
   brandName: { fontSize: "1.0625rem", fontWeight: 700, letterSpacing: "-0.06em" },
   topbar: {
     alignItems: "center",
@@ -168,7 +167,9 @@ export function WorkspaceLayout({
       <Sidebar label="Workspace">
         <SidebarHeader>
           <Link to="/" {...stylex.props(styles.brand)}>
-            <span {...stylex.props(styles.mark)}>m</span>
+            <span {...stylex.props(styles.mark)}>
+              <BrandMark {...stylex.props(styles.markIcon)} />
+            </span>
             <SidebarLabel>
               <span {...stylex.props(styles.brandName)}>mixetape</span>
             </SidebarLabel>

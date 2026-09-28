@@ -126,12 +126,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         rel: "icon",
         type: "image/svg+xml",
-        href: "/favicon.svg",
+        href: `/favicon.svg?v=${siteConfig.faviconVersion}`,
       },
       {
         rel: "icon",
         type: "image/x-icon",
-        href: "/favicon.ico",
+        href: `/favicon.ico?v=${siteConfig.faviconVersion}`,
       },
       {
         rel: "stylesheet",
