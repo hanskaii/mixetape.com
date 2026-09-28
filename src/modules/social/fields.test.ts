@@ -10,23 +10,26 @@ describe("a platform's form", () => {
     const keys = fields.map((field) => field.key);
     expect(keys).not.toContain("title");
     expect(keys).not.toContain("description");
-    expect(keys).not.toContain("captions");
-    expect(keys).not.toContain("localizations");
+    for (const hidden of ["captions", "localizations", "defaultLanguage", "playlistIds"])
+      expect(keys).not.toContain(hidden);
     expect(fields.find((field) => field.key === "privacyStatus")).toMatchObject({
-      type: "select",
-      label: "Privacy",
+      type: "choice",
+      label: "Visibility",
       options: [
-        { value: "public", label: "public" },
-        { value: "unlisted", label: "unlisted" },
-        { value: "private", label: "private" },
+        { value: "public", label: "Public" },
+        { value: "unlisted", label: "Unlisted" },
+        { value: "private", label: "Private" },
       ],
     });
+    expect(fields.find((field) => field.key === "thumbnailUrl")?.type).toBe("image");
+    // Switches come last, the caption-like fields first.
+    expect(fields.at(-1)?.type).toBe("switch");
     expect(fields.find((field) => field.key === "category")).toMatchObject({
       type: "select",
       options: expect.arrayContaining([{ value: "27", label: "Education" }]),
     });
     expect(fields.find((field) => field.key === "tags")?.type).toBe("tags");
-    expect(fields.find((field) => field.key === "madeForKids")?.type).toBe("boolean");
+    expect(fields.find((field) => field.key === "madeForKids")?.type).toBe("switch");
   });
 
   it("shows a platform's own caption field as a per-platform caption", () => {

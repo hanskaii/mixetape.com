@@ -21,3 +21,12 @@ export function videoFrame(publicUrl: string, width: ThumbWidth) {
   const { origin, path } = parts(publicUrl);
   return `${origin}/cdn-cgi/media/mode=frame,time=1s,width=${width}${path}`;
 }
+
+/**
+ * A stored image as a cover a platform takes: JPEG, at most 1280 px wide — within YouTube's
+ * thumbnail limits (JPEG/PNG, 2 MB) whatever the original is.
+ */
+export function coverUrl(publicUrl: string) {
+  const { origin, path } = parts(publicUrl);
+  return `${origin}/cdn-cgi/image/width=1280,fit=scale-down,format=jpeg,quality=85${path}`;
+}

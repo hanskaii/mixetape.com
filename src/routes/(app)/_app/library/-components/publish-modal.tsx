@@ -178,6 +178,12 @@ const styles = stylex.create({
     borderColor: colors.primary,
     boxShadow: `0 0 0 1px ${colors.primary}`,
   },
+  channelBlocked: {
+    backgroundColor: `color-mix(in oklab, ${colors.destructive} 8%, transparent)`,
+    borderColor: colors.destructive,
+    boxShadow: `0 0 0 1px ${colors.destructive}`,
+  },
+  flag: { display: "inline-flex", flexShrink: 0 },
   channelRow: { alignItems: "center", display: "flex", gap: "0.625rem" },
   channelName: {
     flexGrow: 1,
@@ -206,10 +212,8 @@ const styles = stylex.create({
     borderColor: colors.primary,
     color: colors.primaryForeground,
   },
-  note: { alignItems: "flex-start", display: "flex", fontSize: "0.6875rem", gap: "0.25rem" },
   problem: { color: colors.destructive },
   warning: { color: colors.editorial },
-  noteIcon: { flexShrink: 0, marginTop: "0.125rem" },
   quiet: {
     alignItems: "center",
     color: colors.mutedForeground,
@@ -342,6 +346,7 @@ export function PublishModal({
   retentionDays,
   onClose,
   onPublished,
+  images,
 }: {
   files: FileView[];
   groupId?: string;
@@ -352,6 +357,8 @@ export function PublishModal({
   retentionDays: number;
   onClose: () => void;
   onPublished: () => void;
+  /** The library's images, for choosing a cover. */
+  images: FileView[];
 }) {
   // What the dialog opened with; it does not follow later changes to the draft.
   const [start] = useState(() => {
@@ -380,6 +387,11 @@ export function PublishModal({
   const planned = useRef("");
 
   const singleVideo = files.length === 1 && files[0].kind === "video";
+  // A cover can come from the images being published, then from the rest of the library.
+  const coverImages = [
+    ...files.filter((file) => file.kind === "image"),
+    ...images.filter((image) => !files.some((file) => file.id === image.id)),
+  ];
   const metadata = useMemo(
     () => ({ ...start.shared, platforms: overrides }),
     [start.shared, overrides],
@@ -454,6 +466,11 @@ export function PublishModal({
 
   const chosenRows = chosen.flatMap((id) => rows.get(id) ?? []);
   const ready = chosenRows.filter((row) => row.ready);
+  const blockedRows = chosenRows.filter((row) => !row.ready);
+  // A problem a field can fix is said at that field.
+  const titleProblem = blockedRows
+    .flatMap((row) => row.problems)
+    .find((problem) => /\btitle\b/i.test(problem));
   const chosenPlatforms = platforms.filter((platform) =>
     chosenRows.some((row) => row.provider === platform.id),
   );
@@ -654,13 +671,21 @@ export function PublishModal({
                   {fitting.map((account) => {
                     const row = rows.get(account.id)!;
                     const on = chosenSet.has(account.id);
+                    const blocked = on && !row.ready;
+                    // The card stays one line: what stops it is said by the field that fixes
+                    // it and in the footer; the icon's tooltip says it too.
                     return (
                       <button
                         key={account.id}
                         type="button"
                         aria-pressed={on}
+                        title={blocked ? row.problems.join("\n") : undefined}
                         onClick={() => toggle(account.id)}
-                        {...stylex.props(styles.channel, on && styles.channelOn)}
+                        {...stylex.props(
+                          styles.channel,
+                          on && styles.channelOn,
+                          blocked && styles.channelBlocked,
+                        )}
                       >
                         <span {...stylex.props(styles.channelRow)}>
                           <ChannelAvatar
@@ -670,25 +695,29 @@ export function PublishModal({
                             size="sm"
                           />
                           <span {...stylex.props(styles.channelName)}>{account.name}</span>
+                          {row.warnings.length > 0 && (
+                            <span
+                              title={row.warnings.join("\n")}
+                              aria-label={row.warnings.join(". ")}
+                              {...stylex.props(styles.warning, styles.flag)}
+                            >
+                              <Warning size={14} />
+                            </span>
+                          )}
                           <Badge variant="secondary">{row.label}</Badge>
-                          <span {...stylex.props(styles.tick, on && styles.tickOn)}>
-                            <Check size={11} weight="bold" />
-                          </span>
+                          {blocked ? (
+                            <WarningCircle
+                              size={20}
+                              weight="fill"
+                              aria-label={row.problems.join(". ")}
+                              {...stylex.props(styles.problem, styles.flag)}
+                            />
+                          ) : (
+                            <span {...stylex.props(styles.tick, on && styles.tickOn)}>
+                              <Check size={11} weight="bold" />
+                            </span>
+                          )}
                         </span>
-                        {on &&
-                          row.problems.map((problem) => (
-                            <span key={problem} {...stylex.props(styles.note, styles.problem)}>
-                              <WarningCircle weight="fill" {...stylex.props(styles.noteIcon)} />
-                              {problem}
-                            </span>
-                          ))}
-                        {on &&
-                          row.warnings.map((warning) => (
-                            <span key={warning} {...stylex.props(styles.note, styles.warning)}>
-                              <Warning {...stylex.props(styles.noteIcon)} />
-                              {warning}
-                            </span>
-                          ))}
                       </button>
                     );
                   })}
@@ -727,9 +756,19 @@ export function PublishModal({
             <section {...stylex.props(styles.section)}>
               <Heading>Words</Heading>
               {showTitle && (
-                <Field label="Title" hint={titleHint}>
+                <Field
+                  label="Title"
+                  hint={
+                    titleProblem ? (
+                      <span {...stylex.props(styles.problem)}>{titleProblem}</span>
+                    ) : (
+                      titleHint
+                    )
+                  }
+                >
                   <Input
                     value={title}
+                    aria-invalid={Boolean(titleProblem)}
                     placeholder="The headline"
                     onChange={(event) => setTitle(event.target.value)}
                   />
@@ -778,6 +817,7 @@ export function PublishModal({
                   }))}
                 />
                 <PlatformForm
+                  images={coverImages}
                   key={activeTab.id}
                   fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
                   values={overrides[activeTab.id] ?? {}}
@@ -844,10 +884,10 @@ export function PublishModal({
         <div {...stylex.props(styles.footer)}>
           {error ? (
             <p {...stylex.props(styles.status, styles.problem)}>{error}</p>
-          ) : chosenRows.length > ready.length ? (
-            <p {...stylex.props(styles.status, styles.hint)}>
-              {chosenRows.length - ready.length} need
-              {chosenRows.length - ready.length === 1 ? "s" : ""} something first
+          ) : blockedRows.length ? (
+            <p {...stylex.props(styles.status, styles.problem)}>
+              {blockedRows[0].name} — {blockedRows[0].problems[0]}
+              {blockedRows.length > 1 && ` · ${blockedRows.length - 1} more`}
             </p>
           ) : !ready.length ? (
             <p {...stylex.props(styles.status, styles.hint)}>Choose where it goes</p>

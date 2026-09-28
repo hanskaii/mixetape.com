@@ -11,7 +11,7 @@ import {
 import { ServiceError } from "#/modules/api/errors";
 import { contains, decodeCursor, page } from "#/modules/api/cursor";
 import { isProvider } from "#/modules/social/providers";
-import { deleteFile, fileView } from "#/modules/storage/files.service";
+import { deleteFile, dropEmptyGroups, fileView } from "#/modules/storage/files.service";
 
 /**
  * Groups: files that go out together — a carousel, an album — kept in their order, with the
@@ -136,6 +136,10 @@ async function ownedGroup(userId: string, id: string) {
 async function place(groupId: string, fileIds: string[], { replace = false } = {}) {
   if (replace) await db.delete(mediaGroupFiles).where(eq(mediaGroupFiles.groupId, groupId));
   if (!fileIds.length) return;
+  // Files moving in from other carousels leave them; one left empty ends.
+  const from = await db.query.mediaGroupFiles.findMany({
+    where: inArray(mediaGroupFiles.fileId, fileIds),
+  });
   await db.delete(mediaGroupFiles).where(inArray(mediaGroupFiles.fileId, fileIds));
   const rest = replace
     ? []
@@ -144,6 +148,7 @@ async function place(groupId: string, fileIds: string[], { replace = false } = {
   await db
     .insert(mediaGroupFiles)
     .values(fileIds.map((fileId, index) => ({ groupId, fileId, position: start + index })));
+  await dropEmptyGroups(from.map((link) => link.groupId).filter((id) => id !== groupId));
 }
 
 const clean = (value: string | null | undefined) =>
@@ -225,16 +230,16 @@ export async function addToGroup(userId: string, id: string, fileIds: string[]) 
   return getGroup(userId, id);
 }
 
-/** Takes files out of whatever group they are in; they stay in storage. */
+/** Takes files out of whatever group they are in; they stay in storage. A group left empty goes. */
 export async function ungroupFiles(userId: string, fileIds: string[]) {
   const files = await readyFiles(userId, fileIds);
-  if (files.length)
-    await db.delete(mediaGroupFiles).where(
-      inArray(
-        mediaGroupFiles.fileId,
-        files.map((file) => file.id),
-      ),
-    );
+  if (!files.length) return { ungrouped: 0 };
+  const ids = files.map((file) => file.id);
+  const from = await db.query.mediaGroupFiles.findMany({
+    where: inArray(mediaGroupFiles.fileId, ids),
+  });
+  await db.delete(mediaGroupFiles).where(inArray(mediaGroupFiles.fileId, ids));
+  await dropEmptyGroups(from.map((link) => link.groupId));
   return { ungrouped: files.length };
 }
 

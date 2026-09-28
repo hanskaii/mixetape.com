@@ -1,12 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  FolderSimplePlus,
-  MagnifyingGlass,
-  UploadSimple,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { MagnifyingGlass, UploadSimple, WarningCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -33,6 +28,7 @@ import { GroupBand } from "./-components/group-band";
 import { Masonry } from "./-components/masonry";
 import { PublishModal, type PublishDraft } from "./-components/publish-modal";
 import { SelectionBar } from "./-components/selection-bar";
+import { setStackDragImage } from "./-lib/drag-image";
 import { useUploads } from "./-lib/use-uploads";
 
 export const Route = createFileRoute("/(app)/_app/library/")({
@@ -316,6 +312,7 @@ function LibraryPage() {
         accounts={accounts}
         brands={brands}
         platforms={platforms}
+        images={list.files.filter((file) => file.kind === "image")}
         retentionDays={retentionDays}
         onClose={closeModal}
         onPublished={() => {
@@ -371,16 +368,12 @@ function LibraryPage() {
     );
   };
 
-  const emptyGroup = () =>
-    attempt(async () => {
-      const group = await createGroupFromFiles({ data: { fileIds: [] } });
-      setKind("all");
-      setExpanded(group.id);
-    });
-
   const dragStart = (file: FileView, event: React.DragEvent) => {
     const ids = order.has(file.id) ? selected : [file.id];
     event.dataTransfer.setData(FILES_TYPE, JSON.stringify(ids));
+    // The grabbed file on top of the stack the pointer carries.
+    const others = ids.filter((id) => id !== file.id).flatMap((id) => filesById.get(id) ?? []);
+    setStackDragImage(event, [file, ...others]);
     event.dataTransfer.effectAllowed = "move";
     setDragging(true);
   };
@@ -501,9 +494,6 @@ function LibraryPage() {
           description="Drop your videos and images here. Put what goes out together in a carousel, then publish it to every channel it fits."
           actions={
             <>
-              <Button size="sm" variant="outline" onClick={() => void emptyGroup()}>
-                <FolderSimplePlus /> New carousel
-              </Button>
               <Button size="sm" onClick={() => input.current?.click()}>
                 <UploadSimple /> Upload
               </Button>
@@ -569,7 +559,10 @@ function LibraryPage() {
                       <GroupBand
                         key={open.id}
                         group={open}
-                        onCollapse={() => setExpanded(null)}
+                        // Only if it is still the open one: a click on another carousel opens that.
+                        onCollapse={() =>
+                          setExpanded((current) => (current === open.id ? null : current))
+                        }
                         onPublish={(current) => publish(current.files, current, current.id)}
                         onChanged={() => void refresh()}
                         onDragging={setDragFrom}
@@ -582,7 +575,7 @@ function LibraryPage() {
                 ) : (
                   <p {...stylex.props(styles.nothing)}>
                     {kind === "group" && !words
-                      ? "No carousel yet. Select files and press Carousel, or drag them onto New carousel."
+                      ? "No carousel yet. Select files and press Carousel, or drag them onto New carousel at the bottom."
                       : "Nothing matches."}
                   </p>
                 )}

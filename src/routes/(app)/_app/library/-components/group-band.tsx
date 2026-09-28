@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
-  ArrowSquareOut,
   CaretUp,
   DotsThree,
   PaperPlaneTilt,
@@ -20,9 +19,10 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import type { GroupView } from "#/modules/library/groups.service";
-import { saveGroup, ungroupFiles } from "#/modules/library/library.fn";
+import { saveGroup } from "#/modules/library/library.fn";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
+import { setStackDragImage } from "../-lib/drag-image";
 import { formatDuration, selectionSummary } from "../-lib/format";
 import { FILES_TYPE, FROM_GROUP_TYPE } from "./group-card";
 import { Masonry } from "./masonry";
@@ -227,6 +227,21 @@ export function GroupBand({
     band.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, []);
 
+  // A click anywhere else closes it — but not one in a menu, dialog, toolbar or toast it
+  // opened. A click, not a press, so dragging files in from the grid keeps it open.
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      const at = event.target;
+      if (!(at instanceof Element) || !at.isConnected) return;
+      if (band.current?.contains(at)) return;
+      if (at.closest('[role="dialog"], [role="menu"], [role="toolbar"], [data-sonner-toaster]'))
+        return;
+      onCollapse();
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [onCollapse]);
+
   const ids = files.map((file) => file.id);
 
   /** Puts `moved` at `index` (counted in the current order) and saves the new order. */
@@ -239,13 +254,6 @@ export function GroupBand({
     const known = new Map(files.map((file) => [file.id, file]));
     setFiles(order.flatMap((id) => known.get(id) ?? []));
     await saveGroup({ data: { id: group.id, fileIds: order } });
-    onChanged();
-  };
-
-  const takeOut = async (fileIds: string[]) => {
-    setFiles((current) => current.filter((file) => !fileIds.includes(file.id)));
-    setPicked([]);
-    await ungroupFiles({ data: { fileIds } });
     onChanged();
   };
 
@@ -268,7 +276,6 @@ export function GroupBand({
   const accepts = (event: React.DragEvent) =>
     event.dataTransfer.types.includes(FILES_TYPE) || event.dataTransfer.types.includes("Files");
 
-  const pickedHere = picked.filter((id) => ids.includes(id));
   const tiles = files.map((file, index) => ({ file, index }));
 
   return (
@@ -332,11 +339,6 @@ export function GroupBand({
       </div>
 
       <div {...stylex.props(styles.actions)}>
-        {pickedHere.length > 0 && (
-          <Button size="xs" variant="outline" onClick={() => void takeOut(pickedHere)}>
-            <ArrowSquareOut /> Take out {pickedHere.length}
-          </Button>
-        )}
         <Button
           size="icon-xs"
           variant="ghost"
@@ -422,8 +424,13 @@ export function GroupBand({
                   event.currentTarget.click();
                 }}
                 onDragStart={(event) => {
-                  const dragged = on ? picked : [file.id];
+                  // Picked files go in the carousel's order, the grabbed one first on the stack.
+                  const dragged = on ? ids.filter((id) => picked.includes(id)) : [file.id];
                   event.dataTransfer.setData(FILES_TYPE, JSON.stringify(dragged));
+                  setStackDragImage(event, [
+                    file,
+                    ...files.filter((other) => other.id !== file.id && dragged.includes(other.id)),
+                  ]);
                   event.dataTransfer.setData(FROM_GROUP_TYPE, group.id);
                   event.dataTransfer.effectAllowed = "move";
                   setMoving(dragged);
@@ -468,7 +475,7 @@ export function GroupBand({
         <p {...stylex.props(styles.empty)}>Drop files here</p>
       )}
       <p {...stylex.props(styles.hint)}>
-        Drag to reorder · drag a file out onto the grid to take it out · click files to pick several
+        Drag to reorder · drag files out onto the grid to take them out · click to pick several
       </p>
     </div>
   );

@@ -280,6 +280,19 @@ async function postsUsing(userId: string, key: string, statuses: string[]) {
   return rows.length;
 }
 
+/**
+ * Deletes the groups (carousels) among these that no longer hold a file — a carousel is its
+ * files, so the last one leaving ends it.
+ */
+export async function dropEmptyGroups(groupIds: Iterable<string>) {
+  for (const id of new Set(groupIds)) {
+    const left = await db.query.mediaGroupFiles.findFirst({
+      where: eq(mediaGroupFiles.groupId, id),
+    });
+    if (!left) await db.delete(mediaGroups).where(eq(mediaGroups.id, id));
+  }
+}
+
 async function remove(file: MediaFile) {
   await deleteUserFile(file.userId, file.key);
   await db.delete(mediaFiles).where(eq(mediaFiles.id, file.id));
@@ -303,7 +316,9 @@ export async function deleteFile(userId: string, idOrUrl: string) {
       `The file is still used by ${pending} post${pending > 1 ? "s" : ""} not yet sent`,
       409,
     );
+  const group = await groupOf(file.id);
   await remove(file);
+  if (group) await dropEmptyGroups([group]);
   return { deleted: true, url: `r2://${file.key}` };
 }
 
@@ -326,12 +341,7 @@ export async function cleanUpAfterPublish(postId: string) {
     await remove(file);
     deleted++;
   }
-  if (post.groupId) {
-    const left = await db.query.mediaGroupFiles.findFirst({
-      where: eq(mediaGroupFiles.groupId, post.groupId),
-    });
-    if (!left) await db.delete(mediaGroups).where(eq(mediaGroups.id, post.groupId));
-  }
+  if (post.groupId) await dropEmptyGroups([post.groupId]);
   return { deleted };
 }
 
@@ -359,11 +369,6 @@ export async function expireFiles(now = Date.now(), batch = 200) {
     await remove(file);
     deleted++;
   }
-  for (const id of groups) {
-    const left = await db.query.mediaGroupFiles.findFirst({
-      where: eq(mediaGroupFiles.groupId, id),
-    });
-    if (!left) await db.delete(mediaGroups).where(eq(mediaGroups.id, id));
-  }
+  await dropEmptyGroups(groups);
   return { deleted };
 }
