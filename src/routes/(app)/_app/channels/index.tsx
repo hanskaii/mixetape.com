@@ -1,9 +1,24 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import * as stylex from "@stylexjs/stylex";
-import { Check, Plus, Trash, WarningCircle } from "@phosphor-icons/react";
+import {
+  ArrowSquareOut,
+  ArrowsClockwise,
+  Check,
+  DotsThree,
+  Plus,
+  LinkBreak,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import {
   Empty,
   Notice,
@@ -18,6 +33,7 @@ import { getChannelsData, removeAccount } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
 import { ConnectPlatformModal } from "./-components/connect-platform-modal";
 import { PlatformLogo } from "./-components/platform-logo";
+import { channelUrl } from "./-lib/channel-url";
 
 export const Route = createFileRoute("/(app)/_app/channels/")({
   validateSearch: z.object({ connected: z.string().optional(), error: z.string().optional() }),
@@ -145,14 +161,13 @@ function ChannelsPage() {
                         Reconnect
                       </Button>
                     )}
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Disconnect ${account.name}`}
-                      onClick={() => disconnect(account.id, account.name)}
-                    >
-                      <Trash />
-                    </Button>
+                    <ChannelMenu
+                      name={account.name}
+                      platform={group.name}
+                      url={channelUrl(account)}
+                      onRefresh={() => connect(account.provider, account.name)}
+                      onDisconnect={() => disconnect(account.id, account.name)}
+                    />
                   </span>
                 </Row>
               ))}
@@ -165,5 +180,47 @@ function ChannelsPage() {
         </Panel>
       )}
     </Page>
+  );
+}
+
+/** A channel's actions: see it on its platform, sign in to it again, or remove it. */
+function ChannelMenu({
+  name,
+  platform,
+  url,
+  onRefresh,
+  onDisconnect,
+}: {
+  name: string;
+  platform: string;
+  url: string | null;
+  onRefresh: () => void;
+  onDisconnect: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button size="icon-sm" variant="ghost" aria-label={`Actions for ${name}`}>
+            <DotsThree weight="bold" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="min-w-52">
+        {url && (
+          <DropdownMenuItem render={<a href={url} target="_blank" rel="noreferrer" />}>
+            <ArrowSquareOut /> View on {platform}
+          </DropdownMenuItem>
+        )}
+        {/* Opens the platform's consent again: new tokens, and any permission it now lacks. */}
+        <DropdownMenuItem onClick={onRefresh}>
+          <ArrowsClockwise /> Refresh connection
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={onDisconnect}>
+          <LinkBreak /> Disconnect channel
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
