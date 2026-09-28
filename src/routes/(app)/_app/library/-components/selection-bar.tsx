@@ -37,7 +37,7 @@ export function SelectionBar({
 }) {
   if (!files.length) return null;
   return (
-    <div className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+    <div className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 md:left-60">
       <div className="flex max-w-full items-center gap-1.5 overflow-x-auto rounded-2xl bg-card p-1.5 pl-3 shadow-xl ring-1 ring-border animate-in fade-in slide-in-from-bottom-2 duration-200">
         <div className="mr-1 min-w-0 shrink-0">
           <p className="text-[13px] font-semibold leading-tight">{files.length} selected</p>

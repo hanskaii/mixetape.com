@@ -11,7 +11,7 @@ export type Field = {
   key: string;
   label: string;
   type: "text" | "textarea" | "number" | "boolean" | "select" | "tags";
-  options?: string[];
+  options?: { value: string; label: string }[];
   hint?: string;
   maxLength?: number;
   /** The platform's own caption field: a per-platform caption, defaulting to the shared one. */
@@ -33,6 +33,8 @@ const VIDEO_ONLY = new Set([
 type Property = {
   type?: string;
   enum?: string[];
+  /** Named choices for a free field (YouTube's categories), shown as a list in the form. */
+  "x-options"?: { value: string; label: string }[];
   description?: string;
   maxLength?: number;
   items?: { type?: string };
@@ -82,7 +84,17 @@ export function platformFields(provider: string): Field[] {
       ...(caption && { caption: true }),
       ...(VIDEO_ONLY.has(key) && { videoOnly: true }),
     };
-    if (property.enum) fields.push({ ...base, type: "select", options: property.enum });
+    const named = property["x-options"];
+    if (named) fields.push({ ...base, hint: undefined, type: "select", options: named });
+    else if (property.enum)
+      fields.push({
+        ...base,
+        type: "select",
+        options: property.enum.map((value) => ({
+          value,
+          label: value.replace(/_/g, " ").toLowerCase(),
+        })),
+      });
     else if (property.type === "boolean") fields.push({ ...base, type: "boolean" });
     else if (property.type === "number") fields.push({ ...base, type: "number" });
     else if (property.type === "array" && property.items?.type === "string")

@@ -1,6 +1,6 @@
 import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as groups from "./groups.service";
-import * as publishing from "./schedule.service";
+import * as publishing from "./publish.service";
 
 /**
  * The library for agents: groups — files that go out together, with the words drafted for

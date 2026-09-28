@@ -9,7 +9,7 @@ import { PlatformLogo } from "#/components/ui/platform-logo";
 import { Textarea } from "#/components/ui/textarea";
 import type { JsonValue } from "#/database/schema";
 import { planSelection, publishSelection } from "#/modules/library/library.fn";
-import type { PlanRow } from "#/modules/library/schedule.service";
+import type { PlanRow } from "#/modules/library/publish.service";
 import type { Field } from "#/modules/social/fields";
 import type { FileView } from "#/modules/storage/files.service";
 import { FileThumb } from "./file-thumb";

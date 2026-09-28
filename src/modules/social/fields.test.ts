@@ -15,7 +15,15 @@ describe("a platform's form", () => {
     expect(fields.find((field) => field.key === "privacyStatus")).toMatchObject({
       type: "select",
       label: "Privacy",
-      options: ["public", "unlisted", "private"],
+      options: [
+        { value: "public", label: "public" },
+        { value: "unlisted", label: "unlisted" },
+        { value: "private", label: "private" },
+      ],
+    });
+    expect(fields.find((field) => field.key === "category")).toMatchObject({
+      type: "select",
+      options: expect.arrayContaining([{ value: "27", label: "Education" }]),
     });
     expect(fields.find((field) => field.key === "tags")?.type).toBe("tags");
     expect(fields.find((field) => field.key === "madeForKids")?.type).toBe("boolean");

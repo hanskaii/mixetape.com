@@ -7,7 +7,7 @@ import { getProvider } from "#/modules/social/providers";
 import * as social from "#/modules/social/social.service";
 import * as files from "#/modules/storage/files.service";
 import * as groups from "./groups.service";
-import * as publishing from "./schedule.service";
+import * as publishing from "./publish.service";
 
 /**
  * Server functions behind the Library page — the same services the library and storage

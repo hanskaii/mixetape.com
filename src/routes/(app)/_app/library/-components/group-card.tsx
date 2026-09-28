@@ -7,7 +7,7 @@ import { selectionSummary } from "../-lib/format";
 export const FILES_TYPE = "application/x-mixetape-files";
 
 /** Whether a drag carries files — from the library, or from the computer. */
-export const carriesFiles = (event: React.DragEvent) =>
+const carriesFiles = (event: React.DragEvent) =>
   event.dataTransfer.types.includes(FILES_TYPE) || event.dataTransfer.types.includes("Files");
 
 function Cover({ group }: { group: GroupView }) {

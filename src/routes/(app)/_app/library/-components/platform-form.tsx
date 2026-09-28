@@ -80,8 +80,8 @@ export function PlatformForm({
               >
                 <option value="">Default</option>
                 {field.options?.map((option) => (
-                  <option key={option} value={option}>
-                    {option.replace(/_/g, " ").toLowerCase()}
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>

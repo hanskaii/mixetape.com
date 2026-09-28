@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("#/database/index", () => ({ db: {} }));
 
-import { postFields, postLabel } from "./schedule.service";
+import { postFields, postLabel } from "./publish.service";
 import type { FileView } from "#/modules/storage/files.service";
 
 const item = {

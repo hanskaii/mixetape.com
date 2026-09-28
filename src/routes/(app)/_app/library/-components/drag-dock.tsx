@@ -45,7 +45,7 @@ export function DragDock({
   onMove: (groupId: string, fileIds: string[]) => void;
 }) {
   return (
-    <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+    <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 md:left-60">
       <div className="flex max-w-full items-center gap-2 overflow-x-auto rounded-2xl bg-card p-2 shadow-2xl ring-1 ring-border animate-in fade-in slide-in-from-bottom-3 duration-150">
         <Target onDrop={onNewGroup}>
           <FolderSimplePlus size={16} /> New group

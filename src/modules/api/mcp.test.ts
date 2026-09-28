@@ -22,7 +22,7 @@ vi.mock("../storage/files.service", () => ({
   getFile: vi.fn(),
   deleteFile: vi.fn(),
 }));
-vi.mock("../library/schedule.service", () => ({
+vi.mock("../library/publish.service", () => ({
   planPost: vi.fn(),
   publishPost: vi.fn(),
   groupSource: vi.fn(),
@@ -53,7 +53,7 @@ import * as platform from "../social/platform.service";
 import * as social from "../social/social.service";
 import * as files from "../storage/files.service";
 import * as groups from "../library/groups.service";
-import * as publishing from "../library/schedule.service";
+import * as publishing from "../library/publish.service";
 import { ServiceError } from "./errors";
 import type { Caller } from "./api-keys.service";
 import { handleMessage } from "./mcp";

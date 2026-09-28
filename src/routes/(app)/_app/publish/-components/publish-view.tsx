@@ -101,6 +101,13 @@ function zoneLabel(zone: string) {
   return zone === "UTC" ? "UTC" : (zone.split("/").at(-1)?.replaceAll("_", " ") ?? zone);
 }
 
+/** What a post is, when it is more than a video: "Carousel · 4", "Photo". */
+function postFormat(post: Post) {
+  const media = post.media ?? [];
+  if (media.length > 1) return `Carousel · ${media.length}`;
+  return media[0]?.kind === "image" ? "Photo" : null;
+}
+
 function postTitle(post: Post) {
   return (post.metadata as { title?: string } | null)?.title ?? post.caption ?? "Untitled post";
 }
@@ -243,6 +250,7 @@ export function PublishView({ accounts, posts }: PublishData) {
             <p className="truncate text-sm font-medium text-foreground">{postTitle(post)}</p>
             <p className="truncate text-xs text-muted-foreground">
               {account?.name ?? "Channel unavailable"}
+              {postFormat(post) ? ` · ${postFormat(post)}` : ""}
               {post.error ? ` · ${post.error}` : ""}
             </p>
           </div>
