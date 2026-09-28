@@ -41,15 +41,30 @@ const href = (path: string) => withBase(path, import.meta.env.BASE_URL);
 
 <header class="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg backdrop-saturate-150">
   <div class="mx-auto flex items-center justify-between gap-3 h-14 px-4 lg:px-6">
-    <div class="flex items-center gap-4 min-w-0">
-      <a href={href("/introduction")} class="flex shrink-0 items-center gap-2.5 no-underline" aria-label={`${config.title} docs`}>
-        <span class="text-[1.3rem] font-bold tracking-[-0.07em] text-foreground">{config.title}</span>
-        <span class="rounded-md border border-border-strong px-1.5 py-0.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+    <div class="flex items-center gap-3 min-w-0">
+      <!-- As wide as the sidebar (less the header's padding, the gap and the nav's margin), so
+           the section links start over the content column and their divider meets the
+           sidebar's edge. -->
+      <a
+        href={href("/introduction")}
+        aria-label={`${config.title} docs`}
+        class="group flex items-center gap-2 no-underline lg:w-[calc(var(--nb-sidebar-width)-3.25rem-1px)] lg:shrink-0"
+      >
+        <span
+          aria-hidden="true"
+          class="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-brand text-[13px] font-extrabold tracking-[-0.06em] text-brand-foreground"
+        >
+          m
+        </span>
+        <span class="text-[1.2rem] font-bold leading-none tracking-[-0.07em] text-foreground">
+          {config.title}
+        </span>
+        <span class="text-foreground/70 border-border-strong hidden rounded-md border px-1.5 py-0.5 text-[11px] leading-none font-semibold tracking-[0.08em] uppercase sm:inline-block">
           Docs
         </span>
       </a>
 
-      <nav aria-label="Docs sections" class="hidden md:flex items-center gap-1 pl-4 border-l border-border h-6 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav aria-label="Sections" class="border-border ml-4 hidden h-6 min-w-0 items-center gap-1 overflow-x-auto border-l pl-4 md:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {NAV.map((item) => {
           const active = isActive(item.match);
           return (
@@ -57,10 +72,10 @@ const href = (path: string) => withBase(path, import.meta.env.BASE_URL);
               href={href(item.href)}
               aria-current={active ? "page" : undefined}
               class:list={[
-                "px-2.5 py-1 rounded-md text-[0.875rem] font-medium no-underline transition-colors shrink-0 whitespace-nowrap",
+                "rounded-md px-2 py-1 text-[0.8125rem] font-medium no-underline transition-colors shrink-0 whitespace-nowrap",
                 active
                   ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/70",
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
               ]}
             >
               {item.label}
