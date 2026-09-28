@@ -6,7 +6,6 @@ import {
   DotsThree,
   PaperPlaneTilt,
   PencilSimpleLine,
-  Plus,
   Robot,
   Stack,
   Trash,
@@ -167,31 +166,16 @@ const styles = stylex.create({
     right: "0.375rem",
     textShadow: "0 1px 2px rgb(0 0 0 / 0.6)",
   },
-  add: {
-    alignItems: "center",
-    backgroundColor: "transparent",
-    borderColor: { default: colors.border, ":hover": colors.mutedForeground },
-    borderRadius: radius.xl,
-    borderStyle: "dashed",
-    borderWidth: "2px",
-    color: { default: colors.mutedForeground, ":hover": colors.foreground },
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    fontSize: "0.75rem",
-    gap: "0.375rem",
-    height: "100%",
-    justifyContent: "center",
-    paddingInline: "1rem",
-    width: "100%",
+  empty: {
+    color: colors.mutedForeground,
+    fontSize: "0.8125rem",
+    margin: 0,
+    paddingBlock: "2.5rem",
+    textAlign: "center",
   },
-  addOver: { borderColor: colors.primary, color: colors.foreground },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
-  hidden: { display: "none" },
   menu: { minWidth: "14rem" },
 });
-
-type BandTile = { type: "file"; file: FileView; index: number } | { type: "add" };
 
 const fileHeight = (file: FileView, column: number) =>
   column * Math.min(Math.max(file.width && file.height ? file.height / file.width : 1, 0.56), 1.78);
@@ -227,7 +211,6 @@ export function GroupBand({
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState(group.title ?? "");
   const band = useRef<HTMLDivElement>(null);
-  const input = useRef<HTMLInputElement>(null);
 
   // The server's order wins once it answers.
   useEffect(() => {
@@ -283,10 +266,7 @@ export function GroupBand({
     event.dataTransfer.types.includes(FILES_TYPE) || event.dataTransfer.types.includes("Files");
 
   const pickedHere = picked.filter((id) => ids.includes(id));
-  const tiles: BandTile[] = [
-    ...files.map((file, index) => ({ type: "file" as const, file, index })),
-    { type: "add" as const },
-  ];
+  const tiles = files.map((file, index) => ({ file, index }));
 
   return (
     <div
@@ -385,106 +365,79 @@ export function GroupBand({
       </div>
 
       {/* The same masonry as the grid around it, in the carousel's order. */}
-      <Masonry
-        items={tiles}
-        getKey={(tile) => (tile.type === "file" ? tile.file.id : "add")}
-        height={(tile, column) =>
-          tile.type === "file" ? fileHeight(tile.file, column) : Math.round(column * 0.6)
-        }
-        render={(tile) => {
-          if (tile.type === "add")
+      {files.length ? (
+        <Masonry
+          items={tiles}
+          getKey={(tile) => tile.file.id}
+          height={(tile, column) => fileHeight(tile.file, column)}
+          render={(tile) => {
+            const { file, index } = tile;
+            const on = picked.includes(file.id);
             return (
-              <button
-                type="button"
-                onClick={() => input.current?.click()}
+              <div
+                role="checkbox"
+                aria-checked={on}
+                aria-label={`${index + 1}. ${file.name}`}
+                tabIndex={0}
+                draggable
+                onClick={() =>
+                  setPicked((current) =>
+                    current.includes(file.id)
+                      ? current.filter((id) => id !== file.id)
+                      : [...current, file.id],
+                  )
+                }
+                onKeyDown={(event) => {
+                  if (event.key !== " " && event.key !== "Enter") return;
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }}
+                onDragStart={(event) => {
+                  const dragged = on ? picked : [file.id];
+                  event.dataTransfer.setData(FILES_TYPE, JSON.stringify(dragged));
+                  event.dataTransfer.setData(FROM_GROUP_TYPE, group.id);
+                  event.dataTransfer.effectAllowed = "move";
+                  setMoving(dragged);
+                  onDragging(group.id);
+                }}
+                onDragEnd={() => {
+                  setMoving([]);
+                  setTarget(null);
+                  onDragging(null);
+                }}
                 onDragOver={(event) => {
                   if (!accepts(event)) return;
                   event.preventDefault();
                   event.stopPropagation();
-                  if (target !== files.length) setTarget(files.length);
+                  // Past the middle of a file means after it.
+                  const box = event.currentTarget.getBoundingClientRect();
+                  const at = event.clientX > box.left + box.width / 2 ? index + 1 : index;
+                  if (at !== target) setTarget(at);
                 }}
-                onDrop={(event) => dropAt(event, files.length)}
-                {...stylex.props(styles.add, target === files.length && styles.addOver)}
+                onDrop={(event) => dropAt(event, target ?? index)}
+                {...stylex.props(
+                  styles.item,
+                  on && styles.picked,
+                  moving.includes(file.id) && styles.moving,
+                )}
               >
-                <Plus size={18} />
-                {files.length ? "Drop or add files" : "Drop files here"}
-              </button>
+                <MediaImage file={file} width={480} />
+                <span {...stylex.props(styles.number)}>{index + 1}</span>
+                {file.kind === "video" && file.durationMs ? (
+                  <span {...stylex.props(styles.length)}>{formatDuration(file.durationMs)}</span>
+                ) : null}
+                {/* Where a dropped file would land: before this one, or after it. */}
+                {target === index && <span {...stylex.props(styles.insert, styles.insertBefore)} />}
+                {target === index + 1 && index === files.length - 1 && (
+                  <span {...stylex.props(styles.insert, styles.insertAfter)} />
+                )}
+              </div>
             );
-          const { file, index } = tile;
-          const on = picked.includes(file.id);
-          return (
-            <div
-              role="checkbox"
-              aria-checked={on}
-              aria-label={`${index + 1}. ${file.name}`}
-              tabIndex={0}
-              draggable
-              onClick={() =>
-                setPicked((current) =>
-                  current.includes(file.id)
-                    ? current.filter((id) => id !== file.id)
-                    : [...current, file.id],
-                )
-              }
-              onKeyDown={(event) => {
-                if (event.key !== " " && event.key !== "Enter") return;
-                event.preventDefault();
-                event.currentTarget.click();
-              }}
-              onDragStart={(event) => {
-                const dragged = on ? picked : [file.id];
-                event.dataTransfer.setData(FILES_TYPE, JSON.stringify(dragged));
-                event.dataTransfer.setData(FROM_GROUP_TYPE, group.id);
-                event.dataTransfer.effectAllowed = "move";
-                setMoving(dragged);
-                onDragging(group.id);
-              }}
-              onDragEnd={() => {
-                setMoving([]);
-                setTarget(null);
-                onDragging(null);
-              }}
-              onDragOver={(event) => {
-                if (!accepts(event)) return;
-                event.preventDefault();
-                event.stopPropagation();
-                // Past the middle of a file means after it.
-                const box = event.currentTarget.getBoundingClientRect();
-                const at = event.clientX > box.left + box.width / 2 ? index + 1 : index;
-                if (at !== target) setTarget(at);
-              }}
-              onDrop={(event) => dropAt(event, target ?? index)}
-              {...stylex.props(
-                styles.item,
-                on && styles.picked,
-                moving.includes(file.id) && styles.moving,
-              )}
-            >
-              <MediaImage file={file} width={480} />
-              <span {...stylex.props(styles.number)}>{index + 1}</span>
-              {file.kind === "video" && file.durationMs ? (
-                <span {...stylex.props(styles.length)}>{formatDuration(file.durationMs)}</span>
-              ) : null}
-              {/* Where a dropped file would land: before this one, or after it. */}
-              {target === index && <span {...stylex.props(styles.insert, styles.insertBefore)} />}
-              {target === index + 1 && index === files.length - 1 && (
-                <span {...stylex.props(styles.insert, styles.insertAfter)} />
-              )}
-            </div>
-          );
-        }}
-      />
-      <input
-        ref={input}
-        type="file"
-        multiple
-        accept="video/*,image/*"
-        {...stylex.props(styles.hidden)}
-        onChange={(event) => {
-          if (event.target.files?.length) onUpload([...event.target.files]);
-          event.target.value = "";
-        }}
-      />
+          }}
+        />
+      ) : (
+        <p {...stylex.props(styles.empty)}>Drop files here</p>
+      )}
       <p {...stylex.props(styles.hint)}>
         Drag to reorder · drag a file out onto the grid to take it out · click files to pick several
       </p>
