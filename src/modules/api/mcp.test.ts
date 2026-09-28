@@ -8,6 +8,9 @@ vi.mock("../social/social.service", () => ({
   editPost: vi.fn(),
   cancelPost: vi.fn(),
   retryPost: vi.fn(),
+  beginConnect: vi.fn(),
+  connectResult: vi.fn(),
+  chooseChannels: vi.fn(),
 }));
 vi.mock("../social/platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
 vi.mock("../social/analytics.service", () => ({ accountAnalytics: vi.fn() }));
@@ -33,7 +36,7 @@ import { handleMessage } from "./mcp";
 
 const everything: Caller = {
   userId: "user-1",
-  scopes: ["read", "publish", "manage", "comments", "analytics", "storage"],
+  scopes: ["read", "publish", "manage", "comments", "analytics", "storage", "channels"],
 };
 const publisher: Caller = { userId: "user-1", scopes: ["read", "publish"] };
 
@@ -86,6 +89,9 @@ describe("mixetape MCP", () => {
       "post_comment",
       "reply_to_comment",
       "moderate_comment",
+      "connect_channel",
+      "get_connection",
+      "choose_channels",
       "get_post_analytics",
       "get_account_analytics",
       "create_upload",
@@ -175,5 +181,47 @@ describe("mixetape MCP", () => {
     expect(
       await handleMessage(everything, { jsonrpc: "2.0", id: 3, method: "resources/list" }),
     ).toMatchObject({ error: { code: -32601 } });
+  });
+});
+
+describe("connecting channels over MCP", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("hands the agent a sign-in link, marked as started by an agent", async () => {
+    vi.mocked(social.beginConnect).mockResolvedValue({
+      url: "https://www.facebook.com/v25.0/dialog/oauth?state=s1",
+      state: "s1",
+      expiresAt: "2026-09-28T10:10:00.000Z",
+    });
+    const response = (await call("connect_channel", { platform: "facebook" })) as {
+      result: { content: { text: string }[] };
+    };
+    expect(social.beginConnect).toHaveBeenCalledWith("user-1", "facebook", "agent");
+    expect(JSON.parse(response.result.content[0].text)).toEqual({
+      url: "https://www.facebook.com/v25.0/dialog/oauth?state=s1",
+      state: "s1",
+      expiresAt: "2026-09-28T10:10:00.000Z",
+    });
+  });
+
+  it("adds only the channels the user chose", async () => {
+    vi.mocked(social.chooseChannels).mockResolvedValue({ channels: ["Ruang Work"] });
+    await call("choose_channels", { state: "s1", platformAccountIds: ["page-2"] });
+    expect(social.chooseChannels).toHaveBeenCalledWith("user-1", "s1", ["page-2"]);
+
+    const empty = (await call("choose_channels", { state: "s1", platformAccountIds: [] })) as {
+      result: { isError?: boolean; content: { text: string }[] };
+    };
+    expect(empty.result.isError).toBe(true);
+    expect(empty.result.content[0].text).toBe("Choose at least one channel");
+  });
+
+  it("keeps connecting to keys with the channels permission", async () => {
+    expect(await toolNames(publisher)).not.toContain("connect_channel");
+    const refused = (await call("connect_channel", { platform: "youtube" }, publisher)) as {
+      result: { isError?: boolean };
+    };
+    expect(refused.result.isError).toBe(true);
+    expect(social.beginConnect).not.toHaveBeenCalled();
   });
 });

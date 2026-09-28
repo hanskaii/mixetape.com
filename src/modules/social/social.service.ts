@@ -78,7 +78,10 @@ export async function connectableProviders(): Promise<string[]> {
 
 // ── connecting accounts (OAuth) ────────────────────────────────────────────────
 
-type OAuthState = { userId: string; provider: string };
+/** Who started a connect attempt: the Channels page, or an agent through connect_channel. */
+export type ConnectVia = "workspace" | "agent";
+
+type OAuthState = { userId: string; provider: string; via?: ConnectVia };
 
 /** A channel the consent reached that the user has not connected yet, offered to choose. */
 export type ChannelChoice = {
@@ -115,11 +118,15 @@ export async function startConnect(userId: string, provider: string): Promise<st
  * page can open the URL in a new tab (or show it to be opened anywhere) and then watch the
  * state until the callback has finished — see connectResult and finishConnect.
  */
-export async function beginConnect(userId: string, provider: string) {
+export async function beginConnect(
+  userId: string,
+  provider: string,
+  via: ConnectVia = "workspace",
+) {
   if (!isProvider(provider)) throw new ServiceError(`Unsupported provider: ${provider}`);
   const app = await requiredApp(provider);
   const state = randomToken(24);
-  const payload: OAuthState = { userId, provider };
+  const payload: OAuthState = { userId, provider, via };
   await env.KIT_CACHE.put(`oauth:state:${state}`, JSON.stringify(payload), {
     expirationTtl: OAUTH_STATE_TTL,
   });
@@ -128,7 +135,7 @@ export async function beginConnect(userId: string, provider: string) {
     redirectUri: redirectUri(provider),
     state,
   });
-  return { url, state };
+  return { url, state, expiresAt: new Date(Date.now() + OAUTH_STATE_TTL * 1000).toISOString() };
 }
 
 /**
@@ -139,10 +146,10 @@ export async function beginConnect(userId: string, provider: string) {
 export async function finishConnect(provider: string, code: string, state: string) {
   const resultKey = `oauth:result:${state}`;
   try {
-    const { userId, result } = await completeConnect(provider, code, state);
+    const { userId, via, result } = await completeConnect(provider, code, state);
     const stored: StoredResult = { ...result, userId };
     await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), { expirationTtl: OAUTH_STATE_TTL });
-    return result;
+    return { ...result, via };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not connect the account";
     // A second use of the same callback (e.g. a reload) keeps the first result.
@@ -174,12 +181,16 @@ async function completeConnect(
   provider: string,
   code: string,
   state: string,
-): Promise<{ userId: string; result: Exclude<StoredResult, { status: "error" }> }> {
+): Promise<{
+  userId: string;
+  via: ConnectVia;
+  result: Exclude<StoredResult, { status: "error" }>;
+}> {
   const key = `oauth:state:${state}`;
   const saved = await env.KIT_CACHE.get(key);
   if (!saved) throw new ServiceError("This sign-in link expired — start connecting again", 400);
   await env.KIT_CACHE.delete(key); // one use only
-  const { userId, provider: expected } = JSON.parse(saved) as OAuthState;
+  const { userId, provider: expected, via = "workspace" } = JSON.parse(saved) as OAuthState;
   if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
 
   const app = await requiredApp(provider);
@@ -203,7 +214,7 @@ async function completeConnect(
   const refreshed = await saveAccounts(userId, provider, grant, known, at);
   if (fresh.length <= 1) {
     const added = await saveAccounts(userId, provider, grant, fresh, at);
-    return { userId, result: { status: "done", channels: [...refreshed, ...added] } };
+    return { userId, via, result: { status: "done", channels: [...refreshed, ...added] } };
   }
 
   const pending: Pending = { userId, provider, grant, accounts: fresh, at };
@@ -212,6 +223,7 @@ async function completeConnect(
   });
   return {
     userId,
+    via,
     result: {
       status: "choose",
       refreshed,

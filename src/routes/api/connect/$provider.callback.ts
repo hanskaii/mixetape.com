@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/connect/$provider/callback")({
 
         try {
           const result = await finishConnect(params.provider, code, state);
-          if (result.status === "choose") return done("choose=1");
+          if (result.status === "choose") return done(`choose=1&via=${result.via}`);
           return done(`connected=${encodeURIComponent(result.channels.join(", "))}`);
         } catch (error) {
           return failed(error instanceof Error ? error.message : "Could not connect the account");

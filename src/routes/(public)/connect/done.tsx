@@ -14,6 +14,7 @@ export const Route = createFileRoute("/(public)/connect/done")({
   validateSearch: z.object({
     connected: z.coerce.string().optional(),
     choose: z.coerce.string().optional(),
+    via: z.coerce.string().optional(),
     error: z.coerce.string().optional(),
   }),
   head: () => ({ meta: [{ title: `Connect | ${siteConfig.name}` }] }),
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/(public)/connect/done")({
 });
 
 function ConnectDone() {
-  const { connected, choose, error } = Route.useSearch();
+  const { connected, choose, via, error } = Route.useSearch();
   const ok = (connected !== undefined || choose !== undefined) && !error;
 
   useEffect(() => {
@@ -45,7 +46,9 @@ function ConnectDone() {
           {!ok
             ? (error ?? "The sign-in did not finish.")
             : choose
-              ? "Choose which channels to add in the mixetape window you started from."
+              ? via === "agent"
+                ? "Tell your agent which channels to add — it has the list."
+                : "Choose which channels to add in the mixetape window you started from."
               : `${connected}. You can close this tab — mixetape has already updated.`}
         </p>
         <Button variant="outline" size="sm" render={<Link to="/channels" />}>

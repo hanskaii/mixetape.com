@@ -1,3 +1,4 @@
+import { ServiceError } from "#/modules/api/errors";
 import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as analytics from "./analytics.service";
 import * as platform from "./platform.service";
@@ -10,6 +11,7 @@ const id = (description: string) => ({ type: "string", description });
 const POST_ID = id("mixetape post id (list_posts)");
 const ACCOUNT_ID = id("mixetape account id (list_accounts)");
 const DATE = (what: string) => ({ type: "string", description: `${what}, YYYY-MM-DD` });
+const STATE = id("The state connect_channel returned");
 
 /** Each platform's metadata schema; one platform needs no union. */
 function metadataSchema(pick?: (provider: string) => readonly string[] | undefined) {
@@ -40,7 +42,7 @@ export const socialTools: Tool[] = [
     name: "list_accounts",
     scope: "read",
     description:
-      "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be reconnected on /channels first (also after mixetape asks for new permissions).",
+      "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.",
     inputSchema: object({}),
     annotations: READ_ONLY,
     run: async (userId) =>
@@ -352,6 +354,59 @@ export const socialTools: Tool[] = [
         input.string("status"),
         input.boolean("banAuthor"),
       ),
+  },
+
+  // channels
+  {
+    name: "connect_channel",
+    scope: "channels",
+    description:
+      "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.",
+    inputSchema: object(
+      {
+        platform: {
+          type: "string",
+          enum: PROVIDER_LIST.map((provider) => provider.id),
+          description: "The platform to connect; one mixetape has no app for yet is refused",
+        },
+      },
+      ["platform"],
+    ),
+    run: async (userId, input) => {
+      const started = await social.beginConnect(userId, input.string("platform"), "agent");
+      return { url: started.url, state: started.state, expiresAt: started.expiresAt };
+    },
+  },
+  {
+    name: "get_connection",
+    scope: "channels",
+    description:
+      "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) — ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.",
+    inputSchema: object({ state: STATE }, ["state"]),
+    annotations: READ_ONLY,
+    run: (userId, input) => social.connectResult(userId, input.string("state")),
+  },
+  {
+    name: "choose_channels",
+    scope: "channels",
+    description:
+      "Add the channels the user picked after get_connection answered 'choose'. The choice is held for 10 minutes after the sign-in; channels left out are not connected.",
+    inputSchema: object(
+      {
+        state: STATE,
+        platformAccountIds: {
+          type: "array",
+          items: { type: "string" },
+          description: "platformAccountId of each chosen channel, from get_connection's choices",
+        },
+      },
+      ["state", "platformAccountIds"],
+    ),
+    run: async (userId, input) => {
+      const ids = input.strings("platformAccountIds") ?? [];
+      if (!ids.length) throw new ServiceError("Choose at least one channel");
+      return social.chooseChannels(userId, input.string("state"), ids);
+    },
   },
 
   // analytics
