@@ -274,6 +274,14 @@ const styles = stylex.create({
   actions: { display: "flex", gap: "0.5rem" },
 });
 
+/**
+ * A problem said without the platform's name, which the list already shows:
+ * "YouTube takes one file per post" → "takes one file per post".
+ */
+function reason(problem: string, platform: string) {
+  return problem.replace(new RegExp(`(^|: )${platform} `, "g"), "$1");
+}
+
 const Heading = ({ children }: { children: React.ReactNode }) => (
   <h3 {...stylex.props(styles.heading)}>{children}</h3>
 );
@@ -376,6 +384,15 @@ export function PublishModal({
   const fits = (id: string) => Boolean(rows.get(id)?.fits);
   const fitting = accounts.filter((account) => fits(account.id));
   const unfit = plan ? accounts.filter((account) => !fits(account.id)) : [];
+  // What cannot take the files, told once per platform rather than once per channel.
+  const unfitPlatforms = [...new Set(unfit.map((account) => account.provider))].map((provider) => {
+    const channels = unfit.filter((account) => account.provider === provider);
+    const name = rows.get(channels[0].id)?.platform ?? provider;
+    const reasons = [
+      ...new Set(channels.flatMap((account) => rows.get(account.id)?.problems ?? [])),
+    ].map((problem) => reason(problem, name));
+    return { provider, name, channels: channels.length, reasons };
+  });
   const chosenSet = new Set(chosen);
 
   const toggle = (id: string) =>
@@ -598,18 +615,19 @@ export function PublishModal({
               </p>
             )}
 
-            {unfit.length > 0 && (
+            {unfitPlatforms.length > 0 && (
               <details {...stylex.props(styles.details)}>
                 <summary {...stylex.props(styles.summary)}>
-                  {unfit.length} channel{unfit.length === 1 ? "" : "s"} can't take this
+                  Not for {unfitPlatforms.map((platform) => platform.name).join(", ")}
                 </summary>
                 <ul {...stylex.props(styles.unfitList)}>
-                  {unfit.map((account) => (
-                    <li key={account.id} {...stylex.props(styles.unfit)}>
-                      <PlatformLogo provider={account.provider} size="xs" />
+                  {unfitPlatforms.map((platform) => (
+                    <li key={platform.provider} {...stylex.props(styles.unfit)}>
+                      <PlatformLogo provider={platform.provider} size="xs" />
                       <span>
-                        <span {...stylex.props(styles.strong)}>{account.name}</span> —{" "}
-                        {rows.get(account.id)?.problems[0]}
+                        <span {...stylex.props(styles.strong)}>{platform.name}</span>
+                        {platform.channels > 1 && ` (${platform.channels} channels)`} —{" "}
+                        {platform.reasons.join("; ")}
                       </span>
                     </li>
                   ))}
