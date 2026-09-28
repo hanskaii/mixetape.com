@@ -41,7 +41,7 @@ export function openApiDocument(serverUrl: string) {
         post: {
           operationId: tool.name,
           summary: tool.name,
-          description: `${tool.description}\n\n${permission(tool.scope)} Also available as the MCP tool \`${tool.name}\`.`,
+          description: `${tool.description} ${permission(tool.scope)} Also available as the MCP tool \`${tool.name}\`.`,
           tags: [tool.scope],
           "x-permission": tool.scope,
           requestBody: { required: true, content: json(tool.inputSchema) },
@@ -64,8 +64,9 @@ export function openApiDocument(serverUrl: string) {
     info: {
       title: "mixetape API",
       version: "1.0.0",
+      summary: "Schedule and manage posts on connected social channels.",
       description:
-        "Schedule and manage posts on connected social channels. Every action is also an MCP tool at /mcp, with the same names, inputs and errors. Authenticate with an API key from the workspace: `Authorization: Bearer mxt_…`; each key carries only the permissions it was given.",
+        "Schedule and manage posts on connected social channels — the same actions agents use over MCP.",
     },
     servers: [{ url: serverUrl }],
     security: [{ apiKey: [] }],
@@ -140,7 +141,7 @@ export function openApiDocument(serverUrl: string) {
         post: {
           operationId: "createPostRest",
           summary: "Schedule a post",
-          description: `${findTool("create_post")?.description ?? ""}\n\n${permission("publish")}`,
+          description: `${findTool("create_post")?.description ?? ""} ${permission("publish")}`,
           tags: ["Accounts and posts"],
           requestBody: { required: true, content: json(inputWithout("create_post")) },
           responses: {
@@ -173,7 +174,7 @@ export function openApiDocument(serverUrl: string) {
         patch: {
           operationId: "updatePostRest",
           summary: "Change a scheduled post",
-          description: `${findTool("update_post")?.description ?? ""}\n\n${permission("publish")}`,
+          description: `${findTool("update_post")?.description ?? ""} ${permission("publish")}`,
           tags: ["Accounts and posts"],
           requestBody: { required: true, content: json(inputWithout("update_post", "id")) },
           responses: {
