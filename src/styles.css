@@ -149,6 +149,13 @@ body,
   min-height: 100%;
 }
 
+/* No rubber-band bounce past the top or bottom (macOS trackpads, iOS): it pulled the
+   bordered page column away from the edge and showed a bare strip of background. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   color: var(--foreground);
