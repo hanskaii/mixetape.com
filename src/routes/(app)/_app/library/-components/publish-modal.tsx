@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { Check, CheckCircle, SpinnerGap, Warning, WarningCircle } from "@phosphor-icons/react";
+import { AvatarStack } from "#/components/ui/avatar-stack";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
@@ -111,11 +112,14 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: "1px",
     color: colors.foreground,
+    alignItems: "center",
     cursor: "pointer",
+    display: "inline-flex",
     fontSize: "0.75rem",
     fontWeight: 500,
-    height: "2rem",
-    paddingInline: "0.875rem",
+    gap: "0.5rem",
+    height: "2.25rem",
+    paddingInline: "0.3125rem 0.875rem",
   },
   chipOn: {
     backgroundColor: colors.primary,
@@ -394,6 +398,7 @@ export function PublishModal({
     return { provider, name, channels: channels.length, reasons };
   });
   const chosenSet = new Set(chosen);
+  const accountsById = new Map(accounts.map((account) => [account.id, account]));
 
   const toggle = (id: string) =>
     setChosen((current) =>
@@ -552,6 +557,10 @@ export function PublishModal({
                       onClick={() => toggleBrand(brand)}
                       {...stylex.props(styles.chip, brandOn(brand) && styles.chipOn)}
                     >
+                      <AvatarStack
+                        focusable={false}
+                        channels={fittingOf(brand).flatMap((id) => accountsById.get(id) ?? [])}
+                      />
                       {brand.name}
                     </button>
                   ))}

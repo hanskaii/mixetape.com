@@ -35,6 +35,7 @@ import { getChannelsData, removeAccount, removeBrand } from "#/modules/social/so
 import { siteConfig } from "#/config/site";
 import { BrandModal } from "./-components/brand-modal";
 import { ConnectPlatformModal } from "./-components/connect-platform-modal";
+import { AvatarStack } from "#/components/ui/avatar-stack";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { PlatformLogo } from "#/components/ui/platform-logo";
 import { channelUrl } from "./-lib/channel-url";
@@ -48,8 +49,6 @@ export const Route = createFileRoute("/(app)/_app/channels/")({
 
 const styles = stylex.create({
   actions: { alignItems: "center", display: "flex", gap: "0.25rem" },
-  avatars: { display: "flex", marginInlineEnd: "0.25rem" },
-  stacked: { marginInlineStart: { default: "-0.375rem", ":first-child": 0 } },
 });
 
 function ChannelsPage() {
@@ -227,18 +226,7 @@ function ChannelsPage() {
                     }
                   >
                     <span {...stylex.props(styles.actions)}>
-                      <span {...stylex.props(styles.avatars)}>
-                        {members.slice(0, 5).map((account) => (
-                          <span key={account.id} {...stylex.props(styles.stacked)}>
-                            <ChannelAvatar
-                              provider={account.provider}
-                              avatar={account.avatar}
-                              name={account.name}
-                              size="sm"
-                            />
-                          </span>
-                        ))}
-                      </span>
+                      <AvatarStack channels={members} />
                       <BrandMenu
                         name={brand.name}
                         onEdit={() => editBrand(brand)}

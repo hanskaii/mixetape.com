@@ -45,11 +45,14 @@ export function ChannelAvatar({
   avatar,
   name,
   size = "md",
+  badge = true,
 }: {
   provider: string;
   avatar?: string | null;
   name: string;
   size?: "sm" | "md";
+  /** The platform's mark in the corner; off where the platform is said another way. */
+  badge?: boolean;
 }) {
   return (
     <span {...stylex.props(styles.root, styles[size])}>
@@ -60,9 +63,11 @@ export function ChannelAvatar({
           {name.trim().charAt(0).toUpperCase()}
         </span>
       )}
-      <span aria-hidden="true" {...stylex.props(styles.badge)}>
-        <PlatformLogo provider={provider} size="xs" />
-      </span>
+      {badge && (
+        <span aria-hidden="true" {...stylex.props(styles.badge)}>
+          <PlatformLogo provider={provider} size="xs" />
+        </span>
+      )}
     </span>
   );
 }
