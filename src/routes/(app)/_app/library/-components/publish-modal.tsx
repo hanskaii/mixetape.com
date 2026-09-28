@@ -21,6 +21,7 @@ import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { selectionSummary } from "../-lib/format";
 import { PostPreview } from "./post-preview";
+import { PublishButton } from "./publish-button";
 import { PlatformForm } from "./platform-form";
 
 type Values = Record<string, JsonValue>;
@@ -244,19 +245,6 @@ const styles = stylex.create({
     width: "0.375rem",
   },
   tab: { alignItems: "center", display: "inline-flex", gap: "0.375rem" },
-  when: { alignItems: "center", display: "flex", flex: "1 1 auto", gap: "0.5rem", minWidth: 0 },
-  date: {
-    flex: { default: "1 1 auto", "@media (min-width: 900px)": "0 0 auto" },
-    minWidth: 0,
-    width: "auto",
-  },
-  buttons: {
-    display: "flex",
-    flex: { default: "1 0 100%", "@media (min-width: 640px)": "0 0 auto" },
-    gap: "0.5rem",
-    justifyContent: "flex-end",
-    marginInlineStart: "auto",
-  },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
   clear: {
     alignItems: "center",
@@ -274,6 +262,7 @@ const styles = stylex.create({
   footer: {
     alignItems: "center",
     flexWrap: "wrap",
+    justifyContent: "flex-end",
     borderTopColor: colors.border,
     borderTopStyle: "solid",
     borderTopWidth: "1px",
@@ -283,13 +272,15 @@ const styles = stylex.create({
     paddingBlock: "1rem",
     paddingInline: "1.5rem",
   },
-  // Its own line above the buttons on a phone; beside them on a wide screen.
+  // Its own line above the control on a phone; beside it on a wide screen.
   status: {
-    flexBasis: { default: "100%", "@media (min-width: 900px)": "auto" },
+    flexBasis: { default: "100%", "@media (min-width: 640px)": "auto" },
     fontSize: "0.75rem",
     margin: 0,
-    order: { default: -1, "@media (min-width: 900px)": 0 },
+    marginInlineEnd: { default: 0, "@media (min-width: 640px)": "auto" },
   },
+  // A phone closes the dialog by its edge; the footer keeps to the one control.
+  cancel: { display: { default: "none", "@media (min-width: 640px)": "inline-flex" } },
   push: { marginInlineStart: "auto" },
   done: {
     alignItems: "center",
@@ -830,50 +821,29 @@ export function PublishModal({
         </div>
 
         <div {...stylex.props(styles.footer)}>
-          <div
-            {...stylex.props(styles.when)}
-            title={`${Intl.DateTimeFormat().resolvedOptions().timeZone} — each platform gets it early enough to be ready on time`}
-          >
-            <Segmented
-              label="When"
-              value={when}
-              onChange={setWhen}
-              options={[
-                { value: "now", label: "Now" },
-                { value: "later", label: "Schedule" },
-              ]}
-            />
-            {when === "later" && (
-              <Input
-                type="datetime-local"
-                aria-label="Goes live"
-                value={at}
-                onChange={(event) => setAt(event.target.value)}
-                style={styles.date}
-              />
-            )}
-          </div>
           {error ? (
             <p {...stylex.props(styles.status, styles.problem)}>{error}</p>
-          ) : (
-            chosenRows.length > ready.length && (
-              <p {...stylex.props(styles.status, styles.hint)}>
-                {chosenRows.length - ready.length} need
-                {chosenRows.length - ready.length === 1 ? "s" : ""} something first
-              </p>
-            )
-          )}
-          <div {...stylex.props(styles.buttons)}>
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={submit} disabled={busy || !ready.length || past}>
-              {busy && <SpinnerGap {...stylex.props(styles.spin)} />}
-              {ready.length
-                ? `${when === "now" ? "Publish" : "Schedule"} on ${ready.length} channel${ready.length === 1 ? "" : "s"}`
-                : "Choose channels"}
-            </Button>
-          </div>
+          ) : chosenRows.length > ready.length ? (
+            <p {...stylex.props(styles.status, styles.hint)}>
+              {chosenRows.length - ready.length} need
+              {chosenRows.length - ready.length === 1 ? "s" : ""} something first
+            </p>
+          ) : !ready.length ? (
+            <p {...stylex.props(styles.status, styles.hint)}>Choose where it goes</p>
+          ) : null}
+          <Button variant="outline" onClick={onClose} style={styles.cancel}>
+            Cancel
+          </Button>
+          <PublishButton
+            when={when}
+            at={at}
+            onWhen={setWhen}
+            onAt={setAt}
+            count={ready.length}
+            disabled={busy || !ready.length || past}
+            busy={busy}
+            onSubmit={submit}
+          />
         </div>
       </div>
     </Modal>

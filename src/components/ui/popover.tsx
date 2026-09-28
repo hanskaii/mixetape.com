@@ -40,7 +40,7 @@ const styles = stylex.create({
     transitionProperty: "opacity, transform",
     transitionTimingFunction: "cubic-bezier(0, 0, 0.2, 1)",
     width: "18rem",
-    zIndex: 50,
+    zIndex: 200, // above dialogs (100), so a popover opened inside one shows
   },
   popupHidden: {
     opacity: 0,
@@ -48,7 +48,7 @@ const styles = stylex.create({
   },
   positioner: {
     isolation: "isolate",
-    zIndex: 50,
+    zIndex: 200, // above dialogs (100), so a popover opened inside one shows
   },
   title: {
     fontFamily: "inherit",

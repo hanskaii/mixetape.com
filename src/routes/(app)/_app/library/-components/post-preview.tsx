@@ -234,6 +234,7 @@ const styles = stylex.create({
   // ── Facebook album ──
   album: { display: "grid", gap: "2px", gridTemplateColumns: "1fr 1fr" },
   albumTile: { aspectRatio: "1", overflow: "hidden", position: "relative" },
+  albumWide: { aspectRatio: "2", gridColumn: "span 2" },
   albumMore: {
     alignItems: "center",
     backgroundColor: "rgb(0 0 0 / 0.55)",
@@ -414,7 +415,14 @@ export function PostPreview(props: PreviewProps) {
         {files.length > 1 ? (
           <div {...stylex.props(styles.album)}>
             {files.slice(0, 4).map((file, index) => (
-              <div key={file.id} {...stylex.props(styles.albumTile)}>
+              <div
+                key={file.id}
+                {...stylex.props(
+                  styles.albumTile,
+                  // Three photos: the first across the top, like Facebook lays them out.
+                  files.length === 3 && index === 0 && styles.albumWide,
+                )}
+              >
                 <MediaImage file={file} width={480} />
                 {index === 3 && files.length > 4 && (
                   <span {...stylex.props(styles.albumMore)}>+{files.length - 4}</span>
