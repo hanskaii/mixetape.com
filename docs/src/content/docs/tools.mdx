@@ -57,25 +57,25 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 
 | Tool | Does |
 |---|---|
-| [`create_upload`](/api/storage/create_upload) | A presigned URL to upload a file (up to 5 GB) in one PUT |
+| [`create_upload`](/api/storage/create_upload) | A presigned URL to upload a file (up to 5 GB) in one PUT — into a group with `groupId` |
 | [`finish_upload`](/api/storage/finish_upload) | Finish an upload: mixetape checks the file and reads what it is |
-| [`import_file`](/api/storage/import_file) | Copy a file from a public URL into storage |
-| [`list_files`](/api/storage/list_files) | Files in storage, newest first, with kind, size, orientation and duration — by kind or words in the name; paged |
+| [`import_file`](/api/storage/import_file) | Copy a file from a public URL into storage — into a group with `groupId` |
+| [`list_files`](/api/storage/list_files) | Files in storage, newest first, with kind, size, orientation, duration and group — by kind, name or group; paged |
 | [`get_file`](/api/storage/get_file) | One file, by id or r2:// URL |
-| [`delete_file`](/api/storage/delete_file) | Delete a file no content or pending post still uses |
+| [`delete_file`](/api/storage/delete_file) | Delete a file no pending post still uses |
 
 ## `library`
 
 | Tool | Does |
 |---|---|
-| [`create_item`](/api/library/create_item) | File content: its files, title, caption, description and per-platform metadata |
-| [`update_item`](/api/library/update_item) | Change content; metadata merges field by field |
-| [`get_item`](/api/library/get_item) | One content item with its files |
-| [`list_items`](/api/library/list_items) | Content, newest first — by words in the title, caption or description; paged |
-| [`delete_item`](/api/library/delete_item) | Delete content; its files stay in storage |
-| [`plan_item`](/api/library/plan_item) | Channel by channel: can the content go there, and what would be posted |
+| [`create_group`](/api/library/create_group) | A group: files that go out together, with the title, caption and metadata you drafted |
+| [`update_group`](/api/library/update_group) | Change a group's files, their order or its words; metadata merges field by field |
+| [`get_group`](/api/library/get_group) | One group with its files and the posts published from it |
+| [`list_groups`](/api/library/list_groups) | Groups, newest first — by words in the title, caption or description; paged |
+| [`delete_group`](/api/library/delete_group) | Delete a group; its files stay unless `deleteFiles` |
+| [`plan_group`](/api/library/plan_group) | Channel by channel: can the group go there, as what, and what would be posted |
 
-[`schedule_item`](/api/publish/schedule_item) (permission `publish`) schedules content to brands and channels, one post each.
+[`publish_group`](/api/publish/publish_group) (permission `publish`) publishes a group to brands and channels, one post each.
 
 ## `channels`
 

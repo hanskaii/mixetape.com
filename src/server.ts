@@ -2,6 +2,7 @@ import handler from "@tanstack/react-start/server-entry";
 
 // Workflows are classes exported from the Worker entry; wrangler.jsonc binds this one.
 export { PublishWorkflow } from "./modules/social/publish.workflow";
+import { expireStorage } from "./modules/storage/storage.scheduled";
 
 const VISITOR_ID_COOKIE = "_lo_vid";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 400;
@@ -113,4 +114,6 @@ export default {
       );
     }
   },
+
+  scheduled: expireStorage,
 };

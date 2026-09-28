@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { uploadFile } from "#/modules/storage/browser-upload";
+import type { FileView } from "#/modules/storage/files.service";
 
 export type Upload = {
   id: string;
@@ -12,12 +13,13 @@ export type Upload = {
 const AT_ONCE = 3;
 
 /**
- * A queue of browser uploads, three at a time, each with its progress. `onUploaded` runs
- * whenever one finishes, so the page can refresh its list.
+ * A queue of browser uploads, three at a time, each with its progress — into a group when
+ * one is given. `onUploaded` gets each file as it is ready; `onIdle` runs once the queue is
+ * empty again.
  */
-export function useUploads(onUploaded: () => void) {
+export function useUploads(onUploaded: (file: FileView) => void, onIdle: () => void) {
   const [uploads, setUploads] = useState<Upload[]>([]);
-  const waiting = useRef<{ id: string; file: File }[]>([]);
+  const waiting = useRef<{ id: string; file: File; groupId?: string }[]>([]);
   const running = useRef(0);
 
   const patch = (id: string, changes: Partial<Upload>) =>
@@ -27,15 +29,17 @@ export function useUploads(onUploaded: () => void) {
 
   const next = useCallback(() => {
     while (running.current < AT_ONCE && waiting.current.length) {
-      const { id, file } = waiting.current.shift()!;
+      const { id, file, groupId } = waiting.current.shift()!;
       running.current++;
       patch(id, { status: "uploading" });
-      uploadFile(file, (progress) =>
-        patch(id, progress < 1 ? { progress } : { progress: 1, status: "reading" }),
+      uploadFile(
+        file,
+        (progress) => patch(id, progress < 1 ? { progress } : { progress: 1, status: "reading" }),
+        groupId,
       )
-        .then(() => {
+        .then((uploaded) => {
           patch(id, { status: "done", progress: 1 });
-          onUploaded();
+          onUploaded(uploaded);
         })
         .catch((error: unknown) =>
           patch(id, {
@@ -45,14 +49,15 @@ export function useUploads(onUploaded: () => void) {
         )
         .finally(() => {
           running.current--;
+          if (!running.current && !waiting.current.length) onIdle();
           next();
         });
     }
-  }, [onUploaded]);
+  }, [onUploaded, onIdle]);
 
   const add = useCallback(
-    (files: File[]) => {
-      const queued = files.map((file) => ({ id: crypto.randomUUID(), file }));
+    (files: File[], groupId?: string) => {
+      const queued = files.map((file) => ({ id: crypto.randomUUID(), file, groupId }));
       setUploads((current) => [
         ...current,
         ...queued.map(({ id, file }) => ({

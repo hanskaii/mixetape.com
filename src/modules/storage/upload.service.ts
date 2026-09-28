@@ -34,9 +34,9 @@ export const publicUrl = (key: string) =>
   `${env.MEDIA_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`;
 
 /** A file's place in the bucket: under the owner's folder, which is how ownership is proven. */
-function newKey(userId: string, fileName: string): string {
+function newKey(userId: string, fileName: string, prefix = MEDIA_PREFIX): string {
   const name = fileName.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-120) || "file";
-  return `${MEDIA_PREFIX}${userId}/${Date.now()}-${name}`;
+  return `${prefix}${userId}/${Date.now()}-${name}`;
 }
 
 /** The bucket key of an `r2://` URL or a bare key, if it is the user's. */
@@ -49,14 +49,19 @@ export function ownKey(userId: string, urlOrKey: string): string {
 
 // ── presigned upload ─────────────────────────────────────────────────────────
 
+/**
+ * `prefix` puts the file outside the media folder — avatars/, which the library neither lists
+ * nor expires.
+ */
 export async function createUpload(
   userId: string,
   input: { fileName: string; contentType?: string; size?: number },
+  prefix = MEDIA_PREFIX,
 ) {
   if (input.size !== undefined && input.size > MAX_SIZE)
     throw new ServiceError("One upload is limited to 5 GB");
   const contentType = input.contentType?.trim() || "application/octet-stream";
-  const key = newKey(userId, input.fileName);
+  const key = newKey(userId, input.fileName, prefix);
   const [accessKeyId, secretAccessKey] = await Promise.all([
     requiredSecret("R2_ACCESS_KEY_ID"),
     requiredSecret("R2_SECRET_ACCESS_KEY"),

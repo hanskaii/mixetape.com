@@ -44,7 +44,7 @@ export async function handleMessage(
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "mixetape", version: "1.0.0" },
         instructions:
-          "mixetape schedules videos to connected social channels (YouTube, Facebook Pages, Instagram, Threads, TikTok and Pinterest) and manages them once live: details, playlists, captions, comments and analytics. Start with list_accounts, then create_post; to add a channel, connect_channel gives the user a sign-in link. Local files go to mixetape storage with create_upload, one PUT, then finish_upload; content made ahead of scheduling can be filed in the library (create_item). Times are ISO 8601 with an offset.",
+          "mixetape schedules videos to connected social channels (YouTube, Facebook Pages, Instagram, Threads, TikTok and Pinterest) and manages them once live: details, playlists, captions, comments and analytics. Start with list_accounts, then create_post; to add a channel, connect_channel gives the user a sign-in link. Local files go to mixetape storage with create_upload, one PUT, then finish_upload; an agent can upload into a library group (create_group, groupId) with the words drafted, for the user to publish in a few clicks. Times are ISO 8601 with an offset.",
       });
     case "ping":
       return ok(id, {});

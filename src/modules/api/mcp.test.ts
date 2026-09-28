@@ -23,15 +23,16 @@ vi.mock("../storage/files.service", () => ({
   deleteFile: vi.fn(),
 }));
 vi.mock("../library/schedule.service", () => ({
-  planItem: vi.fn(),
-  scheduleItem: vi.fn(),
+  planPost: vi.fn(),
+  publishPost: vi.fn(),
+  groupSource: vi.fn(),
 }));
-vi.mock("../library/library.service", () => ({
-  createItem: vi.fn(),
-  updateItem: vi.fn(),
-  getItem: vi.fn(),
-  listItems: vi.fn(),
-  deleteItem: vi.fn(),
+vi.mock("../library/groups.service", () => ({
+  createGroup: vi.fn(),
+  updateGroup: vi.fn(),
+  getGroup: vi.fn(),
+  listGroups: vi.fn(),
+  deleteGroup: vi.fn(),
 }));
 vi.mock("../social/brands.service", () => ({
   listBrands: vi.fn(),
@@ -51,7 +52,8 @@ vi.mock("./api-keys.service", async () => {
 import * as platform from "../social/platform.service";
 import * as social from "../social/social.service";
 import * as files from "../storage/files.service";
-import * as library from "../library/library.service";
+import * as groups from "../library/groups.service";
+import * as publishing from "../library/schedule.service";
 import { ServiceError } from "./errors";
 import type { Caller } from "./api-keys.service";
 import { handleMessage } from "./mcp";
@@ -120,13 +122,13 @@ describe("mixetape MCP", () => {
       "delete_brand",
       "get_post_analytics",
       "get_account_analytics",
-      "create_item",
-      "update_item",
-      "get_item",
-      "list_items",
-      "delete_item",
-      "plan_item",
-      "schedule_item",
+      "create_group",
+      "update_group",
+      "get_group",
+      "list_groups",
+      "delete_group",
+      "plan_group",
+      "publish_group",
       "create_upload",
       "finish_upload",
       "import_file",
@@ -291,6 +293,8 @@ describe("narrowing and paging lists", () => {
     expect(files.listFiles).toHaveBeenCalledWith("user-1", {
       kind: ["video"],
       search: "episode",
+      groupId: undefined,
+      loose: false,
       limit: 20,
       cursor: "c1",
     });
@@ -300,14 +304,14 @@ describe("narrowing and paging lists", () => {
 describe("the library over MCP", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("files an agent's content as made by an agent", async () => {
-    vi.mocked(library.createItem).mockResolvedValue({ id: "item-1" } as never);
-    await call("create_item", {
+  it("files an agent's group as made by an agent", async () => {
+    vi.mocked(groups.createGroup).mockResolvedValue({ id: "group-1" } as never);
+    await call("create_group", {
       title: "Episode 12",
       fileIds: ["f1", "f2"],
       metadata: { platforms: { youtube: { tags: ["history"] } } },
     });
-    expect(library.createItem).toHaveBeenCalledWith(
+    expect(groups.createGroup).toHaveBeenCalledWith(
       "user-1",
       expect.objectContaining({
         title: "Episode 12",
@@ -319,14 +323,30 @@ describe("the library over MCP", () => {
   });
 
   it("tells clearing a field from leaving it out", async () => {
-    vi.mocked(library.updateItem).mockResolvedValue({ id: "item-1" } as never);
-    await call("update_item", { id: "item-1", caption: null, metadata: { tags: ["a"] } });
-    const [, , changes] = vi.mocked(library.updateItem).mock.calls[0];
+    vi.mocked(groups.updateGroup).mockResolvedValue({ id: "group-1" } as never);
+    await call("update_group", { id: "group-1", caption: null, metadata: { tags: ["a"] } });
+    const [, , changes] = vi.mocked(groups.updateGroup).mock.calls[0];
     expect(changes).toMatchObject({ caption: null, metadata: { tags: ["a"] } });
     expect(changes.title).toBeUndefined();
   });
 
+  it("publishes a group and deletes its files afterwards unless told to keep them", async () => {
+    vi.mocked(publishing.groupSource).mockResolvedValue({ files: [], draft: {} } as never);
+    vi.mocked(publishing.publishPost).mockResolvedValue({ scheduled: [] } as never);
+    await call("publish_group", {
+      id: "group-1",
+      brandIds: ["b1"],
+      scheduledAt: "2026-10-01T10:00:00Z",
+    });
+    expect(publishing.publishPost).toHaveBeenCalledWith(
+      "user-1",
+      { files: [], draft: {} },
+      { brandIds: ["b1"], accountIds: undefined },
+      { scheduledAt: "2026-10-01T10:00:00Z", leadMinutes: undefined, keepFiles: false },
+    );
+  });
+
   it("keeps the library to keys with the library permission", async () => {
-    expect(await toolNames(publisher)).not.toContain("create_item");
+    expect(await toolNames(publisher)).not.toContain("create_group");
   });
 });

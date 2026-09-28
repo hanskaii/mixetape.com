@@ -406,8 +406,10 @@ export type CreatePostInput = {
   leadMinutes?: number;
   /** Platform fields; see the provider's metadata schema. */
   metadata?: Metadata;
-  /** The library item the post is scheduled from (library schedule_item). */
-  itemId?: string;
+  /** The library group the post is published from (library publishing). */
+  groupId?: string;
+  /** Delete the post's files from storage once it is published (library publishing). */
+  cleanup?: boolean;
 };
 
 function checkMedia(userId: string, url: string): string {
@@ -545,7 +547,8 @@ export async function createPost(userId: string, input: CreatePostInput) {
     provider: account.provider,
     mediaUrl: media[0].url,
     media,
-    itemId: input.itemId ?? null,
+    groupId: input.groupId ?? null,
+    cleanup: input.cleanup ?? false,
     caption: input.caption ?? null,
     metadata: checkMetadata(account.provider, input.metadata, input.caption),
     scheduledAt: checkTime(input.scheduledAt, leadMinutes),
@@ -558,7 +561,7 @@ export async function createPost(userId: string, input: CreatePostInput) {
   return getPost(userId, id);
 }
 
-export type EditPostInput = Partial<Omit<CreatePostInput, "accountId" | "itemId">>;
+export type EditPostInput = Partial<Omit<CreatePostInput, "accountId" | "groupId" | "cleanup">>;
 
 /**
  * Changes a post that has not gone out yet: its time, media, caption or metadata. The
@@ -613,8 +616,8 @@ export type PostFilter = {
   accountId?: string[];
   /** Only posts on these platforms, e.g. "youtube". */
   provider?: string[];
-  /** Only posts scheduled from this library item. */
-  itemId?: string;
+  /** Only posts published from this library group. */
+  groupId?: string;
   /** Words in the title, caption or description (case-insensitive). */
   search?: string;
   from?: Date;
@@ -638,7 +641,7 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
   if (filter.status?.length) conditions.push(inArray(socialPosts.status, filter.status));
   if (filter.accountId?.length) conditions.push(inArray(socialPosts.accountId, filter.accountId));
   if (filter.provider?.length) conditions.push(inArray(socialPosts.provider, filter.provider));
-  if (filter.itemId) conditions.push(eq(socialPosts.itemId, filter.itemId));
+  if (filter.groupId) conditions.push(eq(socialPosts.groupId, filter.groupId));
   if (filter.from) conditions.push(gte(socialPosts.scheduledAt, filter.from));
   if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
   const search = filter.search?.trim();

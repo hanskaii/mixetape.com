@@ -324,7 +324,7 @@ export interface SocialProvider {
   readonly metadata: MetadataSpec;
   readonly formats: MediaFormats;
   /**
-   * Where a library item's title and description go in this platform's metadata (YouTube's
+   * Where a library group's title and description go in this platform's metadata (YouTube's
    * title and description, a Pin's title…). The caption always goes to the post's caption.
    */
   readonly textFields?: { title?: string; description?: string };

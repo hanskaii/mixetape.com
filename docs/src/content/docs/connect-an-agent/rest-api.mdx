@@ -37,7 +37,7 @@ curl -X POST https://mixetape.com/api/v1/posts \
 
 ## Lists come in pages
 
-`GET /api/v1/posts`, `list_posts`, `list_files` and `list_items` answer one page at a time, with a
+`GET /api/v1/posts`, `list_posts`, `list_files` and `list_groups` answer one page at a time, with a
 `nextCursor`. Pass it back as `cursor` — with the same filters — for the next page; it is
 `null` on the last one.
 

@@ -55,8 +55,12 @@ sent from your machine.
 ## Housekeeping
 
 `list_files` lists your files, newest first; `get_file` answers one, by id or `r2://` URL.
-`delete_file` refuses while a library item holds the file or a post that has not gone out yet
-points at it — take it out of those first.
+`delete_file` refuses while a post that has not gone out yet points at the file.
+
+Storage is a staging area, not an archive. A file goes **30 days** after it was stored
+(`expiresAt` on every file) — never while a post that has not gone out still needs it — and
+files published from the [library](/concepts/library) go as soon as every post with them is
+out, unless the publish kept them.
 
 ## What each platform takes
 
@@ -75,5 +79,5 @@ is made for upright media.
 
 Files in mixetape storage are checked against this when a post is created, so a post the
 platform cannot take is refused at once — not at go-live. A horizontal video where upright is
-expected is allowed; `plan_item` warns about it.
+expected is allowed; `plan_group` warns about it.
 

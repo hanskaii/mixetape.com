@@ -4,21 +4,36 @@ import * as brands from "#/modules/social/brands.service";
 import { checkFormat, type FormatCheck } from "#/modules/social/formats";
 import { InvalidInputError, getProvider, type Metadata } from "#/modules/social/providers";
 import * as social from "#/modules/social/social.service";
-import { getItem, type ItemView } from "./library.service";
+import { fileView, type FileView } from "#/modules/storage/files.service";
+import { getGroup, readyFiles } from "./groups.service";
 
 /**
- * Sending a library item out: to brands (every channel in them) and to single channels.
- * `planItem` answers, channel by channel, whether the item can go there and exactly what
- * would be posted — the compatibility matrix — without scheduling anything; `scheduleItem`
- * then creates one post per channel that can take it, linked back to the item.
+ * Publishing from the library: a selection of files (a group, or files picked by hand) and
+ * its words, to brands (every channel in them) and single channels.
  *
- * What each channel gets: the item's caption as the post caption; its shared metadata,
- * only the fields that platform knows; its title and description where the platform has
- * them (provider.textFields); then that platform's own overrides on top. A `caption` in a
- * platform's overrides replaces the caption for that platform.
+ * `planPost` answers, channel by channel, whether the files can go there, as what (a Short,
+ * a Reel, a carousel…) and exactly what would be posted — without posting; `publishPost`
+ * creates one post per channel that can take it.
+ *
+ * What each channel gets: the caption as the post caption; the shared metadata fields that
+ * platform knows; the title and description where the platform has them
+ * (provider.textFields); then that platform's own overrides. A `caption` override on a
+ * platform without a caption field of its own replaces the caption there. On top, the
+ * obvious choice where the files make it one: a short upright video goes to Facebook as a
+ * Reel.
  */
 
 export type Target = { brandIds?: string[]; accountIds?: string[] };
+
+/** The words for a post: what an agent drafted on a group, or what the person typed. */
+export type Draft = {
+  title?: string | null;
+  caption?: string | null;
+  description?: string | null;
+  metadata?: Metadata;
+};
+
+export type Source = { files: FileView[]; draft: Draft; groupId?: string };
 
 export type PlanRow = {
   accountId: string;
@@ -27,8 +42,12 @@ export type PlanRow = {
   platform: string;
   /** The chosen brands this channel is in. */
   brands: string[];
+  /** The platform takes these files at all (whatever else it still needs). */
+  fits: boolean;
   ready: boolean;
   format: FormatCheck["format"];
+  /** What the post is on this platform: "Short", "Reel", "Carousel", "Album"… */
+  label: string;
   problems: string[];
   warnings: string[];
   /** What the post would carry. */
@@ -36,24 +55,38 @@ export type PlanRow = {
   metadata: Metadata;
 };
 
+export async function groupSource(userId: string, groupId: string): Promise<Source> {
+  const group = await getGroup(userId, groupId);
+  return { files: group.files, draft: group, groupId };
+}
+
+export async function filesSource(
+  userId: string,
+  fileIds: string[],
+  draft: Draft,
+  groupId?: string,
+): Promise<Source> {
+  if (!fileIds.length) throw new ServiceError("Choose the files to publish");
+  const files = await readyFiles(userId, fileIds);
+  return { files: files.map((file) => fileView(file, groupId ?? null)), draft, groupId };
+}
+
 /** The channels a target names: those of its brands and the ones given directly. */
 async function channelsFor(userId: string, target: Target) {
   const brandIds = [...new Set(target.brandIds ?? [])];
   const accountIds = new Set(target.accountIds ?? []);
   if (!brandIds.length && !accountIds.size)
-    throw new ServiceError("Choose brands or channels to send the content to");
+    throw new ServiceError("Choose brands or channels to publish to");
 
   const [allBrands, accounts] = await Promise.all([
     brandIds.length ? brands.listBrands(userId) : [],
     social.listAccounts(userId),
   ]);
-  const chosenBrands = brandIds.map(
-    (id) =>
-      allBrands.find((brand) => brand.id === id) ??
-      (() => {
-        throw new ServiceError(`Brand not found: ${id}`, 404);
-      })(),
-  );
+  const chosenBrands = brandIds.map((id) => {
+    const brand = allBrands.find((candidate) => candidate.id === id);
+    if (!brand) throw new ServiceError(`Brand not found: ${id}`, 404);
+    return brand;
+  });
   for (const id of accountIds)
     if (!accounts.some((account) => account.id === id))
       throw new ServiceError(`Account not found: ${id}`, 404);
@@ -69,64 +102,106 @@ async function channelsFor(userId: string, target: Target) {
     }));
 }
 
+type Channel = Awaited<ReturnType<typeof channelsFor>>[number];
+
 const isObject = (value: JsonValue | undefined): value is Record<string, JsonValue> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** The caption and raw (not yet validated) metadata an item gives a platform. */
-export function postFields(
-  item: Pick<ItemView, "title" | "caption" | "description" | "metadata">,
-  provider: string,
-) {
+const upright = (file: FileView) => Boolean(file.width && file.height && file.height > file.width);
+
+/** Choices the files make obvious, unless the draft already made them. */
+function smartDefaults(provider: string, files: FileView[], metadata: Metadata): Metadata {
+  const [only] = files;
+  if (
+    provider === "facebook" &&
+    files.length === 1 &&
+    only.kind === "video" &&
+    upright(only) &&
+    only.durationMs &&
+    only.durationMs >= 3_000 &&
+    only.durationMs <= 90_000 &&
+    metadata.format === undefined
+  )
+    return { ...metadata, format: "reel" };
+  return metadata;
+}
+
+/** What the post is on the platform, in its own words. */
+export function postLabel(provider: string, files: FileView[], metadata: Metadata): string {
+  if (files.length > 1)
+    return provider === "facebook"
+      ? "Album"
+      : provider === "pinterest"
+        ? "Carousel Pin"
+        : "Carousel";
+  const [file] = files;
+  if (file.kind === "image") return provider === "pinterest" ? "Pin" : "Photo";
+  switch (provider) {
+    case "youtube":
+      return upright(file) && (file.durationMs ?? Infinity) <= 180_000 ? "Short" : "Video";
+    case "instagram":
+      return "Reel";
+    case "facebook":
+      return metadata.format === "reel" ? "Reel" : "Video";
+    case "pinterest":
+      return "Video Pin";
+    default:
+      return "Video";
+  }
+}
+
+/** The caption and raw (not yet validated) metadata a draft gives a platform. */
+export function postFields(draft: Draft, provider: string, files: FileView[] = []) {
   const platform = getProvider(provider);
   const known = new Set(
     Object.keys((platform.metadata.schema.properties as Record<string, unknown> | undefined) ?? {}),
   );
-  const { platforms, ...shared } = item.metadata;
-  const overrides = {
+  const { platforms, ...shared } = draft.metadata ?? {};
+  const overrides: Metadata = {
     ...(isObject(platforms) && isObject(platforms[provider]) ? platforms[provider] : {}),
   };
 
   const metadata: Metadata = {};
   for (const [key, value] of Object.entries(shared)) if (known.has(key)) metadata[key] = value;
   const { title, description } = platform.textFields ?? {};
-  if (title && item.title && metadata[title] === undefined) metadata[title] = item.title;
-  if (description && item.description && metadata[description] === undefined)
-    metadata[description] = item.description;
+  if (title && draft.title && metadata[title] === undefined) metadata[title] = draft.title;
+  if (description && draft.description && metadata[description] === undefined)
+    metadata[description] = draft.description;
 
-  let caption = item.caption;
+  let caption = draft.caption ?? null;
   if ("caption" in overrides && !known.has("caption")) {
     const value = overrides.caption;
     caption = typeof value === "string" ? value : null;
     delete overrides.caption;
   }
-  return { caption, metadata: { ...metadata, ...overrides } };
+  return { caption, metadata: smartDefaults(provider, files, { ...metadata, ...overrides }) };
 }
 
-function planFor(
-  item: ItemView,
-  channel: Awaited<ReturnType<typeof channelsFor>>[number],
-): PlanRow {
+function planFor(source: Source, channel: Channel): PlanRow {
   const platform = getProvider(channel.provider);
-  const check = checkFormat(platform.name, platform.formats, item.files);
+  const check = checkFormat(platform.name, platform.formats, source.files);
   const problems = [...check.problems];
   if (channel.status !== "active") problems.push("The channel needs reconnecting");
 
-  const { caption, metadata } = postFields(item, channel.provider);
+  const { caption, metadata } = postFields(source.draft, channel.provider, source.files);
   let validated = metadata;
-  try {
-    validated = platform.metadata.validate(metadata, caption);
-  } catch (error) {
-    if (!(error instanceof InvalidInputError)) throw error;
-    problems.push(error.message);
-  }
+  if (!check.problems.length)
+    try {
+      validated = platform.metadata.validate(metadata, caption);
+    } catch (error) {
+      if (!(error instanceof InvalidInputError)) throw error;
+      problems.push(error.message);
+    }
   return {
     accountId: channel.id,
     name: channel.name.trim(),
     provider: channel.provider,
     platform: platform.name,
     brands: channel.brands,
+    fits: check.problems.length === 0,
     ready: problems.length === 0,
     format: check.format,
+    label: check.problems.length ? "" : postLabel(channel.provider, source.files, validated),
     problems,
     warnings: check.warnings,
     caption,
@@ -134,29 +209,26 @@ function planFor(
   };
 }
 
-/** Channel by channel: can the item go there, and what would be posted. Schedules nothing. */
-export async function planItem(userId: string, itemId: string, target: Target) {
-  const [item, channels] = await Promise.all([
-    getItem(userId, itemId),
-    channelsFor(userId, target),
-  ]);
-  if (!item.files.length) throw new ServiceError("The content has no file to post", 409);
-  return { itemId, channels: channels.map((channel) => planFor(item, channel)) };
+/** Channel by channel: can the files go there, as what, and what would be posted. */
+export async function planPost(userId: string, source: Source, target: Target) {
+  if (!source.files.length) throw new ServiceError("There is no file to publish", 409);
+  const channels = await channelsFor(userId, target);
+  return { channels: channels.map((channel) => planFor(source, channel)) };
 }
 
 /**
- * Schedules the item to every targeted channel that can take it, one post each. Channels
- * that cannot are skipped with their reasons; a post the platform check still refuses is
- * reported as failed without stopping the others.
+ * Publishes the files to every targeted channel that can take them, one post each. Channels
+ * that cannot are skipped with their reasons; a post a platform check still refuses is
+ * reported as failed without stopping the others. Unless `keepFiles`, the files are deleted
+ * from storage once every post is out.
  */
-export async function scheduleItem(
+export async function publishPost(
   userId: string,
-  itemId: string,
+  source: Source,
   target: Target,
-  timing: { scheduledAt?: string; leadMinutes?: number } = {},
+  options: { scheduledAt?: string; leadMinutes?: number; keepFiles?: boolean } = {},
 ) {
-  const item = await getItem(userId, itemId);
-  if (!item.files.length) throw new ServiceError("The content has no file to post", 409);
+  if (!source.files.length) throw new ServiceError("There is no file to publish", 409);
   const channels = await channelsFor(userId, target);
 
   const scheduled: { accountId: string; name: string; provider: string; postId: string }[] = [];
@@ -164,23 +236,24 @@ export async function scheduleItem(
   const failed: { accountId: string; name: string; provider: string; error: string }[] = [];
 
   for (const channel of channels) {
-    const plan = planFor(item, channel);
+    const plan = planFor(source, channel);
     const who = { accountId: plan.accountId, name: plan.name, provider: plan.provider };
     if (!plan.ready) {
       skipped.push({ ...who, problems: plan.problems });
       continue;
     }
-    const { caption, metadata } = postFields(item, channel.provider);
+    const { caption, metadata } = postFields(source.draft, channel.provider, source.files);
     try {
       const post = await social.createPost(userId, {
         accountId: channel.id,
-        media: item.files.map((file) => file.url),
+        media: source.files.map((file) => file.url),
         caption: caption ?? undefined,
         metadata,
-        scheduledAt: timing.scheduledAt,
+        scheduledAt: options.scheduledAt,
         // Omitted, each platform keeps its own default; one it refuses fails only that channel.
-        leadMinutes: timing.leadMinutes,
-        itemId: item.id,
+        leadMinutes: options.leadMinutes,
+        groupId: source.groupId,
+        cleanup: !options.keepFiles,
       });
       scheduled.push({ ...who, postId: post.id });
     } catch (error) {
@@ -188,5 +261,5 @@ export async function scheduleItem(
       failed.push({ ...who, error: error.message });
     }
   }
-  return { itemId, scheduled, skipped, failed };
+  return { scheduled, skipped, failed };
 }

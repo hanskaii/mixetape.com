@@ -8,7 +8,7 @@ import { Page, PageHeader } from "#/components/layouts/workspace-page";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
-import { uploadFile } from "#/modules/storage/browser-upload";
+import { uploadAvatar } from "#/modules/storage/browser-upload";
 
 export const Route = createFileRoute("/(app)/_app/settings/profile")({
   loader: async () => {
@@ -49,10 +49,7 @@ function ProfileSettingsPage() {
     setMessage(null);
 
     try {
-      // Into the user's storage like any file; the profile keeps its public URL.
-      const uploaded = await uploadFile(file);
-      if (uploaded.kind !== "image") throw new Error("Choose an image for your avatar");
-      const uploadedUrl = uploaded.publicUrl;
+      const uploadedUrl = await uploadAvatar(file);
       setAvatarUrl(uploadedUrl);
 
       await updateProfileData({ data: { image: uploadedUrl } });

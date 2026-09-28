@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("#/database/index", () => ({ db: {} }));
 
-import { checkMetadata, mergeMetadata } from "./library.service";
+import { checkMetadata, mergeMetadata } from "./groups.service";
 
-describe("an item's metadata", () => {
+describe("a group's metadata", () => {
   it("changes only the fields given, and null clears one", () => {
     expect(
       mergeMetadata(

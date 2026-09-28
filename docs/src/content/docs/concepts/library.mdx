@@ -1,71 +1,74 @@
 ---
 title: Library and brands
-description: Content made ahead — files with their words and per-platform metadata — sent to brands (groups of channels) and single channels when it is ready.
+description: Files first — uploaded by you or your agent, grouped when they go out together, published to every channel they fit. Brands group channels.
 sidebar:
   order: 3
 ---
 
-The library holds content that is made but not sent out yet: a set of files from
-[storage](/concepts/media) with the title, caption, description and metadata written for
-them. An agent that renders a week of videos can file each one as it is done; you see them in
-the workspace under **Library**, and send each to brands and channels when it is ready.
+The library is where media waits before it goes out. In the workspace (**Library**) it is your
+files, in a grid you can drop more onto; files that go out together — a carousel, an album —
+sit in a **group**. Select files or a group, press **Publish**, and mixetape shows every
+channel they fit and as what: a landscape video is a YouTube video and a Facebook video, an
+upright one a Short, a Reel and a TikTok, four images a carousel on Instagram and an album on
+Facebook.
 
-## Content items
+## Groups
 
-`create_item` takes `fileIds` (ready files, in order — a carousel's order, say), `title`,
-`caption`, `description` and `metadata`. `metadata` holds what every platform shares and, under
-`platforms`, each platform's own overrides:
+A group is files in order plus the words drafted for them: `title`, `caption`, `description`
+and `metadata`. An agent makes one with `create_group` and uploads into it by passing
+`groupId` to `create_upload` or `import_file` — so the person only has to choose where it goes.
 
 ```json
 {
   "title": "Why Rome burned",
   "caption": "The night Rome burned, and who got blamed.",
-  "fileIds": ["9f3c…"],
   "metadata": {
     "tags": ["history", "rome"],
     "platforms": {
-      "youtube": { "title": "Why Rome Burned in 64 AD", "privacy": "public" },
+      "youtube": { "title": "Why Rome Burned in 64 AD", "privacyStatus": "public" },
       "instagram": { "caption": "Rome, 64 AD 🔥" }
     }
   }
 }
 ```
 
-Whatever a platform does not override comes from the shared fields, so a YouTube title can
-be longer than an Instagram caption without writing everything twice.
+`metadata` holds what every platform shares and, under `platforms`, each platform's own
+overrides. `update_group` changes only what it is given; metadata merges field by field,
+platform by platform, and `null` clears a field or a platform. `fileIds` replaces the files and
+their order. A file is in at most one group; moving it into another takes it out of the first.
 
-`update_item` changes only what it is given. Metadata merges field by field, platform by
-platform; `null` clears a field or a platform's overrides. `fileIds`, when given, replaces the
-files and their order. Every item records whether an agent or a person made it.
+## Publishing
 
-## Sending it out
+`plan_group` takes brands (`brandIds`) and channels (`accountIds`) and answers for every channel
+they cover:
 
-`plan_item` takes brands (`brandIds`) and channels (`accountIds`) and answers for every channel
-they cover whether the item can go there and exactly what would be posted:
-
-- `format` — `video`, `image` or `carousel`;
-- `problems` that stop it — a platform that takes no images, more files than its carousel
-  holds, a Pinterest Pin without `boardId`, a channel to reconnect;
+- `fits` — whether the platform takes these files at all, and `label`: what the post is there
+  (Short, Video, Reel, Photo, Carousel, Album, Pin…);
+- `problems` that stop it — a missing YouTube title or Pinterest board, a channel to reconnect;
 - `warnings` that do not — a horizontal video for Reels;
 - the `caption` and `metadata` the post would carry.
 
-Each channel gets the item's caption; the shared metadata fields its platform knows; the item's
-title and description where the platform has them (YouTube, Facebook, Pinterest); then that
-platform's overrides. A `caption` override on a platform without a caption field of its own
-(YouTube, Threads, TikTok…) replaces the caption there.
+Each channel gets the caption; the shared metadata fields its platform knows; the title and
+description where the platform has them (YouTube, Facebook, Pinterest); then that platform's
+overrides. A `caption` override on a platform without a caption field of its own replaces the
+caption there. Where the files make a choice obvious, mixetape makes it: a short upright video
+goes to Facebook as a Reel.
 
-`schedule_item` (permission `publish`) then creates one post per channel that can take it, all
+`publish_group` (permission `publish`) then creates one post per channel that can take it, all
 at `scheduledAt`, and skips the rest with their reasons. The posts are ordinary posts —
-editable and cancellable until they go out — linked back to the item: `get_item` lists them,
-and `list_posts` takes `itemId`.
+editable and cancellable until they go out — linked back to the group (`get_group` lists them,
+`list_posts` takes `groupId`). Once every post is out, the files are deleted from storage, and
+the group with them — pass `keepFiles` to keep them.
 
-In the workspace, **Schedule** on a content item does the same, showing the plan as you pick
-brands and channels.
+<Aside type="note" title="Files do not stay forever">
+  Storage keeps a file 30 days at most, then lets it go unless a post that has not gone out
+  still needs it. See [Media and storage](/concepts/media#housekeeping).
+</Aside>
 
 ## Brands
 
 A brand is your own group of connected channels — "Hans Explainer" as its YouTube channel and
-its Facebook Page, say — so content can go to the brand rather than channel by channel. A
+its Facebook Page, say — so a post can go to the brand rather than channel by channel. A
 channel can belong to several brands; disconnecting it takes it out of them.
 
 `create_brand`, `update_brand` and `delete_brand` need the `channels` permission;

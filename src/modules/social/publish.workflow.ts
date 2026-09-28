@@ -10,6 +10,7 @@ import {
   updatePost,
 } from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
+import { cleanUpAfterPublish } from "#/modules/storage/files.service";
 import { publishTiming } from "./timing";
 
 export type PublishParams = { postId: string };
@@ -96,6 +97,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         throw error;
       }
       await firstComment(step, postId);
+      await cleanUp(step, postId);
       return { ...result, status: "published" };
     }
 
@@ -119,6 +121,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
           },
         );
         await firstComment(step, postId);
+        await cleanUp(step, postId);
       } catch (error) {
         // The video is on the platform either way; say why it is not live rather than fail.
         const message = error instanceof Error ? error.message : String(error);
@@ -129,8 +132,21 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         });
       }
     }
-    if (result.status === "published") await firstComment(step, postId);
+    if (result.status === "published") {
+      await firstComment(step, postId);
+      await cleanUp(step, postId);
+    }
     return result;
+  }
+}
+
+/** Library posts free their files once out; storage is not needed after that. */
+async function cleanUp(step: WorkflowStep, postId: string) {
+  try {
+    await step.do("clean up files", async () => cleanUpAfterPublish(postId));
+  } catch (error) {
+    // The post is out either way; the daily expiry catches what is left.
+    console.warn("[cleanup]", postId, error);
   }
 }
 

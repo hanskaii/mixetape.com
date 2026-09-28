@@ -36,6 +36,8 @@
       "bucket_name": "mixetape-media",
     },
   ],
+  // Daily storage expiry (src/modules/storage/storage.scheduled.ts), 03:17 UTC.
+  "triggers": { "crons": ["17 3 * * *"] },
   // One durable instance per scheduled post; see src/modules/social/publish.workflow.ts.
   "workflows": [
     {

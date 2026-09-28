@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("#/database/index", () => ({ db: {} }));
 
-import { postFields } from "./schedule.service";
+import { postFields, postLabel } from "./schedule.service";
+import type { FileView } from "#/modules/storage/files.service";
 
 const item = {
   title: "Why Rome burned",
@@ -19,7 +20,7 @@ const item = {
   },
 };
 
-describe("what a library item gives each platform", () => {
+describe("what a draft gives each platform", () => {
   it("gives YouTube the title and description, its known shared fields, then its overrides", () => {
     expect(postFields(item, "youtube")).toEqual({
       caption: "The night Rome burned.",
@@ -58,5 +59,30 @@ describe("what a library item gives each platform", () => {
       title: "Why Rome burned",
       description: "A longer story of 64 AD.",
     });
+  });
+});
+
+const video = (width: number, height: number, durationMs: number) =>
+  ({ kind: "video", width, height, durationMs }) as FileView;
+const image = { kind: "image", width: 1080, height: 1350 } as FileView;
+
+describe("what the files make of a post", () => {
+  it("names each platform's format", () => {
+    expect(postLabel("youtube", [video(1080, 1920, 45_000)], {})).toBe("Short");
+    expect(postLabel("youtube", [video(1920, 1080, 600_000)], {})).toBe("Video");
+    expect(postLabel("instagram", [video(1080, 1920, 45_000)], {})).toBe("Reel");
+    expect(postLabel("instagram", [image, image], {})).toBe("Carousel");
+    expect(postLabel("facebook", [image, image], {})).toBe("Album");
+    expect(postLabel("pinterest", [image], {})).toBe("Pin");
+  });
+
+  it("sends a short upright video to Facebook as a Reel, unless the draft says otherwise", () => {
+    const short = [video(1080, 1920, 30_000)];
+    expect(postFields({}, "facebook", short).metadata.format).toBe("reel");
+    expect(
+      postFields({ metadata: { platforms: { facebook: { format: "video" } } } }, "facebook", short)
+        .metadata.format,
+    ).toBe("video");
+    expect(postFields({}, "facebook", [video(1920, 1080, 30_000)]).metadata.format).toBeUndefined();
   });
 });

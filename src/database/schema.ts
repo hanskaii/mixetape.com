@@ -151,8 +151,10 @@ export const socialPosts = sqliteTable(
     mediaUrl: text("media_url").notNull(), // the first file; the only one unless a carousel
     // Every file, in order, with its kind; null on posts from before carousels (one video).
     media: text("media", { mode: "json" }).$type<{ url: string; kind: "video" | "image" }[]>(),
-    // The library item the post was scheduled from, if any.
-    itemId: text("item_id").references(() => libraryItems.id, { onDelete: "set null" }),
+    // The library group the post was published from, if any.
+    groupId: text("group_id").references(() => mediaGroups.id, { onDelete: "set null" }),
+    // Delete the post's files from storage once it is published (library publishing).
+    cleanup: integer("cleanup", { mode: "boolean" }).notNull().default(false),
     caption: text("caption"),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, JsonValue>>(), // per-platform fields
     scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }).notNull(),
@@ -175,7 +177,7 @@ export const socialPosts = sqliteTable(
   (table) => [
     index("social_posts_user_scheduled_idx").on(table.userId, table.scheduledAt),
     index("social_posts_status_idx").on(table.status),
-    index("social_posts_item_idx").on(table.itemId),
+    index("social_posts_group_idx").on(table.groupId),
   ],
 );
 
@@ -206,8 +208,8 @@ export const apiKeys = sqliteTable(
 // ── Library ────────────────────────────────────────────────────────────────────
 //
 // Files in mixetape storage (R2, under media/<userId>/), indexed here with what was read
-// from the file itself; content items — media plus the metadata an agent or a person wrote,
-// not scheduled yet; and brands, the user's own groups of channels.
+// from the file itself (kept 30 days at most); groups — files that go out together, with the
+// words drafted for them; and brands, the user's own groups of channels.
 
 export const mediaFiles = sqliteTable(
   "media_files",
@@ -233,8 +235,12 @@ export const mediaFiles = sqliteTable(
   (table) => [index("media_files_user_created_idx").on(table.userId, table.createdAt, table.id)],
 );
 
-export const libraryItems = sqliteTable(
-  "library_items",
+/**
+ * A group: files that go out together — a carousel, an album — with the words an agent (or
+ * the user) drafted for them, which the publish dialog starts from.
+ */
+export const mediaGroups = sqliteTable(
+  "media_groups",
   {
     id: text("id").primaryKey(),
     userId: text("user_id")
@@ -254,23 +260,24 @@ export const libraryItems = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date()),
   },
-  (table) => [index("library_items_user_created_idx").on(table.userId, table.createdAt, table.id)],
+  (table) => [index("media_groups_user_created_idx").on(table.userId, table.createdAt, table.id)],
 );
 
-export const libraryItemFiles = sqliteTable(
-  "library_item_files",
+/** Which group a file is in (at most one), and its place there. */
+export const mediaGroupFiles = sqliteTable(
+  "media_group_files",
   {
-    itemId: text("item_id")
+    groupId: text("group_id")
       .notNull()
-      .references(() => libraryItems.id, { onDelete: "cascade" }),
+      .references(() => mediaGroups.id, { onDelete: "cascade" }),
     fileId: text("file_id")
       .notNull()
-      .references(() => mediaFiles.id, { onDelete: "restrict" }),
-    position: integer("position").notNull(), // order, e.g. of a carousel's images
+      .references(() => mediaFiles.id, { onDelete: "cascade" }),
+    position: integer("position").notNull().default(0), // order, e.g. of a carousel's images
   },
   (table) => [
-    primaryKey({ columns: [table.itemId, table.fileId] }),
-    index("library_item_files_file_idx").on(table.fileId),
+    primaryKey({ columns: [table.groupId, table.fileId] }),
+    uniqueIndex("media_group_files_file_unique").on(table.fileId),
   ],
 );
 
@@ -311,5 +318,5 @@ export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type SocialPost = typeof socialPosts.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type MediaFile = typeof mediaFiles.$inferSelect;
-export type LibraryItem = typeof libraryItems.$inferSelect;
+export type MediaGroup = typeof mediaGroups.$inferSelect;
 export type Brand = typeof brands.$inferSelect;

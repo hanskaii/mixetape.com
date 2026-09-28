@@ -82,7 +82,7 @@ export const socialTools: Tool[] = [
         description: "Only posts on these platforms, e.g. youtube, instagram",
       },
       status: { type: "array", items: { type: "string" }, description: "Only these statuses" },
-      itemId: { type: "string", description: "Only posts scheduled from this library item" },
+      groupId: { type: "string", description: "Only posts published from this library group" },
       search: {
         type: "string",
         description: "Words in the title, caption or description (case-insensitive)",
@@ -102,7 +102,7 @@ export const socialTools: Tool[] = [
         accountId: input.strings("accountId"),
         provider: input.strings("provider"),
         status: input.strings("status"),
-        itemId: input.optionalString("itemId"),
+        groupId: input.optionalString("groupId"),
         search: input.optionalString("search"),
         from: date("from"),
         to: date("to"),

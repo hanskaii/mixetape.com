@@ -41,8 +41,8 @@ export const Route = createFileRoute("/api/v1/posts")({
           const body = (await request.json().catch(() => null)) as CreatePostInput | null;
           if (!body?.accountId || !(body.mediaUrl || body.media?.length))
             throw new ServiceError("accountId and mediaUrl (or media) are required");
-          // itemId is set only by the library's schedule_item, never from outside.
-          const { itemId: _itemId, ...input } = body;
+          // Set only by library publishing, never from outside.
+          const { groupId: _groupId, cleanup: _cleanup, ...input } = body;
           return { post: await createPost(userId, input) };
         }, 201),
     },
