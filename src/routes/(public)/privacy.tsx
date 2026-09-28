@@ -13,7 +13,7 @@ export const Route = createFileRoute("/(public)/privacy")({
  */
 function Privacy() {
   return (
-    <main className="mx-auto max-w-2xl space-y-8 px-4 py-16 text-sm leading-relaxed text-foreground sm:px-0">
+    <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="mt-1 text-xs text-muted-foreground">Last updated September 27, 2026</p>
@@ -100,6 +100,6 @@ function Privacy() {
           .
         </p>
       </section>
-    </main>
+    </div>
   );
 }

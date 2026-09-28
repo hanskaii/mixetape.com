@@ -1,19 +1,9 @@
 import type { ReactNode } from "react";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import {
-  CalendarDots,
-  CaretUpDown,
-  Gear,
-  Key,
-  PlugsConnected,
-  Robot,
-  ShieldCheck,
-  SignOut,
-} from "@phosphor-icons/react";
+import { CalendarDots, Gear, Key, PlugsConnected, Robot, ShieldCheck } from "@phosphor-icons/react";
 import {
   Sidebar,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -26,21 +16,15 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "../ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
 import { colors } from "../ui/tokens.stylex";
-import { authClient } from "#/modules/auth/auth-client";
 import { Route as RootRoute } from "#/routes/__root";
+import { HeaderUser } from "./header-user";
 import ThemeToggle from "./theme-toggle";
 
 /**
- * The workspace: where people supervise what their agents schedule. A sidebar for the few
- * pages there are, and a thin top bar; no composer, since posts arrive through MCP / API.
+ * The workspace: where people supervise what their agents schedule. The same bordered
+ * column as the public site, holding a sidebar for the few pages there are and a thin top
+ * bar with the account menu; no composer, since posts arrive through MCP / API.
  */
 
 const WORKSPACE = [
@@ -56,7 +40,17 @@ const ACCOUNT = [
 
 const PAGES = [...WORKSPACE, ...ACCOUNT];
 
+const MD = "@media (min-width: 768px)";
+
 const styles = stylex.create({
+  // The public site's column (routes/(public)/route.tsx): centred, bordered on wide screens.
+  shell: {
+    borderInlineColor: colors.border,
+    borderInlineStyle: "solid",
+    borderInlineWidth: { default: 0, [MD]: "1px" },
+    marginInline: "auto",
+    maxWidth: "80rem",
+  },
   brand: {
     alignItems: "center",
     color: colors.sidebarForeground,
@@ -81,24 +75,6 @@ const styles = stylex.create({
     width: "1.75rem",
   },
   brandName: { fontSize: "1.0625rem", fontWeight: 700, letterSpacing: "-0.06em" },
-  avatar: {
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    borderRadius: "0.5rem",
-    color: colors.primaryForeground,
-    display: "flex",
-    flexShrink: 0,
-    fontSize: "0.75rem",
-    fontWeight: 700,
-    height: "2rem",
-    justifyContent: "center",
-    objectFit: "cover",
-    overflow: "hidden",
-    width: "2rem",
-  },
-  who: { display: "flex", flexDirection: "column", lineHeight: 1.25, minWidth: 0 },
-  whoName: { fontSize: "0.8125rem", fontWeight: 600 },
-  whoEmail: { color: colors.mutedForeground, fontSize: "0.7rem" },
   topbar: {
     alignItems: "center",
     backdropFilter: "blur(12px)",
@@ -108,9 +84,11 @@ const styles = stylex.create({
     borderBlockEndWidth: "1px",
     display: "flex",
     gap: "0.5rem",
-    height: "3rem",
+    // Level with the sidebar's brand row.
+    height: "3.75rem",
     insetBlockStart: 0,
-    paddingInline: "0.75rem",
+    // The same inset as the page under it (workspace-page.tsx).
+    paddingInline: { default: "1rem", [MD]: "1.75rem" },
     position: "sticky",
     zIndex: 20,
   },
@@ -131,63 +109,6 @@ const styles = stylex.create({
   },
 });
 
-function UserMenu() {
-  const router = useRouter();
-  const { session } = RootRoute.useRouteContext();
-  const user = session?.user;
-  if (!user) return null;
-  const initial = (user.name || user.email || "?").charAt(0).toUpperCase();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <SidebarMenuButton
-            size="lg"
-            tooltip={user.email}
-            icon={
-              user.image ? (
-                <img src={user.image} alt="" {...stylex.props(styles.avatar)} />
-              ) : (
-                <span {...stylex.props(styles.avatar)}>{initial}</span>
-              )
-            }
-          >
-            <SidebarLabel>
-              <span {...stylex.props(styles.who)}>
-                <span {...stylex.props(styles.whoName)}>{user.name || "You"}</span>
-                <span {...stylex.props(styles.whoEmail)}>{user.email}</span>
-              </span>
-            </SidebarLabel>
-            <SidebarLabel>
-              <CaretUpDown />
-            </SidebarLabel>
-          </SidebarMenuButton>
-        }
-      />
-      <DropdownMenuContent align="start" side="top" className="w-56">
-        <DropdownMenuItem render={<Link to="/settings/profile" />}>
-          <Gear /> Profile
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link to="/settings/account" />}>
-          <ShieldCheck /> Security
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={async () => {
-            await authClient.signOut();
-            await router.navigate({ to: "/" });
-            await router.invalidate();
-          }}
-        >
-          <SignOut /> Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 function NavGroup({
   label,
   items,
@@ -207,7 +128,6 @@ function NavGroup({
               render={<Link to={to} />}
               icon={<Icon weight={pathname.startsWith(to) ? "fill" : "regular"} />}
               isActive={pathname.startsWith(to)}
-              tooltip={name}
             >
               {name}
             </SidebarMenuButton>
@@ -219,24 +139,21 @@ function NavGroup({
 }
 
 export function WorkspaceLayout({
-  defaultOpen,
   activePath,
-  preview = false,
   children,
 }: {
-  defaultOpen: boolean;
   /** The page shown as current; defaults to the browser's location. */
   activePath?: string;
-  /** Rendered as a picture of the workspace (landing page): no keyboard shortcut. */
-  preview?: boolean;
   children: ReactNode;
 }) {
   const location = useLocation();
+  // Signed out only in the landing page's picture of the workspace, which shows no account.
+  const signedIn = Boolean(RootRoute.useRouteContext().session?.user);
   const pathname = activePath ?? location.pathname;
   const current = PAGES.find((page) => pathname.startsWith(page.to));
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen} shortcut={!preview}>
+    <SidebarProvider style={styles.shell}>
       <Sidebar label="Workspace">
         <SidebarHeader>
           <Link to="/" {...stylex.props(styles.brand)}>
@@ -250,13 +167,6 @@ export function WorkspaceLayout({
           <NavGroup label="Workspace" items={WORKSPACE} pathname={pathname} />
           <NavGroup label="Account" items={ACCOUNT} pathname={pathname} />
         </SidebarNav>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <UserMenu />
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>
@@ -270,6 +180,7 @@ export function WorkspaceLayout({
             <Robot /> Connect an agent
           </a>
           <ThemeToggle />
+          {signedIn && <HeaderUser />}
         </header>
         <main {...stylex.props(styles.main)}>{children}</main>
       </SidebarInset>

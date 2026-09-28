@@ -11,31 +11,24 @@ import { colors } from "./tokens.stylex";
 
 /**
  * The shadcn/ui Sidebar, rebuilt on StyleX: the same parts (Provider, Sidebar, Header,
- * Content, Footer, Group, Menu, MenuButton, Trigger, Inset) with atomic, compile-time CSS.
+ * Group, Menu, MenuButton, Trigger, Inset) with atomic, compile-time CSS.
  *
- * Desktop: a column that collapses to icons (Ctrl/⌘+B), remembered in a cookie so the
- * server renders it the same way. Mobile (< 768px): an off-canvas drawer. Which one shows
- * is decided by media queries, so the server and the first paint always agree.
+ * Desktop: a column that is always open. Mobile (< 768px): an off-canvas drawer, opened by
+ * the trigger — the only place the trigger shows. Which one shows is decided by media
+ * queries, so the server and the first paint always agree.
  */
 
-export const SIDEBAR_COOKIE = "sidebar_state";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-const SHORTCUT = "b";
 const DESKTOP = "@media (min-width: 768px)";
-const MOBILE_QUERY = "(max-width: 767px)";
 
 type SidebarContextValue = {
-  /** Desktop: expanded or collapsed to icons. */
-  collapsed: boolean;
   /** Mobile: the drawer is open. */
   openMobile: boolean;
   setOpenMobile: (open: boolean) => void;
-  toggle: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextValue | null>(null);
 
-export function useSidebar(): SidebarContextValue {
+function useSidebar(): SidebarContextValue {
   const context = React.useContext(SidebarContext);
   if (!context) throw new Error("useSidebar must be used inside <SidebarProvider>");
   return context;
@@ -59,14 +52,13 @@ const styles = stylex.create({
     insetInlineStart: 0,
     overflow: "hidden",
     position: { default: "fixed", [DESKTOP]: "sticky" },
-    // Only the mobile drawer animates (transform); the desktop collapse is instant.
+    // The mobile drawer slides in.
     transitionDuration: "220ms",
     transitionProperty: "transform",
     transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
     width: { default: "17rem", [DESKTOP]: "15rem" },
     zIndex: 40,
   },
-  collapsed: { width: { default: "17rem", [DESKTOP]: "3.5rem" } },
   mobileClosed: { transform: { default: "translateX(-100%)", [DESKTOP]: "none" } },
   mobileOpen: { transform: "none" },
   overlay: {
@@ -88,23 +80,6 @@ const styles = stylex.create({
     overflowX: "hidden",
     overflowY: "auto",
   },
-  footer: {
-    borderBlockStartColor: colors.sidebarBorder,
-    borderBlockStartStyle: "solid",
-    borderBlockStartWidth: "1px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-    padding: "0.5rem",
-  },
-  separator: {
-    backgroundColor: colors.sidebarBorder,
-    borderStyle: "none",
-    height: "1px",
-    marginBlock: 0,
-    marginInline: "0.5rem",
-  },
-
   group: {
     display: "flex",
     flexDirection: "column",
@@ -121,7 +96,6 @@ const styles = stylex.create({
     paddingInline: "0.625rem",
     whiteSpace: "nowrap",
   },
-  groupLabelCollapsed: { opacity: { default: 1, [DESKTOP]: 0 } },
 
   menu: {
     display: "flex",
@@ -157,7 +131,6 @@ const styles = stylex.create({
     transitionProperty: "background-color, color",
     width: "100%",
   },
-  menuButtonLarge: { height: "3rem", paddingInline: "0.5rem" },
   menuButtonActive: {
     backgroundColor: colors.sidebarAccent,
     color: colors.sidebarAccentForeground,
@@ -177,7 +150,6 @@ const styles = stylex.create({
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
-  labelCollapsed: { display: { default: "block", [DESKTOP]: "none" } },
 
   // ── main area ──────────────────────────────────────────────────────────────
   inset: {
@@ -195,7 +167,8 @@ const styles = stylex.create({
     borderStyle: "none",
     color: colors.foreground,
     cursor: "pointer",
-    display: "inline-flex",
+    display: { default: "inline-flex", [DESKTOP]: "none" },
+    flexShrink: 0,
     fontSize: "1.125rem",
     height: "2rem",
     justifyContent: "center",
@@ -207,50 +180,19 @@ const styles = stylex.create({
 });
 
 export function SidebarProvider({
-  defaultOpen = true,
-  shortcut = true,
+  style,
   children,
 }: {
-  /** Desktop state on first render, e.g. from the sidebar_state cookie on the server. */
-  defaultOpen?: boolean;
-  /** Listen for Ctrl/⌘+B. Off for a sidebar shown as a picture (the landing preview). */
-  shortcut?: boolean;
+  /** Extra styles for the wrapper, e.g. the page's bordered column. */
+  style?: StyleXStyles;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
   const [openMobile, setOpenMobile] = React.useState(false);
-
-  const toggle = React.useCallback(() => {
-    if (window.matchMedia(MOBILE_QUERY).matches) {
-      setOpenMobile((value) => !value);
-      return;
-    }
-    setOpen((value) => {
-      document.cookie = `${SIDEBAR_COOKIE}=${!value}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
-      return !value;
-    });
-  }, []);
-
-  React.useEffect(() => {
-    if (!shortcut) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === SHORTCUT && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        toggle();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [toggle, shortcut]);
-
-  const value = React.useMemo(
-    () => ({ collapsed: !open, openMobile, setOpenMobile, toggle }),
-    [open, openMobile, toggle],
-  );
+  const value = React.useMemo(() => ({ openMobile, setOpenMobile }), [openMobile]);
 
   return (
     <SidebarContext.Provider value={value}>
-      <div {...stylex.props(styles.wrapper)}>{children}</div>
+      <div {...stylex.props(styles.wrapper, style)}>{children}</div>
     </SidebarContext.Provider>
   );
 }
@@ -262,7 +204,7 @@ export function Sidebar({
   children: React.ReactNode;
   label?: string;
 }) {
-  const { collapsed, openMobile, setOpenMobile } = useSidebar();
+  const { openMobile, setOpenMobile } = useSidebar();
   return (
     <>
       {openMobile && (
@@ -275,12 +217,7 @@ export function Sidebar({
       )}
       <aside
         aria-label={label}
-        data-state={collapsed ? "collapsed" : "expanded"}
-        {...stylex.props(
-          styles.sidebar,
-          collapsed && styles.collapsed,
-          openMobile ? styles.mobileOpen : styles.mobileClosed,
-        )}
+        {...stylex.props(styles.sidebar, openMobile ? styles.mobileOpen : styles.mobileClosed)}
       >
         {children}
       </aside>
@@ -294,28 +231,13 @@ export const SidebarHeader = ({ children, style }: PartProps) => (
   <div {...stylex.props(styles.header, style)}>{children}</div>
 );
 
-export const SidebarContent = ({ children, style }: PartProps) => (
-  <div {...stylex.props(styles.content, style)}>{children}</div>
-);
-
-export const SidebarFooter = ({ children, style }: PartProps) => (
-  <div {...stylex.props(styles.footer, style)}>{children}</div>
-);
-
-export const SidebarSeparator = () => <hr {...stylex.props(styles.separator)} />;
-
 export const SidebarGroup = ({ children, style }: PartProps) => (
   <div {...stylex.props(styles.group, style)}>{children}</div>
 );
 
-export function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar();
-  return (
-    <div {...stylex.props(styles.groupLabel, collapsed && styles.groupLabelCollapsed)}>
-      {children}
-    </div>
-  );
-}
+export const SidebarGroupLabel = ({ children }: { children: React.ReactNode }) => (
+  <div {...stylex.props(styles.groupLabel)}>{children}</div>
+);
 
 export const SidebarMenu = ({ children }: { children: React.ReactNode }) => (
   <ul {...stylex.props(styles.menu)}>{children}</ul>
@@ -325,13 +247,10 @@ export const SidebarMenuItem = ({ children }: { children: React.ReactNode }) => 
   <li {...stylex.props(styles.menuItem)}>{children}</li>
 );
 
-/** Text that disappears when the desktop sidebar is collapsed to icons. */
-export function SidebarLabel({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar();
-  return (
-    <span {...stylex.props(styles.label, collapsed && styles.labelCollapsed)}>{children}</span>
-  );
-}
+/** A menu button's text, truncated when it does not fit. */
+export const SidebarLabel = ({ children }: { children: React.ReactNode }) => (
+  <span {...stylex.props(styles.label)}>{children}</span>
+);
 
 export type SidebarMenuButtonProps = Omit<
   React.ComponentPropsWithRef<"button">,
@@ -340,9 +259,6 @@ export type SidebarMenuButtonProps = Omit<
   icon?: React.ReactNode;
   children: React.ReactNode;
   isActive?: boolean;
-  size?: "default" | "lg";
-  /** Shown as a tooltip while the sidebar is collapsed to icons. */
-  tooltip?: string;
   /** Render as another element, e.g. <Link to="/publish" />. */
   render?: useRender.RenderProp;
 };
@@ -351,18 +267,12 @@ export function SidebarMenuButton({
   icon,
   children,
   isActive = false,
-  size = "default",
-  tooltip,
   render,
   onClick,
   ...rest
 }: SidebarMenuButtonProps) {
-  const { collapsed, setOpenMobile } = useSidebar();
-  const look = stylex.props(
-    styles.menuButton,
-    size === "lg" && styles.menuButtonLarge,
-    isActive && styles.menuButtonActive,
-  );
+  const { setOpenMobile } = useSidebar();
+  const look = stylex.props(styles.menuButton, isActive && styles.menuButtonActive);
   return useRender({
     defaultTagName: "button",
     render,
@@ -370,7 +280,6 @@ export function SidebarMenuButton({
       {
         className: look.className,
         style: look.style,
-        title: collapsed ? tooltip : undefined,
         "aria-current": isActive ? "page" : undefined,
         onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
           onClick?.(event);
@@ -388,14 +297,15 @@ export function SidebarMenuButton({
   });
 }
 
-export function SidebarTrigger({ label = "Toggle sidebar" }: { label?: string }) {
-  const { toggle } = useSidebar();
+/** Opens the mobile drawer; hidden on desktop, where the sidebar is always open. */
+export function SidebarTrigger({ label = "Open menu" }: { label?: string }) {
+  const { openMobile, setOpenMobile } = useSidebar();
   return (
     <button
       type="button"
       aria-label={label}
-      title={`${label} (Ctrl/⌘ B)`}
-      onClick={toggle}
+      aria-expanded={openMobile}
+      onClick={() => setOpenMobile(!openMobile)}
       {...stylex.props(styles.trigger)}
     >
       <SidebarSimple weight="bold" />

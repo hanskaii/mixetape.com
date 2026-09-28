@@ -130,7 +130,7 @@ export function WorkspacePreview() {
     <figure {...stylex.props(styles.figure)}>
       <div {...stylex.props(styles.frame)}>
         <div inert {...stylex.props(styles.window)}>
-          <WorkspaceLayout defaultOpen activePath="/publish" preview>
+          <WorkspaceLayout activePath="/publish">
             <PublishView {...SAMPLE} />
           </WorkspaceLayout>
         </div>

@@ -31,7 +31,7 @@ function ConnectDone() {
   }, [ok]);
 
   return (
-    <main className="grid min-h-[60vh] place-items-center px-4">
+    <div className="grid min-h-[60vh] place-items-center">
       <div className="w-full max-w-sm space-y-3 rounded-2xl bg-card p-6 text-center ring-1 ring-foreground/10">
         {ok ? (
           <CheckCircle className="mx-auto size-9 text-emerald-500" />
@@ -52,6 +52,6 @@ function ConnectDone() {
           Go to Channels
         </Button>
       </div>
-    </main>
+    </div>
   );
 }
