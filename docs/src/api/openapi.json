@@ -48,6 +48,10 @@
     {
       "name": "channels",
       "description": "Tools under the **channels** permission: start connecting channels (you still approve each one on the platform)."
+    },
+    {
+      "name": "library",
+      "description": "Tools under the **library** permission: create, change and read content in the library (files and metadata, not scheduled yet)."
     }
   ],
   "paths": {
@@ -3378,6 +3382,261 @@
         }
       }
     },
+    "/api/v1/tools/list_brands": {
+      "post": {
+        "operationId": "list_brands",
+        "summary": "list_brands",
+        "description": "List the brands — the user's groups of connected channels (e.g. Hans Explainer: its YouTube channel and Facebook Page) — each with its accountIds (list_accounts ids). Needs the **read** permission. Also available as the MCP tool `list_brands`.",
+        "tags": [
+          "read"
+        ],
+        "x-permission": "read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/create_brand": {
+      "post": {
+        "operationId": "create_brand",
+        "summary": "create_brand",
+        "description": "Group connected channels as a brand. Needs the **channels** permission. Also available as the MCP tool `create_brand`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "list_accounts ids"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/update_brand": {
+      "post": {
+        "operationId": "update_brand",
+        "summary": "update_brand",
+        "description": "Rename a brand and/or replace its channels (accountIds replaces the whole list). Needs the **channels** permission. Also available as the MCP tool `update_brand`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Brand id (list_brands)"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/delete_brand": {
+      "post": {
+        "operationId": "delete_brand",
+        "summary": "delete_brand",
+        "description": "Delete a brand. Its channels stay connected. Needs the **channels** permission. Also available as the MCP tool `delete_brand`.",
+        "tags": [
+          "channels"
+        ],
+        "x-permission": "channels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Brand id (list_brands)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/v1/tools/get_post_analytics": {
       "post": {
         "operationId": "get_post_analytics",
@@ -3518,11 +3777,365 @@
         }
       }
     },
+    "/api/v1/tools/create_item": {
+      "post": {
+        "operationId": "create_item",
+        "summary": "create_item",
+        "description": "Put content in the library without scheduling it: files from storage plus the title, caption and metadata you wrote. The user sees it in the workspace (Library) and can send it to channels or a brand later. Answers the item with its files (kind, size, orientation, duration). Needs the **library** permission. Also available as the MCP tool `create_item`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Title where the platform has one (YouTube, Pinterest)"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "description": "The post text; defaults for every platform"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Longer description where the platform has one"
+                  },
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Files from storage (list_files ids), in order — one video, or several images for a carousel. Each must be ready (finish_upload done)."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, facebook: { … } } with each platform's overrides (same fields as create_post's metadata for that platform). On update it is merged; null clears a field or a platform."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/update_item": {
+      "post": {
+        "operationId": "update_item",
+        "summary": "update_item",
+        "description": "Change a library item: the given fields only (null clears one); fileIds, when given, replaces the files and their order; metadata is merged. Needs the **library** permission. Also available as the MCP tool `update_item`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Content item id (list_items)"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Title where the platform has one (YouTube, Pinterest)"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "description": "The post text; defaults for every platform"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Longer description where the platform has one"
+                  },
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Files from storage (list_files ids), in order — one video, or several images for a carousel. Each must be ready (finish_upload done)."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, facebook: { … } } with each platform's overrides (same fields as create_post's metadata for that platform). On update it is merged; null clears a field or a platform."
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/get_item": {
+      "post": {
+        "operationId": "get_item",
+        "summary": "get_item",
+        "description": "One library item with its files and metadata. Needs the **library** permission. Also available as the MCP tool `get_item`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Content item id (list_items)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/list_items": {
+      "post": {
+        "operationId": "list_items",
+        "summary": "list_items",
+        "description": "List the library's content items, newest first, with their files — narrowed by words in the title, caption or description. Returns { items, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **library** permission. Also available as the MCP tool `list_items`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "search": {
+                    "type": "string",
+                    "description": "Words in the title, caption or description"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "description": "Items per page: default 50, max 200"
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "description": "nextCursor from the previous page"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/delete_item": {
+      "post": {
+        "operationId": "delete_item",
+        "summary": "delete_item",
+        "description": "Delete a library item. Its files stay in storage. Needs the **library** permission. Also available as the MCP tool `delete_item`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Content item id (list_items)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/v1/tools/create_upload": {
       "post": {
         "operationId": "create_upload",
         "summary": "create_upload",
-        "description": "Upload a local file (up to 5 GB) to mixetape storage. Returns uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>). No API key is needed for the PUT. Then use url (r2://…) as mediaUrl in create_post; publicUrl (media.mixetape.com) is the same file for services outside mixetape. For a file already on the web use import_file. Needs the **storage** permission. Also available as the MCP tool `create_upload`.",
+        "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post and the file can go into a library item. For a file already on the web use import_file. Needs the **storage** permission. Also available as the MCP tool `create_upload`.",
         "tags": [
           "storage"
         ],
@@ -3587,11 +4200,73 @@
         }
       }
     },
+    "/api/v1/tools/finish_upload": {
+      "post": {
+        "operationId": "finish_upload",
+        "summary": "finish_upload",
+        "description": "Finish an upload once its PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Answers the file. Safe to call again. Needs the **storage** permission. Also available as the MCP tool `finish_upload`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileId": {
+                    "type": "string",
+                    "description": "From create_upload"
+                  }
+                },
+                "required": [
+                  "fileId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/v1/tools/import_file": {
       "post": {
         "operationId": "import_file",
         "summary": "import_file",
-        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it; nothing is sent from your machine. Returns its url (r2://…). Needs the **storage** permission. Also available as the MCP tool `import_file`.",
+        "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it and reads what it is; nothing is sent from your machine. Answers the file, ready to use. Needs the **storage** permission. Also available as the MCP tool `import_file`.",
         "tags": [
           "storage"
         ],
@@ -3656,7 +4331,7 @@
       "post": {
         "operationId": "list_files",
         "summary": "list_files",
-        "description": "List the files in your mixetape storage, newest first, with url (r2://…) and size — narrow by words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **storage** permission. Also available as the MCP tool `list_files`.",
+        "description": "List the files in your mixetape storage, newest first — each with url (r2://…), kind, size, width, height, orientation (vertical/horizontal/square) and duration. Narrow by kind or words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last). Needs the **storage** permission. Also available as the MCP tool `list_files`.",
         "tags": [
           "storage"
         ],
@@ -3668,6 +4343,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "kind": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "video",
+                        "image",
+                        "other"
+                      ]
+                    },
+                    "description": "Only these kinds"
+                  },
                   "search": {
                     "type": "string",
                     "description": "Words in the file name (case-insensitive)"
@@ -3719,11 +4406,11 @@
         }
       }
     },
-    "/api/v1/tools/delete_file": {
+    "/api/v1/tools/get_file": {
       "post": {
-        "operationId": "delete_file",
-        "summary": "delete_file",
-        "description": "Delete a file from mixetape storage. A post that still points at it will fail to upload, so only delete files you no longer need. Needs the **storage** permission. Also available as the MCP tool `delete_file`.",
+        "operationId": "get_file",
+        "summary": "get_file",
+        "description": "One file in storage: its url, kind, size, width, height, orientation, duration. Needs the **storage** permission. Also available as the MCP tool `get_file`.",
         "tags": [
           "storage"
         ],
@@ -3735,13 +4422,75 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "url": {
+                  "file": {
                     "type": "string",
-                    "description": "r2://… from list_files"
+                    "description": "The file's id, or its url (r2://…)"
                   }
                 },
                 "required": [
-                  "url"
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/delete_file": {
+      "post": {
+        "operationId": "delete_file",
+        "summary": "delete_file",
+        "description": "Delete a file from mixetape storage. Refused while a library item holds it or a post that has not gone out yet points at it — remove it from those first. Needs the **storage** permission. Also available as the MCP tool `delete_file`.",
+        "tags": [
+          "storage"
+        ],
+        "x-permission": "storage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "The file's id, or its url (r2://…)"
+                  }
+                },
+                "required": [
+                  "file"
                 ]
               }
             }
