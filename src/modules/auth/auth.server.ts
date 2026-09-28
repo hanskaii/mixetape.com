@@ -29,12 +29,13 @@ function createAuth(credentials: Credentials) {
     }),
     secret: credentials.secret,
     baseURL: env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || siteConfig.url,
+    // Sign-in requests are only taken from these pages. Locally that is any dev server,
+    // whatever port it landed on and whether opened as localhost or 127.0.0.1.
     trustedOrigins: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5173",
-      "http://localhost:8787",
       siteConfig.url,
+      "https://mixetape.com",
+      "https://www.mixetape.com",
+      ...(env.APP_ENV === "production" ? [] : ["http://localhost:*", "http://127.0.0.1:*"]),
     ],
     emailAndPassword: {
       enabled: false,
