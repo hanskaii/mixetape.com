@@ -219,7 +219,7 @@
       "post": {
         "operationId": "createPostRest",
         "summary": "Schedule a post",
-        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). Needs the **publish** permission.",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted. Needs the **publish** permission.",
         "tags": [
           "Accounts and posts"
         ],
@@ -235,7 +235,15 @@
                     "description": "mixetape account id (list_accounts)"
                   },
                   "mediaUrl": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "One file: https or r2:// URL"
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Several files in one post, in order (https or r2:// URLs): a carousel or photo album. Use instead of mediaUrl."
                   },
                   "caption": {
                     "type": "string"
@@ -356,7 +364,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -407,7 +415,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
@@ -434,7 +442,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -527,8 +535,7 @@
                   }
                 },
                 "required": [
-                  "accountId",
-                  "mediaUrl"
+                  "accountId"
                 ]
               }
             }
@@ -642,6 +649,13 @@
                 "properties": {
                   "mediaUrl": {
                     "type": "string"
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Several files in one post, in order (https or r2:// URLs): a carousel or photo album. Use instead of mediaUrl."
                   },
                   "caption": {
                     "type": "string"
@@ -761,7 +775,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -812,7 +826,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
@@ -839,7 +853,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -1113,7 +1127,7 @@
       "post": {
         "operationId": "list_accounts",
         "summary": "list_accounts",
-        "description": "List the connected channels: id, platform, name, handle, status, and the capabilities its platform supports (e.g. comments, analytics). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions. Needs the **read** permission. Also available as the MCP tool `list_accounts`.",
+        "description": "List the connected channels: id, platform, name, handle, status, the capabilities its platform supports (e.g. comments, analytics), and formats: what one post can hold there (video, image, a carousel of min–max files, image types, video length, upright). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions. Needs the **read** permission. Also available as the MCP tool `list_accounts`.",
         "tags": [
           "read"
         ],
@@ -1199,6 +1213,10 @@
                       "type": "string"
                     },
                     "description": "Only these statuses"
+                  },
+                  "itemId": {
+                    "type": "string",
+                    "description": "Only posts scheduled from this library item"
                   },
                   "search": {
                     "type": "string",
@@ -1511,7 +1529,7 @@
       "post": {
         "operationId": "create_post",
         "summary": "create_post",
-        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). Needs the **publish** permission. Also available as the MCP tool `create_post`.",
+        "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted. Needs the **publish** permission. Also available as the MCP tool `create_post`.",
         "tags": [
           "publish"
         ],
@@ -1528,7 +1546,15 @@
                     "description": "mixetape account id (list_accounts)"
                   },
                   "mediaUrl": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "One file: https or r2:// URL"
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Several files in one post, in order (https or r2:// URLs): a carousel or photo album. Use instead of mediaUrl."
                   },
                   "caption": {
                     "type": "string"
@@ -1649,7 +1675,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -1700,7 +1726,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
@@ -1727,7 +1753,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -1820,8 +1846,7 @@
                   }
                 },
                 "required": [
-                  "accountId",
-                  "mediaUrl"
+                  "accountId"
                 ]
               }
             }
@@ -1883,6 +1908,13 @@
                   },
                   "mediaUrl": {
                     "type": "string"
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Several files in one post, in order (https or r2:// URLs): a carousel or photo album. Use instead of mediaUrl."
                   },
                   "caption": {
                     "type": "string"
@@ -2002,7 +2034,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
                         "properties": {
                           "format": {
                             "type": "string",
@@ -2053,7 +2085,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
@@ -2080,7 +2112,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -2488,7 +2520,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Facebook Page fields. format \"video\" (default) posts a Page video; \"reel\" posts a Reel (9:16, 3–90 s). Set a field to null to clear it when updating.",
+                        "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
                         "properties": {
                           "title": {
                             "type": "string",
@@ -2504,7 +2536,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Instagram Reel fields (videos post as Reels: 3 s–15 min, ≤ 300 MB, 9:16 recommended). Set a field to null to clear it when updating.",
+                        "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
                         "properties": {
                           "caption": {
                             "type": "string",
@@ -2531,7 +2563,7 @@
                       },
                       {
                         "type": "object",
-                        "description": "Threads video fields (MP4/MOV, ≤ 5 min, ≤ 1 GB). Set a field to null to clear it when updating.",
+                        "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
                         "properties": {
                           "text": {
                             "type": "string",
@@ -3810,7 +3842,7 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "Files from storage (list_files ids), in order — one video, or several images for a carousel. Each must be ready (finish_upload done)."
+                    "description": "Files from storage (list_files ids), in order — one video or image, or several for a carousel. Each must be ready (finish_upload done)."
                   },
                   "metadata": {
                     "type": "object",
@@ -3892,7 +3924,7 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "Files from storage (list_files ids), in order — one video, or several images for a carousel. Each must be ready (finish_upload done)."
+                    "description": "Files from storage (list_files ids), in order — one video or image, or several for a carousel. Each must be ready (finish_upload done)."
                   },
                   "metadata": {
                     "type": "object",
@@ -4088,6 +4120,166 @@
                   "id": {
                     "type": "string",
                     "description": "Content item id (list_items)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/plan_item": {
+      "post": {
+        "operationId": "plan_item",
+        "summary": "plan_item",
+        "description": "Before scheduling a library item: for each channel of the given brands and channels, whether it can go there and exactly what would be posted — the format (video, image, carousel), problems that stop it (a platform that takes no images, too many files, a missing Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Each channel gets the item's caption, its shared metadata fields that platform knows, its title and description where the platform has them, then that platform's overrides. Schedules nothing. Needs the **library** permission. Also available as the MCP tool `plan_item`.",
+        "tags": [
+          "library"
+        ],
+        "x-permission": "library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Content item id (list_items)"
+                  },
+                  "brandIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Brands (list_brands): every channel in them"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Single channels (list_accounts)"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool's result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "description": "What the tool returns"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/tools/schedule_item": {
+      "post": {
+        "operationId": "schedule_item",
+        "summary": "schedule_item",
+        "description": "Schedule a library item to brands and/or channels: one post per channel that can take it (see plan_item), all at scheduledAt, each linked to the item. Channels that cannot take it are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts then behave like any from create_post — editable and cancellable until they go out. Needs the **publish** permission. Also available as the MCP tool `schedule_item`.",
+        "tags": [
+          "publish"
+        ],
+        "x-permission": "publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Content item id (list_items)"
+                  },
+                  "brandIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Brands (list_brands): every channel in them"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Single channels (list_accounts)"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "description": "ISO 8601 with timezone offset. Omit to post now (live after each lead)."
+                  },
+                  "leadMinutes": {
+                    "type": "number",
+                    "description": "Same for every channel; omit to keep each platform's default"
                   }
                 },
                 "required": [
