@@ -9,7 +9,7 @@ import {
   type SocialPost,
 } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
-import { containing, decodeCursor, page } from "#/modules/api/cursor";
+import { contains, decodeCursor, page } from "#/modules/api/cursor";
 import { decrypt, encrypt, randomToken } from "#/modules/secrets/crypto";
 import { secret, type SecretName } from "#/modules/secrets/secrets.service";
 import {
@@ -643,11 +643,12 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
   if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
   const search = filter.search?.trim();
   if (search) {
-    const pattern = containing(search);
     conditions.push(
-      sql`(lower(coalesce(${socialPosts.caption}, '')) like ${pattern} escape '\\'
-        or lower(coalesce(json_extract(${socialPosts.metadata}, '$.title'), '')) like ${pattern} escape '\\'
-        or lower(coalesce(json_extract(${socialPosts.metadata}, '$.description'), '')) like ${pattern} escape '\\')`,
+      or(
+        contains(socialPosts.caption, search),
+        contains(sql`json_extract(${socialPosts.metadata}, '$.title')`, search),
+        contains(sql`json_extract(${socialPosts.metadata}, '$.description')`, search),
+      )!,
     );
   }
   if (filter.cursor) {

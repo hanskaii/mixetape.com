@@ -1,3 +1,4 @@
+import { sql, type SQLWrapper } from "drizzle-orm";
 import { ServiceError } from "./errors";
 
 /**
@@ -20,8 +21,12 @@ export function decodeCursor(cursor: string): { at: Date; id: string } {
   }
 }
 
-/** A LIKE pattern for `text` anywhere, lower-cased, with LIKE's wildcards taken literally. */
-export const containing = (text: string) => `%${text.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
+/**
+ * Whether a text column holds `text` anywhere, ignoring case. instr rather than LIKE: D1
+ * refuses LIKE patterns over 50 bytes, which a long search easily passes.
+ */
+export const contains = (column: SQLWrapper, text: string) =>
+  sql`instr(lower(coalesce(${column}, '')), ${text.toLowerCase()}) > 0`;
 
 /** A page of `limit` from rows fetched with `limit + 1`, and the cursor to the next one. */
 export function page<T>(rows: T[], limit: number, marker: (row: T) => { at: Date; id: string }) {

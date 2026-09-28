@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
   libraryItemFiles,
@@ -9,7 +9,7 @@ import {
   type LibraryItem,
 } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
-import { containing, decodeCursor, page } from "#/modules/api/cursor";
+import { contains, decodeCursor, page } from "#/modules/api/cursor";
 import { isProvider } from "#/modules/social/providers";
 import { fileView } from "#/modules/storage/files.service";
 
@@ -214,11 +214,12 @@ export async function listItems(
   const conditions = [eq(libraryItems.userId, userId)];
   const search = filter.search?.trim();
   if (search) {
-    const pattern = containing(search);
     conditions.push(
-      sql`(lower(coalesce(${libraryItems.title}, '')) like ${pattern} escape '\\'
-        or lower(coalesce(${libraryItems.caption}, '')) like ${pattern} escape '\\'
-        or lower(coalesce(${libraryItems.description}, '')) like ${pattern} escape '\\')`,
+      or(
+        contains(libraryItems.title, search),
+        contains(libraryItems.caption, search),
+        contains(libraryItems.description, search),
+      )!,
     );
   }
   if (filter.cursor) {

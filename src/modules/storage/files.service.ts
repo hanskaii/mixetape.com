@@ -3,7 +3,7 @@ import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { db } from "#/database/index";
 import { libraryItemFiles, mediaFiles, socialPosts, type MediaFile } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
-import { containing, decodeCursor, page } from "#/modules/api/cursor";
+import { contains, decodeCursor, page } from "#/modules/api/cursor";
 import { probe, type Probe } from "./probe";
 import { deleteUserFile } from "./storage.service";
 import * as uploads from "./upload.service";
@@ -175,8 +175,7 @@ export async function listFiles(
   const conditions = [eq(mediaFiles.userId, userId), eq(mediaFiles.status, "ready")];
   if (filter.kind?.length) conditions.push(inArray(mediaFiles.kind, filter.kind));
   const search = filter.search?.trim();
-  if (search)
-    conditions.push(sql`lower(${mediaFiles.name}) like ${containing(search)} escape '\\'`);
+  if (search) conditions.push(contains(mediaFiles.name, search));
   if (filter.cursor) {
     const after = decodeCursor(filter.cursor);
     conditions.push(
@@ -216,7 +215,7 @@ export async function deleteFile(userId: string, idOrUrl: string) {
         // The post's one file, or one of a carousel's.
         or(
           eq(socialPosts.mediaUrl, `r2://${file.key}`),
-          sql`${socialPosts.media} like ${`%"r2://${file.key}"%`}`,
+          sql`instr(${socialPosts.media}, ${`"r2://${file.key}"`}) > 0`,
         ),
         inArray(socialPosts.status, ["scheduled", "publishing"]),
       ),
