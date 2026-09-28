@@ -4,6 +4,7 @@ import * as analytics from "./analytics.service";
 import * as platform from "./platform.service";
 import { PROVIDER_LIST, capabilitiesOf, getProvider } from "./providers";
 import * as social from "./social.service";
+import * as brands from "./brands.service";
 
 // ── schemas ──────────────────────────────────────────────────────────────────
 
@@ -426,6 +427,60 @@ export const socialTools: Tool[] = [
       if (!ids.length) throw new ServiceError("Choose at least one channel");
       return social.chooseChannels(userId, input.string("state"), ids);
     },
+  },
+
+  // brands: the user's groups of channels
+  {
+    name: "list_brands",
+    scope: "read",
+    description:
+      "List the brands — the user's groups of connected channels (e.g. Hans Explainer: its YouTube channel and Facebook Page) — each with its accountIds (list_accounts ids).",
+    inputSchema: object({}),
+    annotations: READ_ONLY,
+    run: (userId) => brands.listBrands(userId),
+  },
+  {
+    name: "create_brand",
+    scope: "channels",
+    description: "Group connected channels as a brand.",
+    inputSchema: object(
+      {
+        name: { type: "string" },
+        accountIds: { type: "array", items: { type: "string" }, description: "list_accounts ids" },
+      },
+      ["name"],
+    ),
+    run: (userId, input) =>
+      brands.createBrand(userId, {
+        name: input.string("name"),
+        accountIds: input.strings("accountIds"),
+      }),
+  },
+  {
+    name: "update_brand",
+    scope: "channels",
+    description: "Rename a brand and/or replace its channels (accountIds replaces the whole list).",
+    inputSchema: object(
+      {
+        id: { type: "string", description: "Brand id (list_brands)" },
+        name: { type: "string" },
+        accountIds: { type: "array", items: { type: "string" } },
+      },
+      ["id"],
+    ),
+    run: (userId, input) =>
+      brands.updateBrand(userId, input.string("id"), {
+        name: input.optionalString("name"),
+        accountIds: input.strings("accountIds"),
+      }),
+  },
+  {
+    name: "delete_brand",
+    scope: "channels",
+    description: "Delete a brand. Its channels stay connected.",
+    inputSchema: object({ id: { type: "string", description: "Brand id (list_brands)" } }, ["id"]),
+    annotations: { destructiveHint: true },
+    run: (userId, input) => brands.deleteBrand(userId, input.string("id")),
   },
 
   // analytics

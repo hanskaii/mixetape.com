@@ -25,6 +25,11 @@ export class Input {
     throw new ServiceError(`${name} must be ${what}`);
   }
 
+  /** The argument as sent — e.g. to tell an explicit null (clear it) from leaving it out. */
+  raw(name: string): unknown {
+    return this.args[name];
+  }
+
   string(name: string): string {
     const value = this.optionalString(name);
     if (!value) throw new ServiceError(`${name} is required`);

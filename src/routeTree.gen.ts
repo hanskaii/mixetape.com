@@ -19,13 +19,13 @@ import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
-import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiV1AccountsRouteImport } from './routes/api/v1/accounts'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
 import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
+import { Route as appAppLibraryIndexRouteImport } from './routes/(app)/_app/library/index'
 import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
 import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
@@ -83,11 +83,6 @@ const ApiConnectProviderRoute = ApiConnectProviderRouteImport.update({
   path: '/api/connect/$provider',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
-  id: '/api/storage/upload',
-  path: '/api/storage/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiV1AccountsRoute = ApiV1AccountsRouteImport.update({
   id: '/api/v1/accounts',
   path: '/api/v1/accounts',
@@ -116,6 +111,11 @@ const appAppApiKeysIndexRoute = appAppApiKeysIndexRouteImport.update({
 const appAppChannelsIndexRoute = appAppChannelsIndexRouteImport.update({
   id: '/channels/',
   path: '/channels/',
+  getParentRoute: () => appAppRouteRoute,
+} as any)
+const appAppLibraryIndexRoute = appAppLibraryIndexRouteImport.update({
+  id: '/library/',
+  path: '/library/',
   getParentRoute: () => appAppRouteRoute,
 } as any)
 const appAppPublishIndexRoute = appAppPublishIndexRouteImport.update({
@@ -169,7 +169,6 @@ export interface FileRoutesByFullPath {
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -182,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
+  '/library/': typeof appAppLibraryIndexRoute
   '/publish/': typeof appAppPublishIndexRoute
   '/queue/': typeof appAppQueueIndexRoute
 }
@@ -194,7 +194,6 @@ export interface FileRoutesByTo {
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -207,6 +206,7 @@ export interface FileRoutesByTo {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
+  '/library': typeof appAppLibraryIndexRoute
   '/publish': typeof appAppPublishIndexRoute
   '/queue': typeof appAppQueueIndexRoute
 }
@@ -222,7 +222,6 @@ export interface FileRoutesById {
   '/(public)/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/v1/accounts': typeof ApiV1AccountsRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
@@ -235,6 +234,7 @@ export interface FileRoutesById {
   '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
+  '/(app)/_app/library/': typeof appAppLibraryIndexRoute
   '/(app)/_app/publish/': typeof appAppPublishIndexRoute
   '/(app)/_app/queue/': typeof appAppQueueIndexRoute
 }
@@ -249,7 +249,6 @@ export interface FileRouteTypes {
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/openapi.json'
     | '/api/v1/posts'
@@ -262,6 +261,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys/'
     | '/channels/'
+    | '/library/'
     | '/publish/'
     | '/queue/'
   fileRoutesByTo: FileRoutesByTo
@@ -274,7 +274,6 @@ export interface FileRouteTypes {
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/openapi.json'
     | '/api/v1/posts'
@@ -287,6 +286,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/api-keys'
     | '/channels'
+    | '/library'
     | '/publish'
     | '/queue'
   id:
@@ -301,7 +301,6 @@ export interface FileRouteTypes {
     | '/(public)/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/storage/upload'
     | '/api/v1/accounts'
     | '/api/v1/openapi.json'
     | '/api/v1/posts'
@@ -314,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/v1/tools/$name'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
+    | '/(app)/_app/library/'
     | '/(app)/_app/publish/'
     | '/(app)/_app/queue/'
   fileRoutesById: FileRoutesById
@@ -326,7 +326,6 @@ export interface RootRouteChildren {
   SitemapXmlRoute: typeof SitemapXmlRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
-  ApiStorageUploadRoute: typeof ApiStorageUploadRoute
   ApiV1AccountsRoute: typeof ApiV1AccountsRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
@@ -406,13 +405,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/storage/upload': {
-      id: '/api/storage/upload'
-      path: '/api/storage/upload'
-      fullPath: '/api/storage/upload'
-      preLoaderRoute: typeof ApiStorageUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/accounts': {
       id: '/api/v1/accounts'
       path: '/api/v1/accounts'
@@ -453,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/channels'
       fullPath: '/channels/'
       preLoaderRoute: typeof appAppChannelsIndexRouteImport
+      parentRoute: typeof appAppRouteRoute
+    }
+    '/(app)/_app/library/': {
+      id: '/(app)/_app/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof appAppLibraryIndexRouteImport
       parentRoute: typeof appAppRouteRoute
     }
     '/(app)/_app/publish/': {
@@ -535,6 +534,7 @@ interface appAppRouteRouteChildren {
   appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
   appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
+  appAppLibraryIndexRoute: typeof appAppLibraryIndexRoute
   appAppPublishIndexRoute: typeof appAppPublishIndexRoute
   appAppQueueIndexRoute: typeof appAppQueueIndexRoute
 }
@@ -544,6 +544,7 @@ const appAppRouteRouteChildren: appAppRouteRouteChildren = {
   appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
   appAppChannelsIndexRoute: appAppChannelsIndexRoute,
+  appAppLibraryIndexRoute: appAppLibraryIndexRoute,
   appAppPublishIndexRoute: appAppPublishIndexRoute,
   appAppQueueIndexRoute: appAppQueueIndexRoute,
 }
@@ -595,7 +596,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapXmlRoute: SitemapXmlRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
-  ApiStorageUploadRoute: ApiStorageUploadRoute,
   ApiV1AccountsRoute: ApiV1AccountsRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1PostsRoute: ApiV1PostsRouteWithChildren,

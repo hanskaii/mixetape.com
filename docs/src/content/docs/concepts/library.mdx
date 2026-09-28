@@ -1,0 +1,53 @@
+---
+title: Library and brands
+description: Content filed ahead of scheduling — files with their words and per-platform metadata — and brands, groups of channels.
+sidebar:
+  order: 3
+---
+
+The library holds content that is made but not scheduled yet: a set of files from
+[storage](/concepts/media) with the title, caption, description and metadata written for
+them. An agent that renders a week of videos can file each one as it is done; you see them in
+the workspace under **Library**, and they wait there until they are scheduled.
+
+## Content items
+
+`create_item` takes `fileIds` (ready files, in order — a carousel's order, say), `title`,
+`caption`, `description` and `metadata`. `metadata` holds what every platform shares and, under
+`platforms`, each platform's own overrides:
+
+```json
+{
+  "title": "Why Rome burned",
+  "caption": "The night Rome burned, and who got blamed.",
+  "fileIds": ["9f3c…"],
+  "metadata": {
+    "tags": ["history", "rome"],
+    "platforms": {
+      "youtube": { "title": "Why Rome Burned in 64 AD", "privacy": "public" },
+      "instagram": { "caption": "Rome, 64 AD 🔥" }
+    }
+  }
+}
+```
+
+Whatever a platform does not override comes from the shared fields, so a YouTube title can
+be longer than an Instagram caption without writing everything twice.
+
+`update_item` changes only what it is given. Metadata merges field by field, platform by
+platform; `null` clears a field or a platform's overrides. `fileIds`, when given, replaces the
+files and their order. Every item records whether an agent or a person made it.
+
+<Aside type="note" title="Not scheduled yet">
+  Content items are not posts. Scheduling one to channels or to a brand is the next step, coming
+  to the library; until then, schedule its files with `create_post` as usual.
+</Aside>
+
+## Brands
+
+A brand is your own group of connected channels — "Hans Explainer" as its YouTube channel and
+its Facebook Page, say — so content can go to the brand rather than channel by channel. A
+channel can belong to several brands; disconnecting it takes it out of them.
+
+`create_brand`, `update_brand` and `delete_brand` need the `channels` permission;
+`list_brands` needs only `read`. In the workspace, brands are under **Channels**.

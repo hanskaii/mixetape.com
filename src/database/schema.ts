@@ -1,4 +1,11 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 /** A value that survives JSON — what a JSON column may hold. */
@@ -191,8 +198,113 @@ export const apiKeys = sqliteTable(
   (table) => [index("api_keys_user_idx").on(table.userId)],
 );
 
+// ── Library ────────────────────────────────────────────────────────────────────
+//
+// Files in mixetape storage (R2, under media/<userId>/), indexed here with what was read
+// from the file itself; content items — media plus the metadata an agent or a person wrote,
+// not scheduled yet; and brands, the user's own groups of channels.
+
+export const mediaFiles = sqliteTable(
+  "media_files",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    key: text("key").notNull().unique(), // R2 key; the file's r2:// URL is r2://<key>
+    name: text("name").notNull(),
+    kind: text("kind").notNull(), // 'video' | 'image' | 'other'
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull().default(0),
+    width: integer("width"),
+    height: integer("height"),
+    durationMs: integer("duration_ms"),
+    // 'uploading' until finish_upload has checked it in R2; then 'ready', or 'failed'
+    status: text("status").notNull().default("uploading"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("media_files_user_created_idx").on(table.userId, table.createdAt, table.id)],
+);
+
+export const libraryItems = sqliteTable(
+  "library_items",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title"),
+    caption: text("caption"),
+    description: text("description"),
+    // Shared fields (tags, thumbnailUrl, firstComment…) plus `platforms: { youtube: {…} }`,
+    // each platform's overrides.
+    metadata: text("metadata", { mode: "json" }).$type<Record<string, JsonValue>>(),
+    createdBy: text("created_by").notNull(), // 'agent' | 'user'
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("library_items_user_created_idx").on(table.userId, table.createdAt, table.id)],
+);
+
+export const libraryItemFiles = sqliteTable(
+  "library_item_files",
+  {
+    itemId: text("item_id")
+      .notNull()
+      .references(() => libraryItems.id, { onDelete: "cascade" }),
+    fileId: text("file_id")
+      .notNull()
+      .references(() => mediaFiles.id, { onDelete: "restrict" }),
+    position: integer("position").notNull(), // order, e.g. of a carousel's images
+  },
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.fileId] }),
+    index("library_item_files_file_idx").on(table.fileId),
+  ],
+);
+
+export const brands = sqliteTable(
+  "brands",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("brands_user_idx").on(table.userId)],
+);
+
+export const brandAccounts = sqliteTable(
+  "brand_accounts",
+  {
+    brandId: text("brand_id")
+      .notNull()
+      .references(() => brands.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => socialAccounts.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.brandId, table.accountId] }),
+    index("brand_accounts_account_idx").on(table.accountId),
+  ],
+);
+
 export type User = typeof user.$inferSelect;
 export type InsertUser = typeof user.$inferInsert;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type SocialPost = typeof socialPosts.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
+export type MediaFile = typeof mediaFiles.$inferSelect;
+export type LibraryItem = typeof libraryItems.$inferSelect;
+export type Brand = typeof brands.$inferSelect;

@@ -18,15 +18,32 @@ A post's `mediaUrl` is either:
 
 ## Uploading a file
 
-`create_upload` returns a presigned `uploadUrl`, valid for 6 hours. Send the whole file (up to
-5 GB) in **one PUT**, with exactly the `Content-Type` it returns — no API key is needed for
-the PUT itself. The tool also returns a ready `curl` command:
+Uploading takes two calls around one PUT:
 
-```sh
-curl -X PUT "<uploadUrl>" -H "Content-Type: video/mp4" --data-binary @episode-12.mp4
-```
+1. `create_upload` returns a `fileId` and a presigned `uploadUrl`, valid for 6 hours.
+2. Send the whole file (up to 5 GB) in **one PUT**, with exactly the `Content-Type` it
+   returns — no API key is needed for the PUT itself. The tool also returns a ready `curl`
+   command:
 
-Then schedule the post with the returned `url` (`r2://…`).
+   ```sh
+   curl -X PUT "<uploadUrl>" -H "Content-Type: video/mp4" --data-binary @episode-12.mp4
+   ```
+
+3. `finish_upload` with the `fileId`. mixetape finds the file and reads what it is.
+
+Then schedule the post with the file's `url` (`r2://…`), or put the file in a
+[library](/concepts/library) item. An upload never finished is dropped after a day.
+
+## What mixetape knows about a file
+
+Every file is read when it arrives, from the file itself rather than from what the uploader
+said: its `kind` (`video`, `image` or `other`), `width` and `height` in pixels (a phone video
+filmed upright counts as upright), `orientation` (`vertical`, `horizontal` or `square`) and a
+video's `durationMs`. MP4 and MOV videos and JPEG, PNG, GIF and WebP images are understood;
+other files keep the kind their content type says.
+
+So an agent can ask `list_files` for `kind: ["video"]` and pick the vertical ones for Shorts
+and Reels without downloading anything.
 
 ## Importing from a URL
 
@@ -36,6 +53,6 @@ sent from your machine.
 
 ## Housekeeping
 
-`list_files` lists your files, newest first, with their `r2://` URL and size. `delete_file`
-removes one — a post that still points at it will fail to upload, so only delete files you no
-longer need.
+`list_files` lists your files, newest first; `get_file` answers one, by id or `r2://` URL.
+`delete_file` refuses while a library item holds the file or a post that has not gone out yet
+points at it — take it out of those first.

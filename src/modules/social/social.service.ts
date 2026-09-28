@@ -8,6 +8,7 @@ import {
   type SocialPost,
 } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
+import { containing, decodeCursor, page } from "#/modules/api/cursor";
 import { decrypt, encrypt, randomToken } from "#/modules/secrets/crypto";
 import { secret, type SecretName } from "#/modules/secrets/secrets.service";
 import {
@@ -554,24 +555,6 @@ export type PostFilter = {
   cursor?: string;
 };
 
-// A page ends at a post; the next starts after it in (scheduledAt, id) order, so pages never
-// skip or repeat a post even when several share a time.
-const encodeCursor = (post: { scheduledAt: Date; id: string }) =>
-  btoa(JSON.stringify([post.scheduledAt.getTime(), post.id]));
-
-function decodeCursor(cursor: string): { at: Date; id: string } {
-  try {
-    const [at, id] = JSON.parse(atob(cursor)) as [number, string];
-    if (typeof at !== "number" || typeof id !== "string") throw new Error();
-    return { at: new Date(at), id };
-  } catch {
-    throw new ServiceError("cursor is not one this API gave out — use nextCursor as it came");
-  }
-}
-
-/** LIKE pattern for `text` anywhere, with LIKE's own wildcards taken literally. */
-const containing = (text: string) => `%${text.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
-
 /** Posts, newest scheduled first, a page at a time: `nextCursor` is null on the last page. */
 export async function listPosts(userId: string, filter: PostFilter = {}) {
   const limit = Math.min(Math.max(filter.limit ?? 100, 1), 500);
@@ -612,9 +595,11 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
     orderBy: [desc(socialPosts.scheduledAt), desc(socialPosts.id)],
     limit: limit + 1,
   });
-  const posts = rows.slice(0, limit);
-  const last = posts.at(-1);
-  return { posts, nextCursor: rows.length > limit && last ? encodeCursor(last) : null };
+  const { items: posts, nextCursor } = page(rows, limit, (post) => ({
+    at: post.scheduledAt,
+    id: post.id,
+  }));
+  return { posts, nextCursor };
 }
 
 /** Stops a post that has not been published; its workflow sees the status and ends. */

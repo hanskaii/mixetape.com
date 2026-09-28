@@ -14,13 +14,26 @@ vi.mock("../social/social.service", () => ({
 }));
 vi.mock("../social/platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
 vi.mock("../social/analytics.service", () => ({ accountAnalytics: vi.fn() }));
-vi.mock("../storage/storage.service", () => ({
-  MEDIA_PREFIX: "media/",
-  listAllOwnedMedia: vi.fn(),
+vi.mock("../storage/files.service", () => ({
+  createFileUpload: vi.fn(),
+  finishUpload: vi.fn(),
+  importFile: vi.fn(),
+  listFiles: vi.fn(),
+  getFile: vi.fn(),
+  deleteFile: vi.fn(),
 }));
-vi.mock("../storage/upload.service", () => ({
-  createUpload: vi.fn(),
-  publicUrl: (key: string) => `https://media.mixetape.com/${key}`,
+vi.mock("../library/library.service", () => ({
+  createItem: vi.fn(),
+  updateItem: vi.fn(),
+  getItem: vi.fn(),
+  listItems: vi.fn(),
+  deleteItem: vi.fn(),
+}));
+vi.mock("../social/brands.service", () => ({
+  listBrands: vi.fn(),
+  createBrand: vi.fn(),
+  updateBrand: vi.fn(),
+  deleteBrand: vi.fn(),
 }));
 vi.mock("./api-keys.service", async () => {
   const { ServiceError } = await import("./errors");
@@ -33,15 +46,15 @@ vi.mock("./api-keys.service", async () => {
 
 import * as platform from "../social/platform.service";
 import * as social from "../social/social.service";
-import * as uploads from "../storage/upload.service";
-import * as storage from "../storage/storage.service";
+import * as files from "../storage/files.service";
+import * as library from "../library/library.service";
 import { ServiceError } from "./errors";
 import type { Caller } from "./api-keys.service";
 import { handleMessage } from "./mcp";
 
 const everything: Caller = {
   userId: "user-1",
-  scopes: ["read", "publish", "manage", "comments", "analytics", "storage", "channels"],
+  scopes: ["read", "publish", "manage", "comments", "analytics", "storage", "channels", "library"],
 };
 const publisher: Caller = { userId: "user-1", scopes: ["read", "publish"] };
 
@@ -97,11 +110,22 @@ describe("mixetape MCP", () => {
       "connect_channel",
       "get_connection",
       "choose_channels",
+      "list_brands",
+      "create_brand",
+      "update_brand",
+      "delete_brand",
       "get_post_analytics",
       "get_account_analytics",
+      "create_item",
+      "update_item",
+      "get_item",
+      "list_items",
+      "delete_item",
       "create_upload",
+      "finish_upload",
       "import_file",
       "list_files",
+      "get_file",
       "delete_file",
     ]);
   });
@@ -115,14 +139,14 @@ describe("mixetape MCP", () => {
   });
 
   it("starts a storage upload for a key with the storage permission", async () => {
-    vi.mocked(uploads.createUpload).mockResolvedValue({ url: "r2://media/u/ep.mp4" } as never);
+    vi.mocked(files.createFileUpload).mockResolvedValue({ url: "r2://media/u/ep.mp4" } as never);
     const reply = (await call("create_upload", {
       fileName: "ep.mp4",
       contentType: "video/mp4",
     })) as {
       result: { content: { text: string }[] };
     };
-    expect(uploads.createUpload).toHaveBeenCalledWith("user-1", {
+    expect(files.createFileUpload).toHaveBeenCalledWith("user-1", {
       fileName: "ep.mp4",
       contentType: "video/mp4",
       size: undefined,
@@ -234,9 +258,6 @@ describe("connecting channels over MCP", () => {
 describe("narrowing and paging lists", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  const result = (response: unknown) =>
-    JSON.parse((response as { result: { content: { text: string }[] } }).result.content[0].text);
-
   it("passes list_posts' filters and cursor through", async () => {
     vi.mocked(social.listPosts).mockResolvedValue({ posts: [], nextCursor: null });
     await call("list_posts", {
@@ -258,36 +279,48 @@ describe("narrowing and paging lists", () => {
     );
   });
 
-  it("lists files newest first, by name, a page at a time", async () => {
-    const file = (name: string, at: number) => ({
-      key: `media/user-1/${at}-${name}`,
-      size: 10,
-      uploaded: new Date(at),
+  it("passes list_files' filters through to the index", async () => {
+    vi.mocked(files.listFiles).mockResolvedValue({ files: [], nextCursor: null });
+    await call("list_files", { kind: ["video"], search: "episode", limit: 20, cursor: "c1" });
+    expect(files.listFiles).toHaveBeenCalledWith("user-1", {
+      kind: ["video"],
+      search: "episode",
+      limit: 20,
+      cursor: "c1",
     });
-    vi.mocked(storage.listAllOwnedMedia).mockResolvedValue([
-      file("old-episode.mp4", 1000),
-      file("new-episode.mp4", 3000),
-      file("cover.jpg", 2000),
-      file("mid-episode.mp4", 2500),
-    ]);
+  });
+});
 
-    const first = result(await call("list_files", { search: "EPISODE", limit: 2 }));
-    expect(first.files.map((f: { name: string }) => f.name)).toEqual([
-      "new-episode.mp4",
-      "mid-episode.mp4",
-    ]);
-    expect(first.nextCursor).toEqual(expect.any(String));
+describe("the library over MCP", () => {
+  beforeEach(() => vi.clearAllMocks());
 
-    const second = result(
-      await call("list_files", { search: "episode", limit: 2, cursor: first.nextCursor }),
+  it("files an agent's content as made by an agent", async () => {
+    vi.mocked(library.createItem).mockResolvedValue({ id: "item-1" } as never);
+    await call("create_item", {
+      title: "Episode 12",
+      fileIds: ["f1", "f2"],
+      metadata: { platforms: { youtube: { tags: ["history"] } } },
+    });
+    expect(library.createItem).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        title: "Episode 12",
+        fileIds: ["f1", "f2"],
+        metadata: { platforms: { youtube: { tags: ["history"] } } },
+      }),
+      "agent",
     );
-    expect(second.files.map((f: { name: string }) => f.name)).toEqual(["old-episode.mp4"]);
-    expect(second.nextCursor).toBeNull();
   });
 
-  it("refuses a cursor it did not give out", async () => {
-    vi.mocked(storage.listAllOwnedMedia).mockResolvedValue([]);
-    const response = await call("list_files", { cursor: "not-a-cursor" });
-    expect((response as { result: { isError?: boolean } }).result.isError).toBe(true);
+  it("tells clearing a field from leaving it out", async () => {
+    vi.mocked(library.updateItem).mockResolvedValue({ id: "item-1" } as never);
+    await call("update_item", { id: "item-1", caption: null, metadata: { tags: ["a"] } });
+    const [, , changes] = vi.mocked(library.updateItem).mock.calls[0];
+    expect(changes).toMatchObject({ caption: null, metadata: { tags: ["a"] } });
+    expect(changes.title).toBeUndefined();
+  });
+
+  it("keeps the library to keys with the library permission", async () => {
+    expect(await toolNames(publisher)).not.toContain("create_item");
   });
 });

@@ -15,8 +15,8 @@ throttle the platforms' fetchers.
 Files in mixetape storage stay put for as long as a post needs them:
 
 - **From your machine:** `create_upload` gives a presigned URL; send the file in one PUT
-  (up to 5 GB) and schedule the `r2://` URL it returns. The file never passes through the
-  agent's context.
+  (up to 5 GB), call `finish_upload`, and schedule the `r2://` URL. The file never passes
+  through the agent's context.
 - **From a link that will expire:** `import_file` copies it into storage right away.
 
 See [Media and storage](/concepts/media).

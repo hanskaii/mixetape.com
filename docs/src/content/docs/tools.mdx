@@ -58,9 +58,21 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 | Tool | Does |
 |---|---|
 | [`create_upload`](/api/storage/create_upload) | A presigned URL to upload a file (up to 5 GB) in one PUT |
+| [`finish_upload`](/api/storage/finish_upload) | Finish an upload: mixetape checks the file and reads what it is |
 | [`import_file`](/api/storage/import_file) | Copy a file from a public URL into storage |
-| [`list_files`](/api/storage/list_files) | The files in storage, newest first, with their r2:// URLs — by words in the name; paged |
-| [`delete_file`](/api/storage/delete_file) | Delete a file from storage |
+| [`list_files`](/api/storage/list_files) | Files in storage, newest first, with kind, size, orientation and duration — by kind or words in the name; paged |
+| [`get_file`](/api/storage/get_file) | One file, by id or r2:// URL |
+| [`delete_file`](/api/storage/delete_file) | Delete a file no content or pending post still uses |
+
+## `library`
+
+| Tool | Does |
+|---|---|
+| [`create_item`](/api/library/create_item) | File content: its files, title, caption, description and per-platform metadata |
+| [`update_item`](/api/library/update_item) | Change content; metadata merges field by field |
+| [`get_item`](/api/library/get_item) | One content item with its files |
+| [`list_items`](/api/library/list_items) | Content, newest first — by words in the title, caption or description; paged |
+| [`delete_item`](/api/library/delete_item) | Delete content; its files stay in storage |
 
 ## `channels`
 
@@ -69,3 +81,8 @@ Each tool is an MCP tool of the same name and a REST endpoint, `POST /api/v1/too
 | [`connect_channel`](/api/channels/connect_channel) | Start connecting a channel: a sign-in link for the user |
 | [`get_connection`](/api/channels/get_connection) | Where a connect attempt stands |
 | [`choose_channels`](/api/channels/choose_channels) | Add the channels the user picked from a sign-in |
+| [`create_brand`](/api/channels/create_brand) | Group channels under a brand |
+| [`update_brand`](/api/channels/update_brand) | Rename a brand or change its channels |
+| [`delete_brand`](/api/channels/delete_brand) | Delete a brand; its channels stay connected |
+
+[`list_brands`](/api/read/list_brands) (permission `read`) lists the brands and their channels.

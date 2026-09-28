@@ -1,5 +1,6 @@
 import { storageTools } from "#/modules/storage/storage.tools";
 import { socialTools } from "#/modules/social/social.tools";
+import { libraryTools } from "#/modules/library/library.tools";
 import { requireScope, type Caller } from "./api-keys.service";
 import { Input, type Tool } from "./tool";
 
@@ -8,7 +9,7 @@ import { Input, type Tool } from "./tool";
  * storage knows nothing of scheduling, it only hands back `r2://` URLs. MCP (/mcp) and REST
  * (/api/v1/tools/:name) both serve this list, and each tool needs one API-key permission.
  */
-export const TOOLS: Tool[] = [...socialTools, ...storageTools];
+export const TOOLS: Tool[] = [...socialTools, ...libraryTools, ...storageTools];
 
 export const findTool = (name: string) => TOOLS.find((tool) => tool.name === name);
 

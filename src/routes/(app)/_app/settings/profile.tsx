@@ -8,6 +8,7 @@ import { Page, PageHeader } from "#/components/layouts/workspace-page";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
+import { uploadFile } from "#/modules/storage/browser-upload";
 
 export const Route = createFileRoute("/(app)/_app/settings/profile")({
   loader: async () => {
@@ -48,25 +49,15 @@ function ProfileSettingsPage() {
     setMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await res.json()) as { success?: boolean; error?: string; url?: string };
-      if (!res.ok || !data.success || !data.url) {
-        throw new Error(data.error || "Failed to upload avatar to R2");
-      }
-
-      const uploadedUrl = data.url;
+      // Into the user's storage like any file; the profile keeps its public URL.
+      const uploaded = await uploadFile(file);
+      if (uploaded.kind !== "image") throw new Error("Choose an image for your avatar");
+      const uploadedUrl = uploaded.publicUrl;
       setAvatarUrl(uploadedUrl);
 
       await updateProfileData({ data: { image: uploadedUrl } });
 
-      setMessage({ type: "success", text: "Avatar uploaded to R2 and updated!" });
+      setMessage({ type: "success", text: "Avatar updated" });
       router.invalidate();
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Error uploading avatar" });

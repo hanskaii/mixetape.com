@@ -3,6 +3,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { getAuth } from "#/modules/auth/auth.server";
 import { PROVIDER_LIST } from "./providers";
 import * as apiKeys from "#/modules/api/api-keys.service";
+import * as brands from "./brands.service";
 import * as social from "./social.service";
 
 /**
@@ -10,7 +11,7 @@ import * as social from "./social.service";
  * off to social.service, the same code the REST API uses.
  */
 
-async function currentUserId(): Promise<string> {
+export async function currentUserId(): Promise<string> {
   const headers = getRequestHeaders();
   const session = headers
     ? await (await getAuth()).api.getSession({ headers }).catch(() => null)
@@ -43,12 +44,25 @@ export const retryFailedPost = createServerFn({ method: "POST" })
 
 export const getChannelsData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await currentUserId();
-  const [accounts, connectable] = await Promise.all([
+  const [accounts, connectable, brandList] = await Promise.all([
     social.listAccounts(userId),
     social.connectableProviders(),
+    brands.listBrands(userId),
   ]);
-  return { providers: PROVIDER_LIST, connectable, accounts };
+  return { providers: PROVIDER_LIST, connectable, accounts, brands: brandList };
 });
+
+export const saveBrand = createServerFn({ method: "POST" })
+  .validator((data: { id?: string; name: string; accountIds: string[] }) => data)
+  .handler(async ({ data }) => {
+    const userId = await currentUserId();
+    const input = { name: data.name, accountIds: data.accountIds };
+    return data.id ? brands.updateBrand(userId, data.id, input) : brands.createBrand(userId, input);
+  });
+
+export const removeBrand = createServerFn({ method: "POST" })
+  .validator((data: { id: string }) => data)
+  .handler(async ({ data }) => brands.deleteBrand(await currentUserId(), data.id));
 
 export const beginChannelConnect = createServerFn({ method: "POST" })
   .validator((data: { provider: string }) => data)

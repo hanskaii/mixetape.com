@@ -17,6 +17,7 @@ export const API_SCOPES = {
   analytics: "Read post and channel analytics",
   storage: "Upload, import, list and delete files in mixetape's storage",
   channels: "Start connecting channels (you still approve each one on the platform)",
+  library: "Create, change and read content in the library (files and metadata, not scheduled yet)",
 } as const;
 
 export type ApiScope = keyof typeof API_SCOPES;
