@@ -38,7 +38,7 @@ export type PublishData = Awaited<ReturnType<typeof getQueueData>>;
 type Post = PublishData["posts"][number];
 type Tab = "queue" | "sent";
 type TimelineItem =
-  | { type: "day"; key: string; label: string }
+  | { type: "day"; key: string; label: { day: string; date: string } }
   | { type: "post"; key: string; post: Post };
 
 const ACTIVE = new Set(["scheduled", "publishing", "uploaded", "failed"]);
@@ -83,18 +83,16 @@ function nextDay(key: string) {
   return date.toISOString().slice(0, 10);
 }
 
+/** "Thursday" and "1 October" — the day leads, the date is quieter. */
 function dateLabel(key: string, today: string) {
-  const date = new Date(`${key}T12:00:00Z`);
+  const at = new Date(`${key}T12:00:00Z`);
   // The key is a calendar date: read it back in UTC, whatever zone the runtime is in.
-  const full = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "UTC",
-  }).format(date);
-  if (key === today) return `Today, ${full.replace(/^\w+, /, "")}`;
-  if (key === nextDay(today)) return `Tomorrow, ${full.replace(/^\w+, /, "")}`;
-  return full;
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(at);
+  const date = format({ day: "numeric", month: "long" });
+  if (key === today) return { day: "Today", date };
+  if (key === nextDay(today)) return { day: "Tomorrow", date };
+  return { day: format({ weekday: "long" }), date };
 }
 
 function zoneLabel(zone: string) {
@@ -225,11 +223,12 @@ export function PublishView({ accounts, posts }: PublishData) {
     return (
       <article
         key={post.id}
-        className="grid grid-cols-[5.75rem_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[6.25rem_minmax(0,1fr)] sm:gap-4"
+        // On a phone the time sits above its post; wider, it gets a column of its own.
+        className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[6.25rem_minmax(0,1fr)] sm:gap-4"
       >
         <time
           dateTime={date.toISOString()}
-          className="pt-3.5 text-right text-sm font-medium tabular-nums text-foreground"
+          className="text-[15px] font-medium tabular-nums text-foreground sm:pt-3.5 sm:text-right sm:text-sm"
         >
           {new Intl.DateTimeFormat("en-US", {
             timeZone,
@@ -460,9 +459,10 @@ export function PublishView({ accounts, posts }: PublishData) {
                   item.type === "day" ? (
                     <h2
                       key={item.key}
-                      className="pb-1 pt-3 text-[15px] font-semibold text-foreground first:pt-0"
+                      className="pb-1 pt-5 text-lg font-semibold text-foreground first:pt-0 sm:pt-3 sm:text-[15px]"
                     >
-                      {item.label}
+                      {item.label.day},{" "}
+                      <span className="font-medium text-muted-foreground">{item.label.date}</span>
                     </h2>
                   ) : (
                     postRow(item.post)
