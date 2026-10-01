@@ -47,7 +47,8 @@ export default function Footer() {
           <p {...stylex.props(styles.tagline)}>Social scheduling for AI agents.</p>
         </div>
         <p {...stylex.props(styles.legal)}>
-          &copy; {year} {siteConfig.name} · YouTube today
+          &copy; {year} {siteConfig.name} · <a href="/privacy">Privacy</a> ·{" "}
+          <a href="/terms">Terms</a>
         </p>
       </div>
     </footer>

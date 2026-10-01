@@ -3,13 +3,7 @@ title: TikTok
 description: Videos on TikTok accounts.
 sidebar:
   order: 4
-  badge: Soon
 ---
-
-<Aside type="caution" title="Not connectable yet">
-  The integration is built, but mixetape's TikTok app is not set up yet, so TikTok shows as
-  "Soon" when you connect a channel.
-</Aside>
 
 **Posting:** TikTok cannot hold a post, so mixetape uploads it at `scheduledAt` (the lead is
 always `0`).
@@ -23,6 +17,12 @@ always `0`).
 | `disableComment`, `disableDuet`, `disableStitch` | `true` / `false` |
 | `coverFrameMs` | Cover frame, in milliseconds from the start |
 | `isAigc` | Label it as AI-generated content |
+
+## After it is up
+
+Post analytics are TikTok's lifetime counts (views, likes, comments, shares) for the video,
+whatever the date range; they appear once the video is public. Account analytics add up the
+videos published in the range and list the top ten by views. TikTok has no daily breakdown.
 
 ## Limits
 

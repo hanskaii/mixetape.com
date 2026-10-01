@@ -19,7 +19,13 @@ export type SecretName =
   | "FACEBOOK_APP_ID"
   | "FACEBOOK_APP_SECRET"
   | "INSTAGRAM_APP_ID"
-  | "INSTAGRAM_APP_SECRET";
+  | "INSTAGRAM_APP_SECRET"
+  | "THREADS_APP_ID"
+  | "THREADS_APP_SECRET"
+  | "TIKTOK_CLIENT_KEY"
+  | "TIKTOK_CLIENT_SECRET"
+  | "PINTEREST_APP_ID"
+  | "PINTEREST_APP_SECRET";
 
 function sources(name: SecretName): {
   store: SecretsStoreSecret | undefined;
@@ -54,6 +60,18 @@ function sources(name: SecretName): {
       return { store: env.SS_INSTAGRAM_APP_ID, local: env.INSTAGRAM_APP_ID };
     case "INSTAGRAM_APP_SECRET":
       return { store: env.SS_INSTAGRAM_APP_SECRET, local: env.INSTAGRAM_APP_SECRET };
+    case "THREADS_APP_ID":
+      return { store: env.SS_THREADS_APP_ID, local: env.THREADS_APP_ID };
+    case "THREADS_APP_SECRET":
+      return { store: env.SS_THREADS_APP_SECRET, local: env.THREADS_APP_SECRET };
+    case "TIKTOK_CLIENT_KEY":
+      return { store: env.SS_TIKTOK_CLIENT_KEY, local: env.TIKTOK_CLIENT_KEY };
+    case "TIKTOK_CLIENT_SECRET":
+      return { store: env.SS_TIKTOK_CLIENT_SECRET, local: env.TIKTOK_CLIENT_SECRET };
+    case "PINTEREST_APP_ID":
+      return { store: env.SS_PINTEREST_APP_ID, local: env.PINTEREST_APP_ID };
+    case "PINTEREST_APP_SECRET":
+      return { store: env.SS_PINTEREST_APP_SECRET, local: env.PINTEREST_APP_SECRET };
   }
 }
 

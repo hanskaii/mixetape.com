@@ -99,6 +99,39 @@ const threadsAnalytics: AnalyticsCapability = {
       trafficSources: [],
     };
   },
+
+  // Profile insights: views come day by day, the rest as totals over the range.
+  async account(accountId, token, range) {
+    const since = Date.parse(`${range.from}T00:00:00Z`) / 1000;
+    const until = Date.parse(`${range.to}T23:59:59Z`) / 1000;
+    const data = await call<{
+      data?: {
+        name: string;
+        values?: { value?: number; end_time?: string }[];
+        total_value?: { value?: number };
+      }[];
+    }>(token, `${accountId}/threads_insights`, {
+      params: { metric: "views,likes,replies,reposts,quotes", since, until },
+    });
+    const metric = (name: string) => data.data?.find((item) => item.name === name);
+    const total = (name: string) => metric(name)?.total_value?.value;
+    const daily = (metric("views")?.values ?? []).map((day) => ({
+      date: (day.end_time ?? "").slice(0, 10),
+      views: day.value,
+    }));
+    return {
+      range,
+      totals: {
+        views: daily.reduce((sum, day) => sum + (day.views ?? 0), 0),
+        likes: total("likes"),
+        comments: total("replies"),
+        shares: (total("reposts") ?? 0) + (total("quotes") ?? 0),
+      },
+      daily,
+      topPosts: [],
+      trafficSources: [],
+    };
+  },
 };
 
 export const threads: SocialProvider = {

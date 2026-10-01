@@ -5,7 +5,7 @@ import { OPEN_API, tiktok } from "./api";
  * TikTok Login Kit. Access tokens last 24 hours; the refresh token (a year) rotates on
  * every refresh, and mixetape keeps the newest.
  */
-const SCOPES = ["user.info.basic", "video.publish"];
+const SCOPES = ["user.info.basic", "video.list", "video.publish"];
 
 type TokenResponse = {
   access_token?: string;

@@ -217,6 +217,83 @@ describe("tiktok", () => {
       tiktokProvider.upload(post("open-1"), "t", { privacyLevel: "PUBLIC_TO_EVERYONE" }),
     ).rejects.toThrow("cannot post as PUBLIC_TO_EVERYONE");
   });
+
+  const range = { from: "2026-09-01", to: "2026-09-30" };
+  const ok = (data: unknown) => Response.json({ data, error: { code: "ok" } });
+
+  it("reads a post's counts through its public video id", async () => {
+    const calls = scriptFetch([
+      ok({ publicaly_available_post_id: [42] }),
+      ok({
+        videos: [{ id: "42", view_count: 900, like_count: 30, comment_count: 4, share_count: 2 }],
+      }),
+    ]);
+    const report = await tiktokProvider.analytics!.post("v_pub_file~1", "t", range);
+    expect(json(calls[1])).toEqual({ filters: { video_ids: ["42"] } });
+    expect(report.totals).toEqual({ views: 900, likes: 30, comments: 4, shares: 2 });
+  });
+
+  it("has no analytics for a post that never became public", async () => {
+    scriptFetch([ok({ publicaly_available_post_id: [] })]);
+    await expect(tiktokProvider.analytics!.post("v_pub_file~1", "t", range)).rejects.toThrow(
+      "no public video",
+    );
+  });
+
+  it("sums the account's videos published in the range", async () => {
+    const at = (date: string) => Date.parse(date) / 1000;
+    scriptFetch([
+      ok({
+        videos: [
+          { id: "3", create_time: at("2026-10-02T00:00:00Z"), view_count: 5000 },
+          { id: "2", create_time: at("2026-09-20T00:00:00Z"), view_count: 100, like_count: 9 },
+          { id: "1", create_time: at("2026-09-02T00:00:00Z"), view_count: 300, like_count: 1 },
+        ],
+        has_more: true,
+        cursor: 7,
+      }),
+      ok({
+        videos: [{ id: "0", create_time: at("2026-08-30T00:00:00Z"), view_count: 50 }],
+        has_more: true,
+      }),
+    ]);
+    const report = await tiktokProvider.analytics!.account!("open-1", "t", range);
+    expect(report.totals).toEqual({ views: 400, likes: 10, comments: 0, shares: 0 });
+    expect(report.topPosts.map((top) => top.platformPostId)).toEqual(["1", "2"]);
+  });
+});
+
+describe("threads analytics", () => {
+  it("reports the profile's insights over the range", async () => {
+    const calls = scriptFetch([
+      Response.json({
+        data: [
+          {
+            name: "views",
+            values: [
+              { value: 10, end_time: "2026-09-01T07:00:00+0000" },
+              { value: 15, end_time: "2026-09-02T07:00:00+0000" },
+            ],
+          },
+          { name: "likes", total_value: { value: 6 } },
+          { name: "replies", total_value: { value: 2 } },
+          { name: "reposts", total_value: { value: 1 } },
+          { name: "quotes", total_value: { value: 1 } },
+        ],
+      }),
+    ]);
+    const report = await threads.analytics!.account!("th-1", "t", {
+      from: "2026-09-01",
+      to: "2026-09-02",
+    });
+    expect(calls[0].url.pathname).toBe("/v1.0/th-1/threads_insights");
+    expect(calls[0].url.searchParams.get("since")).toBe(String(Date.parse("2026-09-01") / 1000));
+    expect(report.totals).toEqual({ views: 25, likes: 6, comments: 2, shares: 2 });
+    expect(report.daily).toEqual([
+      { date: "2026-09-01", views: 10 },
+      { date: "2026-09-02", views: 15 },
+    ]);
+  });
 });
 
 describe("pinterest", () => {
@@ -240,6 +317,32 @@ describe("pinterest", () => {
       media_source: { source_type: "image_url", url: "https://media.example.com/cover.jpg" },
     });
     expect(result.platformUrl).toBe("https://www.pinterest.com/pin/pin-7/");
+  });
+
+  it("connects a personal account as well as a business one", async () => {
+    scriptFetch([
+      Response.json({
+        access_token: "a",
+        refresh_token: "r",
+        expires_in: 2_592_000,
+        scope: "boards:read,boards:write,pins:read,pins:write,user_accounts:read",
+      }),
+      Response.json({ id: "u-1", username: "hans", account_type: "PINNER" }),
+    ]);
+    const { accounts } = await pinterestProvider.connect.exchangeCode(
+      { clientId: "pi-app", clientSecret: "pi-secret" },
+      { code: "c", redirectUri: "https://mixetape.com/api/connect/pinterest/callback" },
+    );
+    expect(accounts).toEqual([
+      { platformAccountId: "u-1", name: "hans", handle: "@hans", avatar: undefined },
+    ]);
+  });
+
+  it("says why when Pinterest refuses an account's analytics", async () => {
+    scriptFetch([Response.json({ code: 3, message: "Not a business account" }, { status: 403 })]);
+    await expect(
+      pinterestProvider.analytics!.account!("u-1", "t", { from: "2026-09-01", to: "2026-09-30" }),
+    ).rejects.toThrow("business account");
   });
 });
 

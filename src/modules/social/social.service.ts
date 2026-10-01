@@ -57,6 +57,9 @@ const APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
   youtube: { id: "YOUTUBE_CLIENT_ID", secret: "YOUTUBE_CLIENT_SECRET" },
   facebook: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
   instagram: { id: "INSTAGRAM_APP_ID", secret: "INSTAGRAM_APP_SECRET" },
+  threads: { id: "THREADS_APP_ID", secret: "THREADS_APP_SECRET" },
+  tiktok: { id: "TIKTOK_CLIENT_KEY", secret: "TIKTOK_CLIENT_SECRET" },
+  pinterest: { id: "PINTEREST_APP_ID", secret: "PINTEREST_APP_SECRET" },
 };
 
 async function platformApp(provider: string): Promise<AppCredentials | null> {

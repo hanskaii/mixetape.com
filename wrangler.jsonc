@@ -126,6 +126,36 @@
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-instagram-app-secret",
     },
+    {
+      "binding": "SS_THREADS_APP_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-threads-app-id",
+    },
+    {
+      "binding": "SS_THREADS_APP_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-threads-app-secret",
+    },
+    {
+      "binding": "SS_TIKTOK_CLIENT_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-tiktok-client-key",
+    },
+    {
+      "binding": "SS_TIKTOK_CLIENT_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-tiktok-client-secret",
+    },
+    {
+      "binding": "SS_PINTEREST_APP_ID",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-pinterest-app-id",
+    },
+    {
+      "binding": "SS_PINTEREST_APP_SECRET",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-pinterest-app-secret",
+    },
   ],
   "vars": {
     "APP_ENV": "production",

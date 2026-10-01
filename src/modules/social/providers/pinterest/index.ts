@@ -6,7 +6,7 @@ import { createPin, pinterestAnalytics, pinterestBoards, pinterestStatus } from 
 export type { PinterestPinMeta } from "./metadata";
 
 /**
- * Pinterest business accounts: video and image Pins on a chosen board, boards as
+ * Pinterest accounts, personal or business: video and image Pins on a chosen board, boards as
  * collections, and Pin and account analytics. Pinterest cannot hold a Pin until a time,
  * so mixetape creates it at the scheduled moment.
  */

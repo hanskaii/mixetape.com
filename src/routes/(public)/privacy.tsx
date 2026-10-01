@@ -16,14 +16,14 @@ function Privacy() {
     <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated September 27, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated October 1, 2026</p>
       </div>
 
       <section className="space-y-2">
         <p>
-          {siteConfig.name} is a scheduling tool that publishes video posts to social media channels
-          on behalf of the person or organization who connects them. It is operated as a single-user
-          tool by its developer; it is not offered as a public service, and it does not sell or
+          {siteConfig.name} is a scheduling tool that publishes video and image posts to social
+          media channels on behalf of the person or organization who connects them. Anyone can sign
+          up and connect their own channels; each person can only reach their own. We do not sell or
           share data with third parties for advertising.
         </p>
       </section>

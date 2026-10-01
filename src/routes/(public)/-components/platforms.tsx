@@ -14,7 +14,7 @@ const MONO = '"Geist Mono Variable", ui-monospace, monospace';
 // `soon`: mixetape has no app on that platform yet, so it cannot be connected — say so
 // rather than present it as live (PRODUCT.md, Honest surface).
 const PLATFORMS = [
-  { name: "TikTok", Icon: TiktokLogo, color: "bg-[#101010]", soon: true },
+  { name: "TikTok", Icon: TiktokLogo, color: "bg-[#101010]", soon: false },
   { name: "YouTube", Icon: YoutubeLogo, color: "bg-[#ff0033]", soon: false },
   {
     name: "Instagram",
@@ -22,9 +22,9 @@ const PLATFORMS = [
     color: "bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045]",
     soon: false,
   },
-  { name: "Threads", Icon: ThreadsLogo, color: "bg-[#101010]", soon: true },
+  { name: "Threads", Icon: ThreadsLogo, color: "bg-[#101010]", soon: false },
   { name: "Facebook", Icon: FacebookLogo, color: "bg-[#1877f2]", soon: false },
-  { name: "Pinterest", Icon: PinterestLogo, color: "bg-[#e60023]", soon: true },
+  { name: "Pinterest", Icon: PinterestLogo, color: "bg-[#e60023]", soon: false },
 ] as const;
 
 const styles = stylex.create({

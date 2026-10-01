@@ -1,5 +1,6 @@
 import { mediaRange, mediaSize } from "../media";
 import { PermanentPublishError, type SocialProvider, type StatusCapability } from "../types";
+import { tiktokAnalytics } from "./analytics";
 import { TikTokApiError, tiktok } from "./api";
 import { tiktokConnect } from "./connect";
 import { tiktokMetadata, type TikTokVideoMeta } from "./metadata";
@@ -9,8 +10,8 @@ export type { TikTokVideoMeta } from "./metadata";
 /**
  * TikTok Direct Post. TikTok cannot hold a post until a time, so mixetape uploads at the
  * scheduled moment. The file is sent in chunks (FILE_UPLOAD), so the media domain needs
- * no verification with TikTok. Comments and analytics need APIs TikTok does not open to
- * posting apps.
+ * no verification with TikTok. Analytics are the Display API's lifetime counts; comments
+ * need an API TikTok does not open to posting apps.
  */
 
 const CHUNK = 10 * 1024 * 1024; // TikTok takes 5–64 MB chunks; the last may be up to 128 MB
@@ -60,6 +61,7 @@ export const tiktokProvider: SocialProvider = {
     vertical: true,
   },
   status: tiktokStatus,
+  analytics: tiktokAnalytics,
 
   async upload(post, token, metadata) {
     const meta = metadata as TikTokVideoMeta;

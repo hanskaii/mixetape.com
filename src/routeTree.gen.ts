@@ -14,6 +14,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as appAppRouteRouteImport } from './routes/(app)/_app/route'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
+import { Route as publicTermsRouteImport } from './routes/(public)/terms'
 import { Route as RobotsTxtRouteImport } from './routes/robots.txt'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
@@ -56,6 +57,11 @@ const publicIndexRoute = publicIndexRouteImport.update({
 const publicPrivacyRoute = publicPrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicTermsRoute = publicTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => publicRouteRoute,
 } as any)
 const RobotsTxtRoute = RobotsTxtRouteImport.update({
@@ -163,6 +169,7 @@ const ApiV1ToolsNameRoute = ApiV1ToolsNameRouteImport.update({
 export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/privacy': typeof publicPrivacyRoute
+  '/terms': typeof publicTermsRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/privacy': typeof publicPrivacyRoute
+  '/terms': typeof publicTermsRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/(app)/_app': typeof appAppRouteRouteWithChildren
   '/(public)/privacy': typeof publicPrivacyRoute
+  '/(public)/terms': typeof publicTermsRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/(public)/': typeof publicIndexRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/mcp'
     | '/privacy'
+    | '/terms'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
   to:
     | '/mcp'
     | '/privacy'
+    | '/terms'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/(app)/_app'
     | '/(public)/privacy'
+    | '/(public)/terms'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/(public)/'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof publicPrivacyRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/terms': {
+      id: '/(public)/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof publicTermsRouteImport
       parentRoute: typeof publicRouteRoute
     }
     '/robots/txt': {
@@ -515,12 +534,14 @@ declare module '@tanstack/react-router' {
 
 interface publicRouteRouteChildren {
   publicPrivacyRoute: typeof publicPrivacyRoute
+  publicTermsRoute: typeof publicTermsRoute
   publicIndexRoute: typeof publicIndexRoute
   publicConnectDoneRoute: typeof publicConnectDoneRoute
 }
 
 const publicRouteRouteChildren: publicRouteRouteChildren = {
   publicPrivacyRoute: publicPrivacyRoute,
+  publicTermsRoute: publicTermsRoute,
   publicIndexRoute: publicIndexRoute,
   publicConnectDoneRoute: publicConnectDoneRoute,
 }

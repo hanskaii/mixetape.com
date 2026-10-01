@@ -1,5 +1,6 @@
 import { mediaStream, publicMediaUrl } from "../media";
 import {
+  InvalidInputError,
   PermanentPublishError,
   type AnalyticsCapability,
   type CollectionsCapability,
@@ -194,31 +195,45 @@ function metrics(summary: Summary | undefined): Metrics {
   };
 }
 
+/** Pinterest may keep analytics to business accounts; say so instead of a bare 403. */
+async function report<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof PinterestApiError && error.status === 403) {
+      throw new InvalidInputError(
+        `Pinterest refused analytics for this account; a personal account may need converting to a business account (${error.message})`,
+      );
+    }
+    throw error;
+  }
+}
+
 /** Pin and account analytics (Pinterest keeps 90 days of daily numbers). */
 export const pinterestAnalytics: AnalyticsCapability = {
   delayDays: 2,
 
   async post(pinId, token, range) {
-    const data = await pinterest<{ all?: { summary_metrics?: Summary } }>(
-      token,
-      `pins/${pinId}/analytics`,
-      {
+    const data = await report(() =>
+      pinterest<{ all?: { summary_metrics?: Summary } }>(token, `pins/${pinId}/analytics`, {
         query: { start_date: range.from, end_date: range.to, metric_types: METRICS },
-      },
+      }),
     );
     return { range, totals: metrics(data.all?.summary_metrics), retention: [], trafficSources: [] };
   },
 
   async account(_accountId, token, range) {
-    const data = await pinterest<{
-      all?: { summary_metrics?: Summary; daily_metrics?: { date: string; metrics?: Summary }[] };
-    }>(token, "user_account/analytics", {
-      query: {
-        start_date: range.from,
-        end_date: range.to,
-        metric_types: "IMPRESSION,SAVE,PIN_CLICK,OUTBOUND_CLICK",
-      },
-    });
+    const data = await report(() =>
+      pinterest<{
+        all?: { summary_metrics?: Summary; daily_metrics?: { date: string; metrics?: Summary }[] };
+      }>(token, "user_account/analytics", {
+        query: {
+          start_date: range.from,
+          end_date: range.to,
+          metric_types: "IMPRESSION,SAVE,PIN_CLICK,OUTBOUND_CLICK",
+        },
+      }),
+    );
     return {
       range,
       totals: metrics(data.all?.summary_metrics),

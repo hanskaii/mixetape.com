@@ -11,7 +11,7 @@ const REACHES: Record<string, string> = {
   instagram: "A Business or Creator account",
   threads: "Your Threads profile",
   tiktok: "Your TikTok account",
-  pinterest: "A Pinterest business account",
+  pinterest: "Your Pinterest account",
 };
 
 const styles = stylex.create({

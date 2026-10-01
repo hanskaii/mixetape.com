@@ -4,7 +4,8 @@ import { PINTEREST, pinterest } from "./api";
 /**
  * Pinterest OAuth with continuous refresh: the access token lasts 30 days, the refresh
  * token 60 days and is renewed on every refresh, so an account in use never lapses.
- * Pinterest requires a business account for publishing through the API.
+ * Personal and business accounts both connect; only the app's owner needs a business
+ * account.
  */
 const SCOPES = ["boards:read", "boards:write", "pins:read", "pins:write", "user_accounts:read"];
 
@@ -72,11 +73,6 @@ export const pinterestConnect: ConnectCapability = {
       account_type?: string;
       id?: string;
     }>(grant.accessToken, "user_account");
-    if (account.account_type && account.account_type !== "BUSINESS") {
-      throw new Error(
-        "Pinterest publishes through the API from business accounts only; convert the account first.",
-      );
-    }
     return {
       grant,
       accounts: [
