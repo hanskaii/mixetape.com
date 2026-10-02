@@ -33,6 +33,7 @@ import {
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import { getChannelsData, removeAccount, removeBrand } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
+import { removalDate } from "#/modules/social/revocation";
 import { BrandModal } from "./-components/brand-modal";
 import { ConnectPlatformModal } from "./-components/connect-platform-modal";
 import { AvatarStack } from "#/components/ui/avatar-stack";
@@ -172,7 +173,7 @@ function ChannelsPage() {
                     />
                   }
                   title={account.name}
-                  meta={account.handle ?? account.platformAccountId}
+                  meta={revokedNote(account) ?? account.handle ?? account.platformAccountId}
                 >
                   <span {...stylex.props(styles.actions)}>
                     {account.status === "active" ? (
@@ -320,4 +321,12 @@ function BrandMenu({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/** A channel whose access was revoked: when its data goes unless it is connected again. */
+function revokedNote(account: { provider: string; revokedAt: Date | string | null }) {
+  const date = removalDate(account);
+  if (!date) return null;
+  const day = date.toLocaleDateString(undefined, { day: "numeric", month: "long" });
+  return `Access revoked — reconnect by ${day}, or it is deleted with its posts`;
 }

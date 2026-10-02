@@ -127,7 +127,7 @@ function AccountSettingsPage() {
     }
   }, [user]);
 
-  // Social & Delete state
+  // Linked sign-in providers
   const [linkedAccounts, setLinkedAccounts] = useState<
     Array<{ providerId: string; accountId: string }>
   >([]);
@@ -397,20 +397,6 @@ function AccountSettingsPage() {
     }
   };
 
-  const promptDeleteAccount = () => {
-    confirm({
-      title: "Delete account permanently?",
-      description:
-        "This action cannot be undone. Your account profile, articles, and stored files will be permanently removed.",
-      confirmText: "Yes, delete account",
-      variant: "destructive",
-      onConfirm: async () => {
-        await authClient.signOut();
-        router.navigate({ to: "/" });
-      },
-    });
-  };
-
   return (
     <Page>
       <PageHeader
@@ -630,26 +616,6 @@ function AccountSettingsPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Danger Zone (Delete Account) Card */}
-        <div className="bg-card rounded-2xl ring-1 ring-destructive/30 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-xs font-bold text-destructive">Delete Account</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Permanently delete your account, active sessions, and uploaded assets.
-            </p>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={promptDeleteAccount}
-            className="h-8 px-4 text-xs font-medium border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50 rounded-full cursor-pointer shrink-0"
-          >
-            Delete account
-          </Button>
         </div>
       </div>
 

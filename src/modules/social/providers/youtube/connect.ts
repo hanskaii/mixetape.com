@@ -106,6 +106,8 @@ export const youtubeConnect: ConnectCapability = {
     };
   },
 
+  accounts: ownChannels,
+
   async refresh(app, refreshToken) {
     const token = await requestToken({
       client_id: app.clientId,

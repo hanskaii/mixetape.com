@@ -23,6 +23,7 @@ const account = (id: string, name: string, handle: string): PublishData["account
   accessTokenExpiresAt: null,
   scopes: null,
   status: "active",
+  revokedAt: null,
   createdAt: created,
   updatedAt: created,
 });

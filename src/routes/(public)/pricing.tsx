@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { Route as RootRoute } from "#/routes/__root";
+import { Check } from "@phosphor-icons/react";
 import { siteConfig } from "#/config/site";
+import { Button } from "#/components/ui/button";
 import { colors } from "../../components/ui/tokens.stylex";
-import { LandingCta } from "./-components/landing-cta";
 import { publicHead } from "./-lib/head";
 
 export const Route = createFileRoute("/(public)/pricing")({
@@ -12,14 +12,59 @@ export const Route = createFileRoute("/(public)/pricing")({
       path: "/pricing",
       title: `Pricing | ${siteConfig.name}`,
       description:
-        "mixetape has no paid plans yet. Sign in, connect your channels and let your agents schedule posts through MCP or the REST API today.",
+        "mixetape plans: Free, Creator at $9 and Studio at $29 a month, for agents that schedule posts to six platforms over MCP and REST. Plans launch soon.",
     }),
   component: PricingPage,
 });
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';
 
-// Only what the product does today (DESIGN.md: no claims or prices it cannot back).
+// The plans as they will launch. Every feature listed works today; the limits are what
+// each plan will allow. Until checkout opens, every button says Soon.
+const PLANS = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    pitch: "Try it with an agent and a couple of channels.",
+    features: [
+      "2 channels",
+      "30 scheduled posts a month",
+      "1 API key",
+      "MCP server and REST API",
+      "All six platforms",
+    ],
+    featured: false,
+  },
+  {
+    name: "Creator",
+    price: "$9",
+    period: "a month",
+    pitch: "For a creator whose agents publish every day.",
+    features: [
+      "10 channels",
+      "Unlimited scheduled posts",
+      "Unlimited API keys",
+      "Library groups and up to 5 brands",
+      "Comments, captions and analytics",
+    ],
+    featured: true,
+  },
+  {
+    name: "Studio",
+    price: "$29",
+    period: "a month",
+    pitch: "For studios running many channels and pipelines.",
+    features: [
+      "50 channels",
+      "Everything in Creator",
+      "Unlimited brands, one per client",
+      "Priority email support",
+    ],
+    featured: false,
+  },
+];
+
 const INCLUDED = [
   {
     title: "Six platforms",
@@ -39,11 +84,13 @@ const INCLUDED = [
   },
 ];
 
+const LG = "@media (min-width: 1024px)";
+
 const styles = stylex.create({
   hero: {
     paddingBlockEnd: "1.5rem",
-    paddingBlockStart: { default: "3rem", "@media (min-width: 1024px)": "4rem" },
-    paddingInlineStart: { default: 0, "@media (min-width: 1024px)": "4rem" },
+    paddingBlockStart: { default: "3rem", [LG]: "4rem" },
+    paddingInlineStart: { default: 0, [LG]: "4rem" },
   },
   eyebrow: {
     color: colors.mutedForeground,
@@ -74,23 +121,83 @@ const styles = stylex.create({
     color: colors.mutedForeground,
     fontSize: { default: "1.125rem", "@media (min-width: 640px)": "1.25rem" },
     lineHeight: 1.45,
+    marginBlockEnd: 0,
     marginBlockStart: "1.5rem",
     maxWidth: "640px",
   },
-  actions: {
-    alignItems: "center",
-    columnGap: "2rem",
-    display: "flex",
-    flexWrap: "wrap",
-    marginBlockStart: "1.5rem",
-    rowGap: "1rem",
+  plans: {
+    display: "grid",
+    gap: "1rem",
+    gridTemplateColumns: { default: "1fr", [LG]: "repeat(3, 1fr)" },
+    listStyle: "none",
+    marginBlock: 0,
+    paddingInline: 0,
   },
-  secondary: {
-    color: colors.foreground,
-    fontSize: "1rem",
-    fontWeight: 500,
-    textDecoration: "underline",
-    textUnderlineOffset: "7px",
+  plan: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: "22px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+    padding: "1.5rem",
+  },
+  featured: {
+    borderColor: "#ebc62c",
+    boxShadow: "0 18px 48px -40px rgba(35, 25, 8, 0.35)",
+  },
+  planHead: {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "space-between",
+  },
+  planName: { fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.02em", marginBlock: 0 },
+  tag: {
+    backgroundColor: "#ffd337",
+    borderRadius: "999px",
+    color: "#11110f",
+    fontFamily: MONO,
+    fontSize: "0.65rem",
+    fontWeight: 600,
+    letterSpacing: "0.12em",
+    paddingBlock: "0.25rem",
+    paddingInline: "0.5rem",
+    textTransform: "uppercase",
+  },
+  price: { alignItems: "baseline", display: "flex", gap: "0.5rem", margin: 0 },
+  amount: { fontSize: "3rem", fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1 },
+  period: { color: colors.mutedForeground, fontSize: "0.875rem" },
+  pitch: {
+    color: colors.mutedForeground,
+    fontSize: "0.875rem",
+    lineHeight: 1.6,
+    marginBlock: 0,
+  },
+  features: {
+    borderBlockStartColor: colors.border,
+    borderBlockStartStyle: "solid",
+    borderBlockStartWidth: "1px",
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1,
+    gap: "0.625rem",
+    listStyle: "none",
+    marginBlock: 0,
+    paddingBlockStart: "1.25rem",
+    paddingInline: 0,
+  },
+  feature: { alignItems: "flex-start", display: "flex", fontSize: "0.875rem", gap: "0.5rem" },
+  check: { color: colors.editorial, flexShrink: 0, marginBlockStart: "0.2rem" },
+  soon: { width: "100%" },
+  note: {
+    color: colors.mutedForeground,
+    fontSize: "0.8125rem",
+    marginBlockEnd: 0,
+    marginBlockStart: "0.75rem",
+    marginInlineStart: "0.5rem",
   },
   section: {
     borderBlockStartColor: colors.border,
@@ -137,36 +244,65 @@ const styles = stylex.create({
     marginBlockStart: "0.25rem",
     maxWidth: "36rem",
   },
+  mail: { color: colors.foreground, textDecoration: "underline", textUnderlineOffset: "4px" },
 });
 
 function PricingPage() {
-  const signedIn = Boolean(RootRoute.useRouteContext().session?.user);
   return (
     <>
       <section {...stylex.props(styles.hero)}>
         <p {...stylex.props(styles.eyebrow)}>Pricing</p>
         <h1 {...stylex.props(styles.title)}>
-          Plans are <em {...stylex.props(styles.serif)}>coming soon.</em>
+          Simple plans, <em {...stylex.props(styles.serif)}>coming soon.</em>
         </h1>
         <p {...stylex.props(styles.lede)}>
-          There is no paid plan yet. Sign in, connect your channels and give your agent a key —
-          mixetape works today as it is described in the docs.
+          Pay for the channels your agents publish to, not for seats. Checkout opens soon; until
+          then, mixetape is free to use as it is today.
         </p>
-        <div {...stylex.props(styles.actions)}>
-          <LandingCta
-            signedIn={signedIn}
-            to="/api-keys"
-            signedInLabel="Get an API key"
-            signedOutLabel="Get an API key"
-          />
-          <a href={`mailto:${siteConfig.contactEmail}`} {...stylex.props(styles.secondary)}>
-            Ask about pricing
-          </a>
-        </div>
       </section>
 
+      <div>
+        <ul {...stylex.props(styles.plans)}>
+          {PLANS.map((plan) => (
+            <li key={plan.name} {...stylex.props(styles.plan, plan.featured && styles.featured)}>
+              <div {...stylex.props(styles.planHead)}>
+                <h2 {...stylex.props(styles.planName)}>{plan.name}</h2>
+                {plan.featured && <span {...stylex.props(styles.tag)}>Popular</span>}
+              </div>
+              <p {...stylex.props(styles.price)}>
+                <span {...stylex.props(styles.amount)}>{plan.price}</span>
+                <span {...stylex.props(styles.period)}>{plan.period}</span>
+              </p>
+              <p {...stylex.props(styles.pitch)}>{plan.pitch}</p>
+              <ul {...stylex.props(styles.features)}>
+                {plan.features.map((feature) => (
+                  <li key={feature} {...stylex.props(styles.feature)}>
+                    <Check size={16} weight="bold" aria-hidden {...stylex.props(styles.check)} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                size="lg"
+                variant={plan.featured ? "default" : "outline"}
+                disabled
+                style={styles.soon}
+              >
+                Soon
+              </Button>
+            </li>
+          ))}
+        </ul>
+        <p {...stylex.props(styles.note)}>
+          Prices in USD. Plans and limits may change before checkout opens. Questions:{" "}
+          <a href={`mailto:${siteConfig.contactEmail}`} {...stylex.props(styles.mail)}>
+            {siteConfig.contactEmail}
+          </a>
+        </p>
+      </div>
+
       <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>What you get today</h2>
+        <h2 {...stylex.props(styles.sectionTitle)}>Every plan includes</h2>
         <ol {...stylex.props(styles.list)}>
           {INCLUDED.map((item, index) => (
             <li key={item.title} {...stylex.props(styles.item)}>

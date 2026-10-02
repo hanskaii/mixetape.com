@@ -105,6 +105,13 @@ function Privacy() {
           , in addition to disconnecting the channel in {siteConfig.name}. Each other platform has
           its own place to remove connected apps, and its own privacy policy for the data it holds.
         </p>
+        <p>
+          {siteConfig.name} checks every day that its access to each YouTube channel still stands,
+          and refreshes the channel's name and picture from YouTube at the same time. Once access is
+          revoked, the channel's stored tokens are deleted as soon as {siteConfig.name} learns of
+          it, and the channel and its posts in {siteConfig.name} are deleted within 7 days unless
+          you connect it again.
+        </p>
       </section>
 
       <section className="space-y-2">

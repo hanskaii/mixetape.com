@@ -79,6 +79,11 @@ export interface ConnectCapability {
     app: AppCredentials,
     refreshToken: string,
   ): Promise<{ accessToken: string; expiresIn: number; refreshToken?: string }>;
+  /**
+   * The accounts a token reaches now, to keep their stored names and avatars current
+   * (YouTube's policies allow keeping its data 30 days before it must be refreshed).
+   */
+  accounts?(token: string): Promise<ConnectedAccount[]>;
 }
 
 // ── Metadata ─────────────────────────────────────────────────────────────────

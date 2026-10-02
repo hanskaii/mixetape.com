@@ -2,6 +2,7 @@ import handler from "@tanstack/react-start/server-entry";
 
 // Workflows are classes exported from the Worker entry; wrangler.jsonc binds this one.
 export { PublishWorkflow } from "./modules/social/publish.workflow";
+import { checkSocialAccess } from "./modules/social/social.scheduled";
 import { expireStorage } from "./modules/storage/storage.scheduled";
 
 export default {
@@ -31,5 +32,10 @@ export default {
     }
   },
 
-  scheduled: expireStorage,
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    await Promise.all([
+      expireStorage(controller, env, ctx),
+      checkSocialAccess(controller, env, ctx),
+    ]);
+  },
 };

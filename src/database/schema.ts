@@ -121,6 +121,9 @@ export const socialAccounts = sqliteTable(
     accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
     scopes: text("scopes"),
     status: text("status").notNull().default("active"), // 'active' | 'reconnect'
+    // When the platform said this access was revoked: its tokens are gone from then on, and a
+    // YouTube channel's data goes too if it is not connected again (social/access.service).
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),

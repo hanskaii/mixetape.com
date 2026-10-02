@@ -298,6 +298,7 @@ async function saveAccounts(
       accessTokenExpiresAt: expiresAt,
       scopes,
       status: "active",
+      revokedAt: null,
       updatedAt: new Date(),
     };
     if (existing) {
@@ -376,10 +377,33 @@ export async function disconnectAccount(userId: string, id: string) {
 }
 
 /**
- * A usable access token for the account, refreshed and saved when it is close to expiry.
- * A refresh the platform refuses marks the account for reconnection.
+ * The platform refused the account's access — revoked by the person, or lapsed. The tokens
+ * are useless now, so they go at once; the channel waits to be connected again (see
+ * access.service for when its data goes).
  */
-export async function accessTokenFor(account: SocialAccount): Promise<string> {
+export async function forgetAccess(account: Pick<SocialAccount, "id" | "revokedAt">) {
+  await db
+    .update(socialAccounts)
+    .set({
+      accessToken: "",
+      refreshToken: null,
+      accessTokenExpiresAt: null,
+      status: "reconnect",
+      revokedAt: account.revokedAt ?? new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(socialAccounts.id, account.id));
+}
+
+/**
+ * A usable access token for the account, refreshed and saved when it is close to expiry —
+ * or always, with `fresh`, to learn whether the platform still accepts it. A refresh the
+ * platform refuses forgets the access (forgetAccess).
+ */
+export async function accessTokenFor(
+  account: SocialAccount,
+  { fresh = false }: { fresh?: boolean } = {},
+): Promise<string> {
   const markReconnect = () =>
     db
       .update(socialAccounts)
@@ -397,7 +421,7 @@ export async function accessTokenFor(account: SocialAccount): Promise<string> {
     });
 
   const expiresAt = account.accessTokenExpiresAt?.getTime() ?? 0;
-  if (expiresAt - Date.now() > TOKEN_REFRESH_MARGIN) return open(account.accessToken);
+  if (!fresh && expiresAt - Date.now() > TOKEN_REFRESH_MARGIN) return open(account.accessToken);
 
   if (!account.refreshToken) {
     await markReconnect();
@@ -424,7 +448,7 @@ export async function accessTokenFor(account: SocialAccount): Promise<string> {
     return refreshed.accessToken;
   } catch (error) {
     if (error instanceof ReconnectRequiredError) {
-      await markReconnect();
+      await forgetAccess(account);
       throw new ServiceError(error.message, 409, { code: "account_needs_reconnect" });
     }
     throw error;

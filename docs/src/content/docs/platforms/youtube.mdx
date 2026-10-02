@@ -43,3 +43,11 @@ traffic sources, per video and per channel.
 - **Custom thumbnails** need a verified channel.
 - The API cannot pin comments or set a Short's related video.
 - Analytics lag two to three days.
+
+## Revoked access
+
+mixetape checks each YouTube channel's access once a day and refreshes its name and picture.
+When access is revoked — from [Google's security settings](https://security.google.com/settings/security/permissions)
+or by Google — the channel's tokens are deleted at once and it shows **Reconnect**; it and its
+posts in mixetape are deleted 6 days later unless it is connected again, as YouTube's policies
+require. Until then `list_accounts` reports it with status `reconnect`.
