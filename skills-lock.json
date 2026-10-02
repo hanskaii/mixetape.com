@@ -1,11 +1,77 @@
 {
   "version": 1,
   "skills": {
+    "backlink-profile-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/backlink-profile-audit/SKILL.md",
+      "computedHash": "900f4df88aad458f6d85d4b6ed8a1575af26af6fcfa256c7dc2cc5a51e6d77b8"
+    },
+    "change-and-decision-log": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/change-and-decision-log/SKILL.md",
+      "computedHash": "c73b906491d31355a2fa895e13be4c931aeb50f49d8a012417f2a384bf8b88c0"
+    },
+    "content-creation-standards": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/content-creation-standards/SKILL.md",
+      "computedHash": "09649009aa993c8ddc5d58c310676a8fcfa2131f87e989edd9ee3ddccf8b792a"
+    },
+    "content-freshness-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/content-freshness-audit/SKILL.md",
+      "computedHash": "985db8d64a3a0a018ce4fa52fb94c61998c3e4c8817eee8275ede0ed69bb0fd0"
+    },
+    "content-opportunity-discovery": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/content-opportunity-discovery/SKILL.md",
+      "computedHash": "c06770d69bd88e2dd6fb6d5929710e93f4cff5490cba55629a0ac9d1d25461a6"
+    },
+    "ctr-snippet-optimization": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ctr-snippet-optimization/SKILL.md",
+      "computedHash": "e1b1300011310e32e599524e8fb8bcc821f8adabce46e3c781ff48af21b00972"
+    },
+    "duplicate-intent-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/duplicate-intent-audit/SKILL.md",
+      "computedHash": "4832689ed197792554a12f276661838f1b26032734be5ec11f4f713dd1749660"
+    },
     "improve": {
       "source": "shadcn/improve",
       "sourceType": "github",
       "skillPath": "skills/improve/SKILL.md",
       "computedHash": "553713a1b9af40ec50c4018f75b8974bf728fe5abc8e125b748e2d718d5c31ea"
+    },
+    "indexing-crawl-health-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/indexing-crawl-health-audit/SKILL.md",
+      "computedHash": "dcf519d2e00bcde1683235047e6750438ad2bf30ff19561032da35877bb5dc30"
+    },
+    "internal-linking-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/internal-linking-audit/SKILL.md",
+      "computedHash": "489c51706d526722c0637f0e38ff5d4f03ddff17dc2da4169dff056f5c5e2666"
+    },
+    "legal-regulatory-compliance": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/legal-regulatory-compliance/SKILL.md",
+      "computedHash": "7459895cb9bbe1a159ea3e24e5b1340b9dd173d8e6990715a3fffcfdcf5a065d"
+    },
+    "measurement-discipline": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/measurement-discipline/SKILL.md",
+      "computedHash": "468c63c4aebec34864ae4a91f7d2b2b03747aec980ed5a343eb2472fca8c73d8"
     },
     "migrate-radix-to-base": {
       "source": "shadcn/ui",
@@ -13,11 +79,65 @@
       "skillPath": "skills/migrate-radix-to-base/SKILL.md",
       "computedHash": "4fdc31bf287f674ba6bf91a648120f7b34cd7ef370f998f2cc116fed067789c5"
     },
+    "page-quality-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/page-quality-audit/SKILL.md",
+      "computedHash": "55ad9e2e4b444c02cc1d142f195d06e84288175158c9b68f853125b0f74c1c7b"
+    },
+    "protected-field-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/protected-field-audit/SKILL.md",
+      "computedHash": "47e56d756545c727fa60f3837b1974bb56116ff5815420b3257c67e913d898f0"
+    },
+    "seo-growth-stage-strategy": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-growth-stage-strategy/SKILL.md",
+      "computedHash": "1ce1a713c9eb6b5312101ba6160e6413555dce29b4c41e40740a9d8467b4ff21"
+    },
+    "seo-health-monitoring": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-health-monitoring/SKILL.md",
+      "computedHash": "12f0c5453e1d7e48019566037837fd4c050e7416731773c528ea183069eb8f6a"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
       "computedHash": "9b5a0bc8d34287ac67d8e59a84ce3beb0cc29d2bfc50159804600d79cfc2a549"
+    },
+    "site-audit-orchestrator": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/site-audit-orchestrator/SKILL.md",
+      "computedHash": "a7d08bc2b601c367cc4217068f0b89098fa5e5e04fbb3c287d8ae66381b7e24b"
+    },
+    "site-migration-safety": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/site-migration-safety/SKILL.md",
+      "computedHash": "f500071e4dbf601d0e062bb733e4e59e025fdbc4b66f79b17097d028a7365109"
+    },
+    "technical-seo-audit": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/technical-seo-audit/SKILL.md",
+      "computedHash": "10cb7e9dd1de14c86b5f018359a4ae1a3338f5f44049669b9124ff9db627b03e"
+    },
+    "traffic-drop-diagnosis": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/traffic-drop-diagnosis/SKILL.md",
+      "computedHash": "4d8bede7a30b9e85e2e8cc48dbe8fd638351f337d7bfc5586db9f07101aacecd"
+    },
+    "verify-primary-source": {
+      "source": "seoo-tools/seoo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/verify-primary-source/SKILL.md",
+      "computedHash": "58408f5f62721452bad18673d262b184fa91634edfdde3823bc23403dd1e6696"
     }
   }
 }
