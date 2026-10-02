@@ -1,6 +1,6 @@
 ---
 title: API keys and permissions
-description: "How agents and scripts authenticate to mixetape with API keys, and the eight permissions that decide what each key may do."
+description: "How agents and scripts authenticate to mixetape — by signing in or with API keys — and the nine permissions that decide what each may do."
 sidebar:
   order: 1
 ---
@@ -13,6 +13,10 @@ Authorization: Bearer mxt_…
 
 mixetape stores only a hash of each key; the key itself is shown once, when it is created.
 Give each agent or script its own key, so removing one never stops another.
+
+An agent that [signs in](/agents#sign-in-or-use-a-key) needs no key: you tick its permissions
+on the mixetape page it opens, and it appears under **API keys → Connected apps**, where you
+can disconnect it. The permissions below are the same for both.
 
 ## Permissions
 
@@ -30,6 +34,7 @@ key allows — over MCP they are simply not listed — and a call without the pe
 | `storage` | Upload, import, list and delete files in mixetape's storage |
 | `library` | Make, change and read [library](/concepts/library) groups — files that go out together, with drafted words — and plan where they fit |
 | `channels` | Start connecting channels (you still approve each one on the platform), and group them into brands |
+| `webhooks` | Add, change and remove [webhooks](/concepts/webhooks) |
 
 [Tools](/tools) lists which tools each permission unlocks.
 

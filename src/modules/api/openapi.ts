@@ -38,6 +38,10 @@ const TAGS = [
     "Files",
     "mixetape storage: uploads, imports and the files' index; files published without a group.",
   ],
+  [
+    "Webhooks",
+    "Endpoints told when posts go up, go live, fail or are cancelled, and when a channel needs reconnecting; signed per Standard Webhooks.",
+  ],
 ] as const;
 
 const IDEMPOTENCY_KEY = {

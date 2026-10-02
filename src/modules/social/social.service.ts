@@ -27,6 +27,7 @@ import {
 import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
 import { releasePostFiles } from "#/modules/storage/files.service";
+import { emitEvent, type WebhookEventType } from "#/modules/webhooks/webhooks.service";
 
 /**
  * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
@@ -381,7 +382,7 @@ export async function disconnectAccount(userId: string, id: string) {
  * are useless now, so they go at once; the channel waits to be connected again (see
  * access.service for when its data goes).
  */
-export async function forgetAccess(account: Pick<SocialAccount, "id" | "revokedAt">) {
+export async function forgetAccess(account: SocialAccount) {
   await db
     .update(socialAccounts)
     .set({
@@ -393,6 +394,26 @@ export async function forgetAccess(account: Pick<SocialAccount, "id" | "revokedA
       updatedAt: new Date(),
     })
     .where(eq(socialAccounts.id, account.id));
+  await announceReconnect(account);
+}
+
+/** Tells the user's webhooks a working channel needs connecting again — once per loss. */
+async function announceReconnect(account: SocialAccount) {
+  if (account.status !== "active") return;
+  await emitEvent(
+    account.userId,
+    "account.reconnect_needed",
+    {
+      account: {
+        id: account.id,
+        provider: account.provider,
+        name: account.name.trim(),
+        handle: account.handle,
+        status: "reconnect",
+      },
+    },
+    `${account.id}:reconnect:${account.updatedAt.getTime()}`,
+  );
 }
 
 /**
@@ -404,11 +425,13 @@ export async function accessTokenFor(
   account: SocialAccount,
   { fresh = false }: { fresh?: boolean } = {},
 ): Promise<string> {
-  const markReconnect = () =>
-    db
+  const markReconnect = async () => {
+    await db
       .update(socialAccounts)
       .set({ status: "reconnect", updatedAt: new Date() })
       .where(eq(socialAccounts.id, account.id));
+    await announceReconnect(account);
+  };
   // Tokens sealed with an earlier encryption key cannot be read: the channel must be
   // connected again, which is what the Reconnect button does.
   const open = (sealed: string) =>
@@ -782,6 +805,7 @@ export async function cancelPost(userId: string, id: string) {
     .where(and(eq(socialPosts.id, id), eq(socialPosts.status, "scheduled")));
   await stopWorkflow(post.workflowId ?? id);
   await releasePostFiles(id);
+  await announcePost(id);
   return getPost(userId, id);
 }
 
@@ -836,4 +860,29 @@ export async function updatePost(id: string, values: Partial<typeof socialPosts.
     .update(socialPosts)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(socialPosts.id, id));
+  if (values.status && values.status in POST_EVENTS) await announcePost(id);
+}
+
+/** The statuses webhooks hear about (webhooks.service WEBHOOK_EVENTS). */
+const POST_EVENTS: Record<string, WebhookEventType> = {
+  uploaded: "post.uploaded",
+  published: "post.published",
+  failed: "post.failed",
+  cancelled: "post.cancelled",
+};
+
+/**
+ * Tells the user's webhooks a post reached its status. Keyed by the attempt, so a retried
+ * step announcing it again is still one event, and a later attempt is a new one.
+ */
+async function announcePost(id: string) {
+  const post = await db.query.socialPosts.findFirst({ where: eq(socialPosts.id, id) });
+  const type = post && POST_EVENTS[post.status];
+  if (!post || !type) return;
+  await emitEvent(
+    post.userId,
+    type,
+    { post: JSON.parse(JSON.stringify(postView(post))) },
+    `${post.id}:${post.status}:${post.attempts}`,
+  );
 }

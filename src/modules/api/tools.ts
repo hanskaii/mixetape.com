@@ -1,6 +1,7 @@
 import { storageTools } from "#/modules/storage/storage.tools";
 import { socialTools } from "#/modules/social/social.tools";
 import { libraryTools } from "#/modules/library/library.tools";
+import { webhookTools } from "#/modules/webhooks/webhooks.tools";
 import { getProvider, platformsWith } from "#/modules/social/providers";
 import { requireScope, type Caller } from "./api-keys.service";
 import { ServiceError } from "./errors";
@@ -13,7 +14,7 @@ import type { Tool } from "./tool";
  * tools; storage knows nothing of scheduling, it only hands back `r2://` URLs. Each tool
  * needs one API-key permission. The REST API is a separate surface (endpoints.ts).
  */
-export const TOOLS: Tool[] = [...socialTools, ...libraryTools, ...storageTools];
+export const TOOLS: Tool[] = [...socialTools, ...libraryTools, ...storageTools, ...webhookTools];
 
 export const findTool = (name: string) => TOOLS.find((tool) => tool.name === name);
 

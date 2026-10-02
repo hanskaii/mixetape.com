@@ -7,6 +7,7 @@ import {
   type Caller,
 } from "./api-keys.service";
 import { errorBody, ServiceError } from "#/modules/api/errors";
+import { callerForOAuthToken } from "#/modules/oauth/oauth.service";
 
 async function sessionUserId(request: Request): Promise<string | null> {
   const session = await (
@@ -18,12 +19,23 @@ async function sessionUserId(request: Request): Promise<string | null> {
 }
 
 /**
- * The caller of an API route: an `Authorization: Bearer mxt_…` API key with its
- * permissions, or a signed-in browser session, which may do everything.
+ * The caller behind an `Authorization: Bearer` header: an API key (mxt_…) or an OAuth
+ * access token a connected app was given (mxo_…), each with its permissions; else null.
  */
-export async function requireCaller(request: Request): Promise<Caller> {
+export async function callerForBearer(request: Request): Promise<Caller | null> {
   const fromKey = await callerForApiKey(request);
   if (fromKey) return fromKey;
+  const header = request.headers.get("authorization") ?? "";
+  return header.startsWith("Bearer ") ? callerForOAuthToken(header.slice(7).trim()) : null;
+}
+
+/**
+ * The caller of an API route: an API key or a connected app's token with its permissions
+ * (callerForBearer), or a signed-in browser session, which may do everything.
+ */
+export async function requireCaller(request: Request): Promise<Caller> {
+  const fromBearer = await callerForBearer(request);
+  if (fromBearer) return fromBearer;
   const userId = await sessionUserId(request);
   if (userId) return { userId, scopes: ALL_SCOPES };
   throw new ServiceError("Unauthorized", 401);

@@ -6,16 +6,34 @@ sidebar:
 ---
 
 Agents work with mixetape through its **MCP server** at `https://mixetape.com/mcp`
-(Streamable HTTP), authenticated with an [API key](/concepts/api-keys) in the `Authorization`
-header. Scripts and integrations that do not speak MCP use the [REST API](/rest-api) instead —
-the same actions, as resources.
+(Streamable HTTP). An agent that supports MCP sign-in connects with no key at all: it opens a
+mixetape page where you sign in and tick what it may do. Any other agent sends an
+[API key](/concepts/api-keys) in the `Authorization` header. Scripts and integrations that do
+not speak MCP use the [REST API](/rest-api) instead — the same actions, as resources.
+
+## Sign in or use a key
+
+**Sign in (OAuth).** Add `https://mixetape.com/mcp` with no header. The first time the agent
+needs it, a browser tab opens on mixetape: sign in, choose the [permissions](/concepts/api-keys)
+it gets, and press **Allow**. It renews its access by itself; you see it, and can disconnect it,
+under **API keys → Connected apps**. This is how Claude, ChatGPT and Claude Code connect.
+
+**API key.** For agents that cannot sign in, and for scripts: create a key under **API keys**
+and send it as `Authorization: Bearer mxt_…`.
+
+### Claude and ChatGPT
+
+Add `https://mixetape.com/mcp` as a custom connector — in Claude under Settings → Connectors,
+in ChatGPT as a custom connector in developer mode — then connect it and allow access on the
+mixetape page that opens.
 
 ## Set it up in your agent
 
 Step-by-step guides: [Claude Code](/agents/claude-code), [Codex](/agents/codex),
 [Cursor](/agents/cursor) and [OpenCode](/agents/opencode).
 
-Any other client that speaks Streamable HTTP works. The shape most clients take in their config:
+Any other client that speaks Streamable HTTP works. The shape most clients take in their config
+— leave `headers` out if the client signs in by itself:
 
 ```json
 {
@@ -29,10 +47,17 @@ Any other client that speaks Streamable HTTP works. The shape most clients take 
 }
 ```
 
+For developers of MCP clients: mixetape follows the MCP authorization specification. An
+unauthenticated request gets a `401` whose `WWW-Authenticate` header points at
+`/.well-known/oauth-protected-resource/mcp`; the authorization server (issuer
+`https://mixetape.com/api/auth`) supports dynamic client registration, Client ID Metadata
+Documents, PKCE (S256) and refresh tokens. Access tokens are bound to the `https://mixetape.com/mcp`
+resource and carry the approved permissions as scopes.
+
 ## What the agent sees
 
 The server introduces itself with how to start — `list_accounts`, then `create_post` — and
-lists only the [tools](/agents/tools) the key's permissions allow. Each tool's description says
+lists only the [tools](/agents/tools) the key's — or the connection's — permissions allow. Each tool's description says
 what it does, which permission it needs, where it works when that is not every platform
 (`only on YouTube, Pinterest`), and what to call next. A failed call answers with a plain error
 the agent can act on: the account needs reconnecting, a field is missing, the platform does not

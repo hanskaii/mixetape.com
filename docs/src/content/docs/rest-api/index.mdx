@@ -26,6 +26,7 @@ The [API reference](/api) lists every endpoint with its fields; this page is the
 | Comments | `GET` `POST /posts/{id}/comments` · replies and moderation under `/comments/{commentId}` |
 | Library groups | `GET` `POST /groups` · `GET` `PATCH` `DELETE /groups/{id}` · `GET /groups/{id}/plan` · `POST /groups/{id}/publish` |
 | Files | `GET /files` · `POST /files/uploads` · `POST /files/uploads/{id}/complete` · `POST /files/imports` · `GET` `DELETE /files/{id}` · `POST /files/plan` · `POST /files/publish` |
+| Webhooks | `GET` `POST /webhooks` · `GET` `PATCH` `DELETE /webhooks/{id}` · `POST /webhooks/{id}/test` |
 
 ```sh
 curl -X POST https://mixetape.com/api/v1/posts \
@@ -58,7 +59,8 @@ curl "https://mixetape.com/api/v1/posts?accountId=…&search=pompeii&limit=20" \
 ```
 
 To follow what happened since you last looked — which posts went out, which failed — ask for
-`GET /posts?updatedSince=<time of your last check>`.
+`GET /posts?updatedSince=<time of your last check>`, or let mixetape tell you with a
+[webhook](/concepts/webhooks).
 
 ## Safe retries
 

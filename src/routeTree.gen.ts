@@ -19,8 +19,11 @@ import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as publicPricingRouteImport } from './routes/(public)/pricing'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
 import { Route as publicTermsRouteImport } from './routes/(public)/terms'
+import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known/$'
 import { Route as McpToolsDotjsonRouteImport } from './routes/mcp_.tools[.]json'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
+import { Route as publicOauthConsentRouteImport } from './routes/(public)/oauth/consent'
+import { Route as publicOauthLoginRouteImport } from './routes/(public)/oauth/login'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
@@ -83,6 +86,11 @@ const publicTermsRoute = publicTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => publicRouteRoute,
 } as any)
+const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
+  id: '/.well-known/$',
+  path: '/.well-known/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpToolsDotjsonRoute = McpToolsDotjsonRouteImport.update({
   id: '/mcp_/tools.json',
   path: '/mcp/tools.json',
@@ -91,6 +99,16 @@ const McpToolsDotjsonRoute = McpToolsDotjsonRouteImport.update({
 const publicConnectDoneRoute = publicConnectDoneRouteImport.update({
   id: '/connect/done',
   path: '/connect/done',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicOauthConsentRoute = publicOauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicOauthLoginRoute = publicOauthLoginRouteImport.update({
+  id: '/oauth/login',
+  path: '/oauth/login',
   getParentRoute: () => publicRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -168,9 +186,12 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
+  '/oauth/consent': typeof publicOauthConsentRoute
+  '/oauth/login': typeof publicOauthLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/v1/$': typeof ApiV1SplatRoute
@@ -193,9 +214,12 @@ export interface FileRoutesByTo {
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
+  '/oauth/consent': typeof publicOauthConsentRoute
+  '/oauth/login': typeof publicOauthLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/v1/$': typeof ApiV1SplatRoute
@@ -221,9 +245,12 @@ export interface FileRoutesById {
   '/(public)/pricing': typeof publicPricingRoute
   '/(public)/privacy': typeof publicPrivacyRoute
   '/(public)/terms': typeof publicTermsRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp_/tools.json': typeof McpToolsDotjsonRoute
   '/(public)/': typeof publicIndexRoute
   '/(public)/connect/done': typeof publicConnectDoneRoute
+  '/(public)/oauth/consent': typeof publicOauthConsentRoute
+  '/(public)/oauth/login': typeof publicOauthLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
   '/api/v1/$': typeof ApiV1SplatRoute
@@ -248,9 +275,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/.well-known/$'
     | '/mcp/tools.json'
     | '/'
     | '/connect/done'
+    | '/oauth/consent'
+    | '/oauth/login'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/v1/$'
@@ -273,9 +303,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/.well-known/$'
     | '/mcp/tools.json'
     | '/'
     | '/connect/done'
+    | '/oauth/consent'
+    | '/oauth/login'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/v1/$'
@@ -300,9 +333,12 @@ export interface FileRouteTypes {
     | '/(public)/pricing'
     | '/(public)/privacy'
     | '/(public)/terms'
+    | '/.well-known/$'
     | '/mcp_/tools.json'
     | '/(public)/'
     | '/(public)/connect/done'
+    | '/(public)/oauth/consent'
+    | '/(public)/oauth/login'
     | '/api/auth/$'
     | '/api/connect/$provider'
     | '/api/v1/$'
@@ -325,6 +361,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   appAppRouteRoute: typeof appAppRouteRouteWithChildren
+  DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   McpToolsDotjsonRoute: typeof McpToolsDotjsonRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
@@ -405,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof publicTermsRouteImport
       parentRoute: typeof publicRouteRoute
     }
+    '/.well-known/$': {
+      id: '/.well-known/$'
+      path: '/.well-known/$'
+      fullPath: '/.well-known/$'
+      preLoaderRoute: typeof DotwellKnownSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp_/tools.json': {
       id: '/mcp_/tools.json'
       path: '/mcp/tools.json'
@@ -417,6 +461,20 @@ declare module '@tanstack/react-router' {
       path: '/connect/done'
       fullPath: '/connect/done'
       preLoaderRoute: typeof publicConnectDoneRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/oauth/consent': {
+      id: '/(public)/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof publicOauthConsentRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/oauth/login': {
+      id: '/(public)/oauth/login'
+      path: '/oauth/login'
+      fullPath: '/oauth/login'
+      preLoaderRoute: typeof publicOauthLoginRouteImport
       parentRoute: typeof publicRouteRoute
     }
     '/api/auth/$': {
@@ -519,6 +577,8 @@ interface publicRouteRouteChildren {
   publicTermsRoute: typeof publicTermsRoute
   publicIndexRoute: typeof publicIndexRoute
   publicConnectDoneRoute: typeof publicConnectDoneRoute
+  publicOauthConsentRoute: typeof publicOauthConsentRoute
+  publicOauthLoginRoute: typeof publicOauthLoginRoute
 }
 
 const publicRouteRouteChildren: publicRouteRouteChildren = {
@@ -527,6 +587,8 @@ const publicRouteRouteChildren: publicRouteRouteChildren = {
   publicTermsRoute: publicTermsRoute,
   publicIndexRoute: publicIndexRoute,
   publicConnectDoneRoute: publicConnectDoneRoute,
+  publicOauthConsentRoute: publicOauthConsentRoute,
+  publicOauthLoginRoute: publicOauthLoginRoute,
 }
 
 const publicRouteRouteWithChildren = publicRouteRoute._addFileChildren(
@@ -575,6 +637,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   appAppRouteRoute: appAppRouteRouteWithChildren,
+  DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   McpToolsDotjsonRoute: McpToolsDotjsonRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,

@@ -3,7 +3,16 @@ import { siteConfig } from "#/config/site";
 
 // The workspace pages redirect a crawler to the landing page; keep crawlers out of them. No
 // trailing slash: "/publish/" would not match "/publish" itself.
-const PRIVATE = ["/api/", "/publish", "/library", "/queue", "/channels", "/api-keys", "/settings"];
+const PRIVATE = [
+  "/api/",
+  "/oauth/",
+  "/publish",
+  "/library",
+  "/queue",
+  "/channels",
+  "/api-keys",
+  "/settings",
+];
 
 export const Route = createFileRoute("/robots.txt")({
   server: {

@@ -1,25 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { handleMessage, type JsonRpcMessage } from "#/modules/api/mcp";
-import { callerForApiKey } from "#/modules/api/api-keys.service";
+import { callerForBearer } from "#/modules/api/http";
+import { siteUrl } from "#/modules/social/social.service";
 
 // POST https://mixetape.com/mcp — the MCP endpoint (Streamable HTTP, stateless, JSON
-// responses). Authorization: Bearer mxt_… (an API key from /api-keys).
+// responses). Authorization: Bearer with an API key (mxt_…, from /api-keys) or an OAuth
+// access token (mxo_…): a client without one is answered 401 with where to sign in
+// (/.well-known/oauth-protected-resource/mcp), so it connects with no key to paste.
 //
-//   claude mcp add --transport http mixetape https://mixetape.com/mcp \
-//     --header "Authorization: Bearer mxt_…"
+//   claude mcp add --transport http mixetape https://mixetape.com/mcp
 export const Route = createFileRoute("/mcp")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const caller = await callerForApiKey(request);
+        const caller = await callerForBearer(request);
         if (!caller) {
+          const sent = request.headers.has("authorization");
+          const metadata = `${siteUrl()}/.well-known/oauth-protected-resource/mcp`;
           return Response.json(
             {
               jsonrpc: "2.0",
               id: null,
-              error: { code: -32001, message: "Unauthorized — send Authorization: Bearer mxt_…" },
+              error: {
+                code: -32001,
+                message: "Unauthorized — sign in with OAuth, or send Authorization: Bearer mxt_…",
+              },
             },
-            { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="mixetape"' } },
+            {
+              status: 401,
+              headers: {
+                "WWW-Authenticate": `Bearer realm="mixetape", resource_metadata="${metadata}"${sent ? ', error="invalid_token"' : ""}`,
+              },
+            },
           );
         }
 

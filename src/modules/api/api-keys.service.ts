@@ -19,6 +19,7 @@ export const API_SCOPES = {
   channels: "Start connecting channels (you still approve each one on the platform)",
   library:
     "Make, change and read groups in the library (files that go out together, with drafted words)",
+  webhooks: "Add, change and remove webhooks that are told when posts and channels change",
 } as const;
 
 export type ApiScope = keyof typeof API_SCOPES;
@@ -75,7 +76,7 @@ export async function callerForApiKey(request: Request): Promise<Caller | null> 
 export function requireScope(caller: Caller, scope: ApiScope) {
   if (!caller.scopes.includes(scope)) {
     throw new ServiceError(
-      `This API key does not have the "${scope}" permission (${API_SCOPES[scope].toLowerCase()}). Create a key that has it on /api-keys.`,
+      `This API key or connected app does not have the "${scope}" permission (${API_SCOPES[scope].toLowerCase()}). Give it that permission on /api-keys: a new key, or connect the app again.`,
       403,
       { code: "missing_permission" },
     );

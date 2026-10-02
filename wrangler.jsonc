@@ -53,6 +53,12 @@
       "binding": "PUBLISH_WORKFLOW",
       "class_name": "PublishWorkflow",
     },
+    {
+      // One webhook delivery, retried with backoff (modules/webhooks).
+      "name": "mixetape-webhooks",
+      "binding": "WEBHOOK_WORKFLOW",
+      "class_name": "WebhookWorkflow",
+    },
   ],
   "send_email": [
     {

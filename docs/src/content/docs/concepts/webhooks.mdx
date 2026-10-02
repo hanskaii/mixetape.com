@@ -1,0 +1,78 @@
+---
+title: Webhooks
+description: "Get an HTTPS request when a post goes up, goes live, fails or is cancelled, or a channel needs reconnecting — signed, retried, instead of polling."
+sidebar:
+  order: 4
+---
+
+A webhook is an https endpoint of yours that mixetape calls when something happens, so a
+pipeline hears that its post went live — or failed, and why — without polling `GET /posts`.
+Add one under **API keys → Webhooks**, with the [REST API](/api) (`POST /webhooks`) or the
+`create_webhook` tool; each needs the `webhooks` [permission](/concepts/api-keys).
+
+## Events
+
+| Event | When |
+|---|---|
+| `post.uploaded` | The post is on the platform, waiting for its publish time |
+| `post.published` | The post went live |
+| `post.failed` | The post failed; `error` says why |
+| `post.cancelled` | The post was cancelled |
+| `account.reconnect_needed` | A channel lost its access and must be connected again |
+
+A webhook gets the events it was created with — all of them when you pick none.
+
+## What arrives
+
+A `POST` with a JSON body:
+
+```json
+{
+  "id": "evt_3f9c2a71d05e4b8c9a1e6f20",
+  "type": "post.published",
+  "timestamp": "2026-10-02T17:30:12.000Z",
+  "data": { "post": { "id": "…", "status": "published", "platformUrl": "https://youtu.be/…", … } }
+}
+```
+
+`data.post` is the post as [`GET /posts/{id}`](/api) returns it; `data.account` (for
+`account.reconnect_needed`) has the channel's `id`, `provider`, `name` and `handle`.
+
+## Verifying it came from mixetape
+
+Deliveries follow [Standard Webhooks](https://www.standardwebhooks.com): three headers,
+`webhook-id`, `webhook-timestamp` (Unix seconds) and `webhook-signature`, which is
+`v1,` + the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{body}` keyed with your
+secret (the bytes after `whsec_`, base64-decoded). The secret is shown once, when the webhook is
+created. Any Standard Webhooks library verifies it; by hand, in Node:
+
+```js
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verify(secret, headers, body) {
+  const key = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+  const signed = `${headers["webhook-id"]}.${headers["webhook-timestamp"]}.${body}`;
+  const expected = createHmac("sha256", key).update(signed).digest("base64");
+  return headers["webhook-signature"]
+    .split(" ")
+    .some((sig) => {
+      const [, value = ""] = sig.split(",");
+      return value.length === expected.length && timingSafeEqual(Buffer.from(value), Buffer.from(expected));
+    });
+}
+```
+
+Check the timestamp is recent too (a few minutes), and use the raw body, not re-serialised
+JSON.
+
+## Delivery
+
+- Answer with any `2xx` within 10 seconds; do slow work after answering.
+- Anything else is retried with backoff for about an hour (30 s, then 1, 2, 4, 8, 16 and 32 min).
+- One event is delivered once per webhook; its `id` stays the same across retries, so use it to
+  ignore a repeat.
+- A webhook whose events fail every retry 20 times in a row is turned off. Fix the endpoint and
+  turn it back on (`PATCH /webhooks/{id}` with `enabled: true`, or the power button in the
+  workspace).
+- `POST /webhooks/{id}/test` (or `test_webhook`) sends a `webhook.test` event right away and
+  says how the endpoint answered.

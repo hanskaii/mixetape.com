@@ -6,22 +6,28 @@ sidebar:
 ---
 
 <Steps>
-  <Step title="Create an API key">
-    Create a key under **API keys** at [mixetape.com](https://mixetape.com/api-keys) with the permissions the agent needs — see [API keys and permissions](/concepts/api-keys). Copy it; it is shown once.
-  </Step>
   <Step title="Add the server">
     ```sh
-    claude mcp add --transport http mixetape https://mixetape.com/mcp \
-      --header "Authorization: Bearer mxt_…" -s user
+    claude mcp add --transport http mixetape https://mixetape.com/mcp -s user
     ```
 
     `-s user` makes it available in every project; leave it out to add it to the current
-    one only. `claude mcp list` shows it as connected.
+    one only.
+  </Step>
+  <Step title="Sign in">
+    In Claude Code, run `/mcp`, pick **mixetape** and choose to authenticate. A browser tab
+    opens on mixetape: sign in, tick the [permissions](/concepts/api-keys) the agent gets and
+    press **Allow**. Claude Code keeps the access fresh by itself.
   </Step>
   <Step title="Try it">
     Ask the agent to "list my mixetape channels". It calls `list_accounts` and answers with your connected channels. To add one from the agent, see [Connecting channels](/agents#connecting-accounts).
   </Step>
 </Steps>
+
+<Aside type="note" title="With an API key instead">
+  For a headless run (CI, a routine), create a key under **API keys** and add the server with
+  `--header "Authorization: Bearer mxt_…"`; nothing then needs a browser.
+</Aside>
 
 <Aside type="tip">
   In a session that was already running, reconnect the server (`/mcp`) or start a new one

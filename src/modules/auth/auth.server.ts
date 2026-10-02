@@ -1,19 +1,57 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { emailOTP, twoFactor } from "better-auth/plugins";
+import { emailOTP, jwt, twoFactor } from "better-auth/plugins";
+import { cimd } from "@better-auth/cimd";
+import { mcp } from "@better-auth/mcp";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { db, schema } from "../../database";
 import { siteConfig } from "#/config/site";
 import { requiredSecret, secret } from "#/modules/secrets/secrets.service";
+import { ALL_SCOPES } from "#/modules/api/api-keys.service";
+import { fetchClientMetadataResource } from "#/modules/oauth/client-metadata";
 
 type Credentials = {
   secret: string;
   github?: { clientId: string; clientSecret: string };
   google?: { clientId: string; clientSecret: string };
 };
+
+/** Where the auth server lives; the MCP server is `${AUTH_ORIGIN}/mcp`. */
+const authOrigin = () =>
+  (env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || siteConfig.url).replace(/\/$/, "");
+
+/** The MCP server, as the resource OAuth access tokens are issued for (their `aud`). */
+export const mcpResource = () => `${authOrigin()}/mcp`;
+
+/**
+ * The scopes an MCP client may ask for: mixetape's API permissions (api-keys.service), plus
+ * the identity scopes OAuth clients expect and offline_access for refresh tokens.
+ */
+export const OAUTH_SCOPES = ["openid", "profile", "email", "offline_access", ...ALL_SCOPES];
+
+/**
+ * An MCP client registering with a callback on this machine (Claude Code's
+ * http://localhost:…) or its own scheme is a native app, though it rarely says so; Better
+ * Auth treats an unspecified client as a web app, which may only use https.
+ */
+function nativeWhenLocal(body: unknown) {
+  if (!body || typeof body !== "object" || "application_type" in body) return null;
+  const uris = (body as { redirect_uris?: unknown }).redirect_uris;
+  if (!Array.isArray(uris)) return null;
+  const local = uris.some((uri) => {
+    try {
+      const { protocol } = new URL(String(uri));
+      return protocol === "http:" || (protocol !== "https:" && protocol.length > 1);
+    } catch {
+      return false;
+    }
+  });
+  return local ? { ...body, application_type: "native" } : null;
+}
 
 function createAuth(credentials: Credentials) {
   return betterAuth({
@@ -25,10 +63,27 @@ function createAuth(credentials: Credentials) {
         account: schema.account,
         verification: schema.verification,
         twoFactor: schema.twoFactor,
+        jwks: schema.jwks,
+        oauthClient: schema.oauthClient,
+        oauthResource: schema.oauthResource,
+        oauthClientResource: schema.oauthClientResource,
+        oauthRefreshToken: schema.oauthRefreshToken,
+        oauthAccessToken: schema.oauthAccessToken,
+        oauthConsent: schema.oauthConsent,
+        oauthClientAssertion: schema.oauthClientAssertion,
       },
     }),
     secret: credentials.secret,
-    baseURL: env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || siteConfig.url,
+    baseURL: authOrigin(),
+    // The jwt plugin's session-to-JWT endpoint: nothing here needs it.
+    disabledPaths: ["/token"],
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/oauth2/register") return;
+        const body = nativeWhenLocal(ctx.body);
+        if (body) return { context: { body } };
+      }),
+    },
     // Sign-in requests are only taken from these pages. Locally that is any dev server,
     // whatever port it landed on and whether opened as localhost or 127.0.0.1.
     trustedOrigins: [
@@ -109,6 +164,21 @@ function createAuth(credentials: Credentials) {
         issuer: siteConfig.name,
         allowPasswordless: true,
       }),
+      // OAuth 2.1 for MCP clients, so Claude, ChatGPT or Cursor connect with a sign-in
+      // instead of a pasted API key. jwt signs the access tokens (audience: /mcp); mcp is
+      // the authorization server; clients register themselves (RFC 7591) or identify by a
+      // metadata document URL (cimd). The person signs in on /oauth/login and picks the
+      // permissions on /oauth/consent; the token carries them as scopes (api/http.ts).
+      jwt(),
+      mcp({
+        resource: mcpResource(),
+        loginPage: "/oauth/login",
+        consentPage: "/oauth/consent",
+        scopes: OAUTH_SCOPES,
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+      }),
+      cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
       tanstackStartCookies(),
     ],
   });

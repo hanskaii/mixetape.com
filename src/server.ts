@@ -2,6 +2,7 @@ import handler from "@tanstack/react-start/server-entry";
 
 // Workflows are classes exported from the Worker entry; wrangler.jsonc binds this one.
 export { PublishWorkflow } from "./modules/social/publish.workflow";
+export { WebhookWorkflow } from "./modules/webhooks/webhook.workflow";
 import { checkSocialAccess } from "./modules/social/social.scheduled";
 import { expireStorage } from "./modules/storage/storage.scheduled";
 
