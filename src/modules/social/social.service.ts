@@ -15,6 +15,7 @@ import { secret, type SecretName } from "#/modules/secrets/secrets.service";
 import {
   InvalidInputError,
   ReconnectRequiredError,
+  capabilitiesOf,
   getProvider,
   isProvider,
   type AppCredentials,
@@ -25,6 +26,7 @@ import {
 } from "./providers";
 import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
+import { releasePostFiles } from "#/modules/storage/files.service";
 
 /**
  * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
@@ -325,10 +327,52 @@ export async function listAccounts(userId: string) {
   }));
 }
 
+/** A channel as agents and the API see it: who it is, its state, and what its platform takes. */
+export function accountView(account: Awaited<ReturnType<typeof listAccounts>>[number]) {
+  const platform = getProvider(account.provider);
+  return {
+    id: account.id,
+    provider: account.provider,
+    platformAccountId: account.platformAccountId,
+    name: account.name.trim(),
+    handle: account.handle,
+    status: account.status,
+    capabilities: capabilitiesOf(platform),
+    formats: platform.formats,
+  };
+}
+
 export async function deleteAccount(userId: string, id: string) {
   await db
     .delete(socialAccounts)
     .where(and(eq(socialAccounts.id, id), eq(socialAccounts.userId, userId)));
+}
+
+/**
+ * Disconnects an account for the API. Removing it removes its posts too, so one with posts
+ * still waiting to go out is refused until they are cancelled — an agent must not drop
+ * scheduled posts as a side effect.
+ */
+export async function disconnectAccount(userId: string, id: string) {
+  const account = await db.query.socialAccounts.findFirst({
+    where: and(eq(socialAccounts.id, id), eq(socialAccounts.userId, userId)),
+  });
+  if (!account) throw new ServiceError("Account not found", 404);
+  const waiting = await db.query.socialPosts.findMany({
+    columns: { id: true },
+    where: and(
+      eq(socialPosts.accountId, id),
+      inArray(socialPosts.status, ["scheduled", "publishing", "uploaded"]),
+    ),
+  });
+  if (waiting.length)
+    throw new ServiceError(
+      `${account.name} still has ${waiting.length} post${waiting.length === 1 ? "" : "s"} waiting to go out; cancel ${waiting.length === 1 ? "it" : "them"} first`,
+      409,
+      { code: "conflict" },
+    );
+  await deleteAccount(userId, id);
+  return { deleted: true as const, id };
 }
 
 /**
@@ -357,7 +401,9 @@ export async function accessTokenFor(account: SocialAccount): Promise<string> {
 
   if (!account.refreshToken) {
     await markReconnect();
-    throw new ServiceError("The account has no refresh token — reconnect it", 409);
+    throw new ServiceError("The account has no refresh token — reconnect it", 409, {
+      code: "account_needs_reconnect",
+    });
   }
 
   try {
@@ -379,7 +425,7 @@ export async function accessTokenFor(account: SocialAccount): Promise<string> {
   } catch (error) {
     if (error instanceof ReconnectRequiredError) {
       await markReconnect();
-      throw new ServiceError(error.message, 409);
+      throw new ServiceError(error.message, 409, { code: "account_needs_reconnect" });
     }
     throw error;
   }
@@ -411,8 +457,6 @@ export type CreatePostInput = {
   metadata?: Metadata;
   /** The library group the post is published from (library publishing). */
   groupId?: string;
-  /** Delete the post's files from storage once it is published (library publishing). */
-  cleanup?: boolean;
 };
 
 function checkMedia(userId: string, url: string): string {
@@ -447,7 +491,9 @@ export async function resolveMedia(
     const file = indexed.find((candidate) => `r2://${candidate.key}` === url);
     if (!file) return { kind: kindFromUrl(url) };
     if (file.status !== "ready")
-      throw new ServiceError(`${file.name} is not ready — finish its upload first`, 409);
+      throw new ServiceError(`${file.name} is not ready — finish its upload first`, 409, {
+        code: "file_not_ready",
+      });
     return file;
   });
   const media = checked.map((url, index): MediaItem => {
@@ -465,7 +511,8 @@ export async function resolveMedia(
 function checkPostFormat(provider: string, facts: FileFacts[]) {
   const platform = getProvider(provider);
   const { problems } = checkFormat(platform.name, platform.formats, facts);
-  if (problems.length) throw new ServiceError(problems.join("; "));
+  if (problems.length)
+    throw new ServiceError(problems.join("; "), 400, { code: "media_not_supported" });
 }
 
 /** A post's files: its `media`, or — for posts from before carousels — its one media URL. */
@@ -507,7 +554,8 @@ function checkMetadata(
   try {
     return getProvider(provider).metadata.validate(input ?? {}, caption);
   } catch (error) {
-    if (error instanceof InvalidInputError) throw new ServiceError(error.message);
+    if (error instanceof InvalidInputError)
+      throw new ServiceError(error.message, 400, { code: "invalid_field", field: "metadata" });
     throw error;
   }
 }
@@ -538,7 +586,9 @@ export async function createPost(userId: string, input: CreatePostInput) {
   });
   if (!account) throw new ServiceError("Account not found", 404);
   if (account.status !== "active")
-    throw new ServiceError("This account needs to be reconnected first", 409);
+    throw new ServiceError("This account needs to be reconnected first", 409, {
+      code: "account_needs_reconnect",
+    });
 
   const id = newId();
   const leadMinutes = leadFor(account.provider, input.leadMinutes);
@@ -555,7 +605,6 @@ export async function createPost(userId: string, input: CreatePostInput) {
     mediaUrl: media[0].url,
     media,
     groupId: input.groupId ?? null,
-    cleanup: input.cleanup ?? false,
     caption: input.caption ?? null,
     metadata: checkMetadata(account.provider, input.metadata, input.caption),
     scheduledAt: checkTime(input.scheduledAt, leadMinutes),
@@ -568,7 +617,7 @@ export async function createPost(userId: string, input: CreatePostInput) {
   return getPost(userId, id);
 }
 
-export type EditPostInput = Partial<Omit<CreatePostInput, "accountId" | "groupId" | "cleanup">>;
+export type EditPostInput = Partial<Omit<CreatePostInput, "accountId" | "groupId">>;
 
 /**
  * Changes a post that has not gone out yet: its time, media, caption or metadata. The
@@ -578,8 +627,9 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
   const post = await getPost(userId, id);
   if (post.status !== "scheduled") {
     throw new ServiceError(
-      `A ${post.status} post is already on the platform — change it with edit_published_post (PATCH /api/v1/posts/:id/platform)`,
+      `A ${post.status} post is already on the platform — change it there instead`,
       409,
+      { code: "invalid_post_state" },
     );
   }
 
@@ -617,6 +667,11 @@ export async function getPost(userId: string, id: string) {
   return post;
 }
 
+/** A post as agents and the API see it: every file listed, internal bookkeeping left out. */
+export function postView({ userId: _u, workflowId: _w, ...post }: SocialPost) {
+  return { ...post, media: postMedia(post) };
+}
+
 export type PostFilter = {
   status?: string[];
   /** Only posts on these accounts (mixetape account ids). */
@@ -629,6 +684,8 @@ export type PostFilter = {
   search?: string;
   from?: Date;
   to?: Date;
+  /** Only posts that changed (status, error, time, …) at or after this. */
+  updatedSince?: Date;
   limit?: number;
   /** nextCursor from the previous page. */
   cursor?: string;
@@ -640,9 +697,13 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
   for (const [name, date] of [
     ["from", filter.from],
     ["to", filter.to],
+    ["updatedSince", filter.updatedSince],
   ] as const) {
     if (date && Number.isNaN(date.getTime()))
-      throw new ServiceError(`${name} must be an ISO time, e.g. 2026-10-02T00:00:00+07:00`);
+      throw new ServiceError(`${name} must be an ISO time, e.g. 2026-10-02T00:00:00+07:00`, 400, {
+        code: "invalid_field",
+        field: name,
+      });
   }
   const conditions = [eq(socialPosts.userId, userId)];
   if (filter.status?.length) conditions.push(inArray(socialPosts.status, filter.status));
@@ -651,6 +712,7 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
   if (filter.groupId) conditions.push(eq(socialPosts.groupId, filter.groupId));
   if (filter.from) conditions.push(gte(socialPosts.scheduledAt, filter.from));
   if (filter.to) conditions.push(lte(socialPosts.scheduledAt, filter.to));
+  if (filter.updatedSince) conditions.push(gte(socialPosts.updatedAt, filter.updatedSince));
   const search = filter.search?.trim();
   if (search) {
     conditions.push(
@@ -687,19 +749,25 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
 export async function cancelPost(userId: string, id: string) {
   const post = await getPost(userId, id);
   if (post.status !== "scheduled")
-    throw new ServiceError(`A ${post.status} post cannot be cancelled`, 409);
+    throw new ServiceError(`A ${post.status} post cannot be cancelled`, 409, {
+      code: "invalid_post_state",
+    });
   await db
     .update(socialPosts)
     .set({ status: "cancelled", updatedAt: new Date() })
     .where(and(eq(socialPosts.id, id), eq(socialPosts.status, "scheduled")));
   await stopWorkflow(post.workflowId ?? id);
+  await releasePostFiles(id);
   return getPost(userId, id);
 }
 
 /** Sends a failed post again, now or at its original time if that is still ahead. */
 export async function retryPost(userId: string, id: string) {
   const post = await getPost(userId, id);
-  if (post.status !== "failed") throw new ServiceError("Only a failed post can be retried", 409);
+  if (post.status !== "failed")
+    throw new ServiceError("Only a failed post can be retried", 409, {
+      code: "invalid_post_state",
+    });
   const scheduledAt = post.scheduledAt.getTime() > Date.now() ? post.scheduledAt : new Date();
   await updatePost(id, { status: "scheduled", scheduledAt, error: null });
   await dispatch(id, "retry");

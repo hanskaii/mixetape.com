@@ -1,0 +1,68 @@
+---
+title: Agents (MCP)
+description: mixetape as an MCP server — add it to Claude Code, Codex, Cursor, OpenCode or any MCP client, and let the agent connect accounts.
+sidebar:
+  order: 0
+---
+
+Agents work with mixetape through its **MCP server** at `https://mixetape.com/mcp`
+(Streamable HTTP), authenticated with an [API key](/concepts/api-keys) in the `Authorization`
+header. Scripts and integrations that do not speak MCP use the [REST API](/rest-api) instead —
+the same actions, as resources.
+
+## Set it up in your agent
+
+Step-by-step guides: [Claude Code](/agents/claude-code), [Codex](/agents/codex),
+[Cursor](/agents/cursor) and [OpenCode](/agents/opencode).
+
+Any other client that speaks Streamable HTTP works. The shape most clients take in their config:
+
+```json
+{
+  "mcpServers": {
+    "mixetape": {
+      "type": "http",
+      "url": "https://mixetape.com/mcp",
+      "headers": { "Authorization": "Bearer mxt_…" }
+    }
+  }
+}
+```
+
+## What the agent sees
+
+The server introduces itself with how to start — `list_accounts`, then `create_post` — and
+lists only the [tools](/agents/tools) the key's permissions allow. Each tool's description says
+what it does, which permission it needs, where it works when that is not every platform
+(`only on YouTube, Pinterest`), and what to call next. A failed call answers with a plain error
+the agent can act on: the account needs reconnecting, a field is missing, the platform does not
+have that feature.
+
+Times are ISO 8601 with an offset, so the agent never guesses a timezone.
+
+## Connecting accounts
+
+With the `channels` permission, the agent can add an account for you:
+
+<Steps>
+  <Step title="connect_channel">
+    `{ "platform": "facebook" }` returns a sign-in `url` and a `state`. The agent gives you the
+    link; open it in any browser, sign in with the account that owns the channel, and allow
+    access. The link works once, for 10 minutes.
+  </Step>
+  <Step title="get_connection">
+    The agent follows the attempt with the `state`: `pending` until you finish, then `done`
+    with the accounts connected — or `error` with the reason.
+  </Step>
+  <Step title="choose_channels (sometimes)">
+    When the sign-in reached several new accounts — your Facebook Pages, say — the answer is
+    `choose`, with the list. The agent asks you which to add and passes their
+    `platformAccountId`s to `choose_channels`. Accounts you already had just get fresh access.
+  </Step>
+</Steps>
+
+## The tool catalog
+
+[Tools](/agents/tools) lists every tool with the platforms it works on and its arguments. The
+same catalog is published as JSON at
+[`https://mixetape.com/mcp/tools.json`](https://mixetape.com/mcp/tools.json) — no key needed.

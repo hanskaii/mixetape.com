@@ -59,11 +59,12 @@ goes to Facebook as a Reel.
 at `scheduledAt`, and skips the rest with their reasons. The posts are ordinary posts —
 editable and cancellable until they go out — linked back to the group (`get_group` lists them,
 `list_posts` takes `groupId`). Once every post is out, the files are deleted from storage, and
-the group with them — pass `keepFiles` to keep them.
+the group with them.
 
 <Aside type="note" title="Files do not stay forever">
-  Storage keeps a file 30 days at most, then lets it go unless a post that has not gone out
-  still needs it. See [Media and storage](/concepts/media#housekeeping).
+  A file no post needs is deleted 24 hours after it was stored — a file waiting in a group
+  included. Publish (or schedule) a group within a day of filling it. See
+  [Media and storage](/concepts/media#housekeeping).
 </Aside>
 
 ## Brands

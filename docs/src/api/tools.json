@@ -1,0 +1,2267 @@
+{
+  "tools": [
+    {
+      "name": "list_accounts",
+      "description": "List the connected channels: id, platform, name, handle, status, the capabilities its platform supports (e.g. comments, analytics), and formats: what one post can hold there (video, image, a carousel of min–max files, image types, video length, upright). status 'reconnect' means the channel must be connected again (connect_channel, or /channels) — also after mixetape asks for new permissions.",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_posts",
+      "description": "List posts, newest scheduled time first, a page at a time — narrow by account, platform, status, time or words in the title/caption. Statuses: scheduled (waiting in mixetape, editable with update_post), publishing (uploading), uploaded (on the platform, private until its time), published (live; change with edit_published_post), failed, cancelled. Returns { posts, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only posts on these accounts"
+          },
+          "provider": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only posts on these platforms, e.g. youtube, instagram"
+          },
+          "status": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "publishing",
+                "uploaded",
+                "published",
+                "failed",
+                "cancelled"
+              ]
+            },
+            "description": "Only posts in these statuses"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Only posts published from this library group"
+          },
+          "search": {
+            "type": "string",
+            "description": "Words in the title, caption or description"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Scheduled at or after: ISO 8601 with a timezone offset"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Scheduled at or before: ISO 8601 with a timezone offset"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Posts per page, default 50"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "nextCursor from the previous page"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_post",
+      "description": "One post with its status, error, platform link and attempts.",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_post_insights",
+      "description": "How a post that is on the platform stands right now: visibility, processing, scheduled publish time, any rejection, plus lifetime views, likes and comments. For watch time and retention use get_post_analytics.",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_collections",
+      "description": "List the account's collections — playlists on YouTube, boards on Pinterest — with id, title, visibility and item count. Use an id in metadata.playlistIds (YouTube), metadata.boardId (Pinterest) or add_to_collection.",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "mixetape account id (list_accounts)"
+          }
+        },
+        "required": [
+          "accountId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_captions",
+      "description": "List the caption tracks of a post on the platform (language, name, kind; 'asr' is automatic).",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "create_post",
+      "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "mixetape account id (list_accounts)"
+          },
+          "mediaUrl": {
+            "type": "string",
+            "description": "One file: a public https URL, or an r2:// URL from mixetape storage"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Several files in one post, in order (https or r2:// URLs) — a carousel or photo album. Use instead of mediaUrl."
+          },
+          "caption": {
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it goes live; left out, it goes live once the lead has passed: ISO 8601 with a timezone offset"
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How long before scheduledAt mixetape uploads or prepares it, so the platform finishes processing first. Defaults: YouTube and Facebook 30, Instagram 15, Threads 10; TikTok and Pinterest always 0. Facebook takes 0 or at least 15."
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "No < or >"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "No < or >"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Category id, e.g. \"27\" Education, \"22\" People & Blogs (the default)",
+                    "x-options": [
+                      {
+                        "value": "1",
+                        "label": "Film & Animation"
+                      },
+                      {
+                        "value": "2",
+                        "label": "Autos & Vehicles"
+                      },
+                      {
+                        "value": "10",
+                        "label": "Music"
+                      },
+                      {
+                        "value": "15",
+                        "label": "Pets & Animals"
+                      },
+                      {
+                        "value": "17",
+                        "label": "Sports"
+                      },
+                      {
+                        "value": "19",
+                        "label": "Travel & Events"
+                      },
+                      {
+                        "value": "20",
+                        "label": "Gaming"
+                      },
+                      {
+                        "value": "22",
+                        "label": "People & Blogs"
+                      },
+                      {
+                        "value": "23",
+                        "label": "Comedy"
+                      },
+                      {
+                        "value": "24",
+                        "label": "Entertainment"
+                      },
+                      {
+                        "value": "25",
+                        "label": "News & Politics"
+                      },
+                      {
+                        "value": "26",
+                        "label": "Howto & Style"
+                      },
+                      {
+                        "value": "27",
+                        "label": "Education"
+                      },
+                      {
+                        "value": "28",
+                        "label": "Science & Technology"
+                      },
+                      {
+                        "value": "29",
+                        "label": "Nonprofits & Activism"
+                      }
+                    ]
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "≤ 500 characters in total"
+                  },
+                  "privacyStatus": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ]
+                  },
+                  "madeForKids": {
+                    "type": "boolean"
+                  },
+                  "notifySubscribers": {
+                    "type": "boolean"
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                  },
+                  "localizations": {
+                    "type": "object",
+                    "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ]
+                    }
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
+                  },
+                  "playlistIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Playlists (the account's collections) the video joins right after upload"
+                  },
+                  "captions": {
+                    "type": "array",
+                    "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "language": {
+                          "type": "string",
+                          "description": "e.g. \"en\""
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Track name; empty is the default track"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "Public https SRT or WebVTT"
+                        }
+                      },
+                      "required": [
+                        "language",
+                        "url"
+                      ]
+                    }
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
+                  }
+                },
+                "title": "YouTube"
+              },
+              {
+                "type": "object",
+                "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "video",
+                      "reel"
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Page videos only"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "The post text (defaults to caption)"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG/PNG, set right after upload"
+                  },
+                  "captions": {
+                    "type": "array",
+                    "description": "Subtitle files (public https .srt) uploaded right after the video",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "language": {
+                          "type": "string",
+                          "description": "e.g. \"en\", \"id\" or \"en_US\""
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "language",
+                        "url"
+                      ]
+                    }
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the Page's own comment once the post is public"
+                  }
+                },
+                "title": "Facebook"
+              },
+              {
+                "type": "object",
+                "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
+                "properties": {
+                  "caption": {
+                    "type": "string",
+                    "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG cover, set at creation"
+                  },
+                  "coverFrameMs": {
+                    "type": "number",
+                    "description": "Or the cover frame, ms from the start"
+                  },
+                  "shareToFeed": {
+                    "type": "boolean",
+                    "description": "Also show it in the feed grid (default true)"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own comment once the Reel is public"
+                  }
+                },
+                "title": "Instagram"
+              },
+              {
+                "type": "object",
+                "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Defaults to the post caption"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Posted as the profile's own reply once the post is public"
+                  }
+                },
+                "title": "Threads"
+              },
+              {
+                "type": "object",
+                "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Caption, ≤ 2,200 characters; defaults to caption"
+                  },
+                  "privacyLevel": {
+                    "type": "string",
+                    "enum": [
+                      "PUBLIC_TO_EVERYONE",
+                      "MUTUAL_FOLLOW_FRIENDS",
+                      "FOLLOWER_OF_CREATOR",
+                      "SELF_ONLY"
+                    ],
+                    "description": "Default SELF_ONLY (required until the app is audited)"
+                  },
+                  "disableComment": {
+                    "type": "boolean"
+                  },
+                  "disableDuet": {
+                    "type": "boolean"
+                  },
+                  "disableStitch": {
+                    "type": "boolean"
+                  },
+                  "coverFrameMs": {
+                    "type": "number",
+                    "description": "Cover frame, ms from the start"
+                  },
+                  "isAigc": {
+                    "type": "boolean",
+                    "description": "Label as AI-generated content"
+                  }
+                },
+                "title": "TikTok"
+              },
+              {
+                "type": "object",
+                "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                "properties": {
+                  "boardId": {
+                    "type": "string",
+                    "description": "A board id from the account's collections (required)"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 800,
+                    "description": "Defaults to the post caption"
+                  },
+                  "link": {
+                    "type": "string",
+                    "description": "Destination URL when the Pin is clicked"
+                  },
+                  "altText": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Video Pins: public https cover image"
+                  },
+                  "coverFrameSeconds": {
+                    "type": "number",
+                    "description": "Video Pins: cover frame, seconds (default 1)"
+                  }
+                },
+                "title": "Pinterest"
+              }
+            ]
+          }
+        },
+        "required": [
+          "accountId"
+        ]
+      }
+    },
+    {
+      "name": "update_post",
+      "description": "Change a post that is still 'scheduled' (waiting in mixetape): its time, lead, media, caption or metadata (merged; null clears a field). Once it is on the platform, use edit_published_post.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "mediaUrl": {
+            "type": "string",
+            "description": "One file: a public https URL, or an r2:// URL from mixetape storage"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Several files in one post, in order (https or r2:// URLs) — a carousel or photo album. Use instead of mediaUrl."
+          },
+          "caption": {
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it goes live; left out, it goes live once the lead has passed: ISO 8601 with a timezone offset"
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How long before scheduledAt mixetape uploads or prepares it, so the platform finishes processing first. Defaults: YouTube and Facebook 30, Instagram 15, Threads 10; TikTok and Pinterest always 0. Facebook takes 0 or at least 15."
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "No < or >"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "No < or >"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Category id, e.g. \"27\" Education, \"22\" People & Blogs (the default)",
+                    "x-options": [
+                      {
+                        "value": "1",
+                        "label": "Film & Animation"
+                      },
+                      {
+                        "value": "2",
+                        "label": "Autos & Vehicles"
+                      },
+                      {
+                        "value": "10",
+                        "label": "Music"
+                      },
+                      {
+                        "value": "15",
+                        "label": "Pets & Animals"
+                      },
+                      {
+                        "value": "17",
+                        "label": "Sports"
+                      },
+                      {
+                        "value": "19",
+                        "label": "Travel & Events"
+                      },
+                      {
+                        "value": "20",
+                        "label": "Gaming"
+                      },
+                      {
+                        "value": "22",
+                        "label": "People & Blogs"
+                      },
+                      {
+                        "value": "23",
+                        "label": "Comedy"
+                      },
+                      {
+                        "value": "24",
+                        "label": "Entertainment"
+                      },
+                      {
+                        "value": "25",
+                        "label": "News & Politics"
+                      },
+                      {
+                        "value": "26",
+                        "label": "Howto & Style"
+                      },
+                      {
+                        "value": "27",
+                        "label": "Education"
+                      },
+                      {
+                        "value": "28",
+                        "label": "Science & Technology"
+                      },
+                      {
+                        "value": "29",
+                        "label": "Nonprofits & Activism"
+                      }
+                    ]
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "≤ 500 characters in total"
+                  },
+                  "privacyStatus": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ]
+                  },
+                  "madeForKids": {
+                    "type": "boolean"
+                  },
+                  "notifySubscribers": {
+                    "type": "boolean"
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                  },
+                  "localizations": {
+                    "type": "object",
+                    "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ]
+                    }
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG/PNG, ≤ 2 MB, 1280×720; set right after upload"
+                  },
+                  "playlistIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Playlists (the account's collections) the video joins right after upload"
+                  },
+                  "captions": {
+                    "type": "array",
+                    "description": "Subtitle files uploaded right after the video (400 quota units each)",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "language": {
+                          "type": "string",
+                          "description": "e.g. \"en\""
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Track name; empty is the default track"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "Public https SRT or WebVTT"
+                        }
+                      },
+                      "required": [
+                        "language",
+                        "url"
+                      ]
+                    }
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the channel's own comment once the video is public — e.g. a link to the full video from a Short"
+                  }
+                },
+                "title": "YouTube"
+              },
+              {
+                "type": "object",
+                "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "video",
+                      "reel"
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Page videos only"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "The post text (defaults to caption)"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG/PNG, set right after upload"
+                  },
+                  "captions": {
+                    "type": "array",
+                    "description": "Subtitle files (public https .srt) uploaded right after the video",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "language": {
+                          "type": "string",
+                          "description": "e.g. \"en\", \"id\" or \"en_US\""
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "language",
+                        "url"
+                      ]
+                    }
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the Page's own comment once the post is public"
+                  }
+                },
+                "title": "Facebook"
+              },
+              {
+                "type": "object",
+                "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
+                "properties": {
+                  "caption": {
+                    "type": "string",
+                    "description": "≤ 2,200 characters, 30 hashtags, 20 @mentions; defaults to the post caption"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Public https JPEG cover, set at creation"
+                  },
+                  "coverFrameMs": {
+                    "type": "number",
+                    "description": "Or the cover frame, ms from the start"
+                  },
+                  "shareToFeed": {
+                    "type": "boolean",
+                    "description": "Also show it in the feed grid (default true)"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own comment once the Reel is public"
+                  }
+                },
+                "title": "Instagram"
+              },
+              {
+                "type": "object",
+                "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Defaults to the post caption"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Posted as the profile's own reply once the post is public"
+                  }
+                },
+                "title": "Threads"
+              },
+              {
+                "type": "object",
+                "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Caption, ≤ 2,200 characters; defaults to caption"
+                  },
+                  "privacyLevel": {
+                    "type": "string",
+                    "enum": [
+                      "PUBLIC_TO_EVERYONE",
+                      "MUTUAL_FOLLOW_FRIENDS",
+                      "FOLLOWER_OF_CREATOR",
+                      "SELF_ONLY"
+                    ],
+                    "description": "Default SELF_ONLY (required until the app is audited)"
+                  },
+                  "disableComment": {
+                    "type": "boolean"
+                  },
+                  "disableDuet": {
+                    "type": "boolean"
+                  },
+                  "disableStitch": {
+                    "type": "boolean"
+                  },
+                  "coverFrameMs": {
+                    "type": "number",
+                    "description": "Cover frame, ms from the start"
+                  },
+                  "isAigc": {
+                    "type": "boolean",
+                    "description": "Label as AI-generated content"
+                  }
+                },
+                "title": "TikTok"
+              },
+              {
+                "type": "object",
+                "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                "properties": {
+                  "boardId": {
+                    "type": "string",
+                    "description": "A board id from the account's collections (required)"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 800,
+                    "description": "Defaults to the post caption"
+                  },
+                  "link": {
+                    "type": "string",
+                    "description": "Destination URL when the Pin is clicked"
+                  },
+                  "altText": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "thumbnailUrl": {
+                    "type": "string",
+                    "description": "Video Pins: public https cover image"
+                  },
+                  "coverFrameSeconds": {
+                    "type": "number",
+                    "description": "Video Pins: cover frame, seconds (default 1)"
+                  }
+                },
+                "title": "Pinterest"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_post",
+      "description": "Cancel a post that is still 'scheduled'.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
+      "name": "retry_post",
+      "description": "Send a 'failed' post again — now, or at its original time if that is still ahead.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "set_thumbnail",
+      "description": "Set or replace the custom thumbnail of a post already on the platform. imageUrl: public https JPEG/PNG (YouTube: ≤ 2 MB, 1280×720, verified channel). For a post still 'scheduled', use update_post with metadata.thumbnailUrl.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "imageUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "imageUrl"
+        ]
+      },
+      "annotations": {
+        "idempotentHint": true
+      }
+    },
+    {
+      "name": "edit_published_post",
+      "description": "Change the details of a post that is already on the platform (uploaded or published). YouTube: title, description, tags, category, privacy, made-for-kids, language and localizations (50 quota units). Facebook: title and description. Only the given fields change; null clears one.",
+      "permission": "manage",
+      "platforms": [
+        "youtube",
+        "facebook"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "YouTube fields. title is required when creating. Set a field to null to clear it when updating.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "No < or >"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "No < or >"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Category id, e.g. \"27\" Education, \"22\" People & Blogs (the default)",
+                    "x-options": [
+                      {
+                        "value": "1",
+                        "label": "Film & Animation"
+                      },
+                      {
+                        "value": "2",
+                        "label": "Autos & Vehicles"
+                      },
+                      {
+                        "value": "10",
+                        "label": "Music"
+                      },
+                      {
+                        "value": "15",
+                        "label": "Pets & Animals"
+                      },
+                      {
+                        "value": "17",
+                        "label": "Sports"
+                      },
+                      {
+                        "value": "19",
+                        "label": "Travel & Events"
+                      },
+                      {
+                        "value": "20",
+                        "label": "Gaming"
+                      },
+                      {
+                        "value": "22",
+                        "label": "People & Blogs"
+                      },
+                      {
+                        "value": "23",
+                        "label": "Comedy"
+                      },
+                      {
+                        "value": "24",
+                        "label": "Entertainment"
+                      },
+                      {
+                        "value": "25",
+                        "label": "News & Politics"
+                      },
+                      {
+                        "value": "26",
+                        "label": "Howto & Style"
+                      },
+                      {
+                        "value": "27",
+                        "label": "Education"
+                      },
+                      {
+                        "value": "28",
+                        "label": "Science & Technology"
+                      },
+                      {
+                        "value": "29",
+                        "label": "Nonprofits & Activism"
+                      }
+                    ]
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "≤ 500 characters in total"
+                  },
+                  "privacyStatus": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ]
+                  },
+                  "madeForKids": {
+                    "type": "boolean"
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "description": "Language of title/description, e.g. \"en\"; required for localizations"
+                  },
+                  "localizations": {
+                    "type": "object",
+                    "description": "Translations keyed by language: { \"id\": { \"title\": \"…\", \"description\": \"…\" } }",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ]
+                    }
+                  }
+                },
+                "title": "YouTube"
+              },
+              {
+                "type": "object",
+                "description": "Facebook Page fields. A video posts as a Page video, or with format \"reel\" as a Reel (9:16, 3–90 s); an image posts as a photo, several images (media) as an album of up to 10 — description is their text. Set a field to null to clear it when updating.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Page videos only"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "The post text (defaults to caption)"
+                  }
+                },
+                "title": "Facebook"
+              },
+              {
+                "type": "object",
+                "description": "Instagram fields. A video posts as a Reel (3 s–15 min, ≤ 300 MB, 9:16 recommended), a JPEG image as a photo, several files (media) as a carousel of 2–10. The cover fields and shareToFeed apply to Reels only. Set a field to null to clear it when updating.",
+                "properties": {},
+                "title": "Instagram"
+              },
+              {
+                "type": "object",
+                "description": "Threads post fields — for a video (MP4/MOV, ≤ 5 min), a JPEG/PNG image, or a carousel of 2–20 of either. Set a field to null to clear it when updating.",
+                "properties": {},
+                "title": "Threads"
+              },
+              {
+                "type": "object",
+                "description": "TikTok fields. The video posts at the scheduled time (TikTok cannot hold a post). Until TikTok audits the app, only SELF_ONLY works.",
+                "properties": {},
+                "title": "TikTok"
+              },
+              {
+                "type": "object",
+                "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
+                "properties": {},
+                "title": "Pinterest"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "metadata"
+        ]
+      },
+      "annotations": {
+        "idempotentHint": true
+      }
+    },
+    {
+      "name": "create_collection",
+      "description": "Create a collection on the account: a YouTube playlist or a Pinterest board.",
+      "permission": "manage",
+      "platforms": [
+        "youtube",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "mixetape account id (list_accounts)"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "unlisted",
+              "private"
+            ]
+          }
+        },
+        "required": [
+          "accountId",
+          "title"
+        ]
+      }
+    },
+    {
+      "name": "add_to_collection",
+      "description": "Add a post that is on the platform to a collection (YouTube playlist, or save a Pin to another Pinterest board). position 0 puts it first; omitted puts it last. For a post still 'scheduled', set metadata.playlistIds instead.",
+      "permission": "manage",
+      "platforms": [
+        "youtube",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "collectionId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "collectionId"
+        ]
+      }
+    },
+    {
+      "name": "upload_caption",
+      "description": "Upload a subtitle track to a post on the platform: public https SRT or WebVTT on YouTube (400–450 quota units), SRT on Facebook. A track with the same language (and name) is replaced.",
+      "permission": "manage",
+      "platforms": [
+        "youtube",
+        "facebook"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "language": {
+            "type": "string",
+            "description": "BCP-47, e.g. \"en\", \"id\""
+          },
+          "name": {
+            "type": "string",
+            "description": "Track name; empty is the default track"
+          },
+          "url": {
+            "type": "string",
+            "description": "A public https SRT (or WebVTT on YouTube) file"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "description": "Upload without publishing the track"
+          }
+        },
+        "required": [
+          "id",
+          "language",
+          "url"
+        ]
+      },
+      "annotations": {
+        "idempotentHint": true
+      }
+    },
+    {
+      "name": "list_comments",
+      "description": "Read the comments on a post (with replies). Comment ids are what reply_to_comment and moderate_comment take. held: true lists comments held for review.",
+      "permission": "comments",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Default 20"
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "time",
+              "relevance"
+            ]
+          },
+          "held": {
+            "type": "boolean",
+            "description": "Only comments held for review"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "post_comment",
+      "description": "Post a comment on a public post as the channel itself — e.g. from a Short, a link to the full video. Neither API can pin it; pin it on the platform.",
+      "permission": "comments",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "reply_to_comment",
+      "description": "Reply to a comment on one of the account's posts, as the channel.",
+      "permission": "comments",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "commentId": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "commentId",
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "moderate_comment",
+      "description": "Publish, hold for review, or reject (hide) a comment on one of the account's posts. banAuthor with 'rejected' also hides the author's future comments.",
+      "permission": "comments",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "commentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "heldForReview",
+              "rejected"
+            ]
+          },
+          "banAuthor": {
+            "type": "boolean",
+            "description": "With rejected, also hide the author's future comments"
+          }
+        },
+        "required": [
+          "id",
+          "commentId",
+          "status"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
+      "name": "connect_channel",
+      "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "youtube",
+              "facebook",
+              "instagram",
+              "threads",
+              "tiktok",
+              "pinterest"
+            ],
+            "description": "The platform to connect; one mixetape has no app for yet is refused"
+          }
+        },
+        "required": [
+          "platform"
+        ]
+      }
+    },
+    {
+      "name": "get_connection",
+      "description": "Where a connect_channel attempt stands. 'pending': the user has not finished yet (ask again shortly). 'done': channels lists what was connected or refreshed. 'choose': the sign-in reached several new channels (e.g. Facebook Pages) — ask the user which to add, then call choose_channels; refreshed lists channels that were already connected and just got new access. 'error': why it failed.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "The state connect_channel returned"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "choose_channels",
+      "description": "Add the channels the user picked after get_connection answered 'choose'. The choice is held for 10 minutes after the sign-in; channels left out are not connected.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "The state connect_channel returned"
+          },
+          "platformAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "platformAccountId of each chosen channel, from get_connection's choices"
+          }
+        },
+        "required": [
+          "state",
+          "platformAccountIds"
+        ]
+      }
+    },
+    {
+      "name": "list_brands",
+      "description": "List the brands — the user's groups of connected channels (e.g. Hans Explainer: its YouTube channel and Facebook Page) — each with its accountIds (list_accounts ids).",
+      "permission": "read",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "create_brand",
+      "description": "Group connected channels as a brand.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The brand's channels; on update this replaces the whole list"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "update_brand",
+      "description": "Rename a brand and/or replace its channels (accountIds replaces the whole list).",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Brand id (list_brands)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The brand's channels; on update this replaces the whole list"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_brand",
+      "description": "Delete a brand. Its channels stay connected.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Brand id (list_brands)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
+      "name": "get_post_analytics",
+      "description": "A post's analytics: views, watch time, average view duration and percentage, likes, comments, shares, subscribers gained/lost, the audience-retention curve and traffic sources. Defaults to the day it went up through today; the last ~3 days are incomplete.",
+      "permission": "analytics",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "mixetape post id (list_posts)"
+          },
+          "from": {
+            "type": "string",
+            "format": "date",
+            "description": "First day"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "description": "Last day"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_account_analytics",
+      "description": "An account's analytics: totals, day by day, its top 10 posts (with the mixetape post id when published through mixetape) and traffic sources. Defaults to the last 28 days; the last ~3 days are incomplete.",
+      "permission": "analytics",
+      "platforms": [
+        "youtube",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "mixetape account id (list_accounts)"
+          },
+          "from": {
+            "type": "string",
+            "format": "date",
+            "description": "First day"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "description": "Last day"
+          }
+        },
+        "required": [
+          "accountId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "create_group",
+      "description": "Make a group in the library: files that go out together (a carousel), with the title, caption and metadata you drafted, so the user can publish it from the workspace in a few clicks. Empty is fine — then upload into it with create_upload or import_file (groupId). Answers the group with its files (kind, size, orientation, duration).",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title where the platform has one (YouTube, Pinterest)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "The post text; the default on every platform"
+          },
+          "description": {
+            "type": "string",
+            "description": "Longer description where the platform has one"
+          },
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files from storage, in order — a carousel's order. Each must be ready (its upload finished); a file in another group moves here. On update this replaces the group's files; the ones left out stay in storage."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides (the same fields as a post's metadata on that platform; a caption there replaces the caption on that platform). On update it is merged; null clears a field or a platform."
+          }
+        }
+      }
+    },
+    {
+      "name": "update_group",
+      "description": "Change a group: the given fields only (null clears one); fileIds, when given, replaces its files and their order (the ones left out stay in storage); metadata is merged.",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Group id (list_groups)"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title where the platform has one (YouTube, Pinterest)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "The post text; the default on every platform"
+          },
+          "description": {
+            "type": "string",
+            "description": "Longer description where the platform has one"
+          },
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files from storage, in order — a carousel's order. Each must be ready (its upload finished); a file in another group moves here. On update this replaces the group's files; the ones left out stay in storage."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides (the same fields as a post's metadata on that platform; a caption there replaces the caption on that platform). On update it is merged; null clears a field or a platform."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "get_group",
+      "description": "One group: its files in order, its drafted words, and the posts published from it.",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Group id (list_groups)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_groups",
+      "description": "List the library's groups, newest first, with their files — narrowed by words in the title, caption or description. Returns { groups, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Words in the title, caption or description"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "description": "Groups per page, default 50"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "nextCursor from the previous page"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "delete_group",
+      "description": "Delete a group. Its files stay in storage, in no group — unless deleteFiles, which deletes them too (except any a post not yet sent still needs).",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Group id (list_groups)"
+          },
+          "deleteFiles": {
+            "type": "boolean",
+            "description": "Delete its files too"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
+      "name": "plan_group",
+      "description": "Before publishing a group: for each channel of the given brands and channels, whether its files can go there and as what (label: Short, Video, Reel, Photo, Carousel, Album, Pin…), problems that stop it (a platform that takes no images, too many files, a missing YouTube title or Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Publishes nothing.",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Group id (list_groups)"
+          },
+          "brandIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Brands: every channel in them"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Single channels"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "publish_group",
+      "description": "Publish a group to brands and/or channels: one post per channel that can take it (see plan_group), all at scheduledAt. Channels that cannot are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts behave like any from create_post — editable and cancellable until they go out. Once every post is out (or cancelled), the files are deleted from storage, and the emptied group with them.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Group id (list_groups)"
+          },
+          "brandIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Brands: every channel in them"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Single channels"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 with a timezone offset; left out, each post goes live after its lead"
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The same lead for every channel; left out, each platform keeps its default"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "create_upload",
+      "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that library group. Storage is temporary: the file is deleted once its post is published or cancelled, or 24 hours after upload (expiresAt) if no post uses it by then — schedule it within a day. For a file already on the web use import_file.",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "e.g. \"video/mp4\", \"image/jpeg\""
+          },
+          "size": {
+            "type": "integer",
+            "description": "Size in bytes, to refuse files over 5 GB early"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Put the file in this library group, after its other files"
+          }
+        },
+        "required": [
+          "fileName"
+        ]
+      }
+    },
+    {
+      "name": "finish_upload",
+      "description": "Finish an upload once its PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Answers the file. Safe to call again.",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "From create_upload"
+          }
+        },
+        "required": [
+          "fileId"
+        ]
+      }
+    },
+    {
+      "name": "import_file",
+      "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it and reads what it is; nothing is sent from your machine. Answers the file, ready to use.",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "A public https URL, up to 5 GB, with a Content-Length"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Defaults to the URL's file name"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Put the file in this library group, after its other files"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "list_files",
+      "description": "List the files in your mixetape storage, newest first — each with url (r2://…), kind, size, width, height, orientation (vertical/horizontal/square) and duration. Narrow by kind or words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "video",
+                "image",
+                "other"
+              ]
+            },
+            "description": "Only these kinds"
+          },
+          "search": {
+            "type": "string",
+            "description": "Words in the file name"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Only the files in this group"
+          },
+          "loose": {
+            "type": "boolean",
+            "description": "Only files in no group"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Files per page, default 50"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "nextCursor from the previous page"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_file",
+      "description": "One file in storage: its url, kind, size, width, height, orientation, duration.",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "The file's id, or its url (r2://…)"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "delete_file",
+      "description": "Delete a file from mixetape storage (it leaves its group). Refused while a post that has not gone out yet points at it.",
+      "permission": "storage",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "The file's id, or its url (r2://…)"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    }
+  ]
+}

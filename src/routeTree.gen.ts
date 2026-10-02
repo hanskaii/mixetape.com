@@ -15,15 +15,14 @@ import { Route as appAppRouteRouteImport } from './routes/(app)/_app/route'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
 import { Route as publicTermsRouteImport } from './routes/(public)/terms'
+import { Route as McpToolsDotjsonRouteImport } from './routes/mcp_.tools[.]json'
 import { Route as RobotsTxtRouteImport } from './routes/robots.txt'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
-import { Route as ApiV1AccountsRouteImport } from './routes/api/v1/accounts'
+import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
-import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
-import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
 import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
 import { Route as appAppLibraryIndexRouteImport } from './routes/(app)/_app/library/index'
@@ -33,8 +32,6 @@ import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/s
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
 import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/file/$'
-import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts.$id'
-import { Route as ApiV1ToolsNameRouteImport } from './routes/api/v1/tools.$name'
 
 const publicRouteRoute = publicRouteRouteImport.update({
   id: '/(public)',
@@ -64,6 +61,11 @@ const publicTermsRoute = publicTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => publicRouteRoute,
 } as any)
+const McpToolsDotjsonRoute = McpToolsDotjsonRouteImport.update({
+  id: '/mcp_/tools.json',
+  path: '/mcp/tools.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RobotsTxtRoute = RobotsTxtRouteImport.update({
   id: '/robots/txt',
   path: '/robots/txt',
@@ -89,24 +91,14 @@ const ApiConnectProviderRoute = ApiConnectProviderRouteImport.update({
   path: '/api/connect/$provider',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AccountsRoute = ApiV1AccountsRouteImport.update({
-  id: '/api/v1/accounts',
-  path: '/api/v1/accounts',
+const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
+  id: '/api/v1/$',
+  path: '/api/v1/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
   id: '/api/v1/openapi.json',
   path: '/api/v1/openapi.json',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
-  id: '/api/v1/posts',
-  path: '/api/v1/posts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ToolsRoute = ApiV1ToolsRouteImport.update({
-  id: '/api/v1/tools',
-  path: '/api/v1/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appAppApiKeysIndexRoute = appAppApiKeysIndexRouteImport.update({
@@ -155,37 +147,24 @@ const ApiStorageFileSplatRoute = ApiStorageFileSplatRouteImport.update({
   path: '/api/storage/file/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ApiV1PostsRoute,
-} as any)
-const ApiV1ToolsNameRoute = ApiV1ToolsNameRouteImport.update({
-  id: '/$name',
-  path: '/$name',
-  getParentRoute: () => ApiV1ToolsRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
+  '/mcp/tools.json': typeof McpToolsDotjsonRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
-  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
-  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
-  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
-  '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
   '/library/': typeof appAppLibraryIndexRoute
@@ -196,22 +175,19 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
+  '/mcp/tools.json': typeof McpToolsDotjsonRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
-  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
-  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
-  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
-  '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
   '/library': typeof appAppLibraryIndexRoute
@@ -225,22 +201,19 @@ export interface FileRoutesById {
   '/(app)/_app': typeof appAppRouteRouteWithChildren
   '/(public)/privacy': typeof publicPrivacyRoute
   '/(public)/terms': typeof publicTermsRoute
+  '/mcp_/tools.json': typeof McpToolsDotjsonRoute
   '/robots/txt': typeof RobotsTxtRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/(public)/': typeof publicIndexRoute
   '/(public)/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/connect/$provider': typeof ApiConnectProviderRouteWithChildren
-  '/api/v1/accounts': typeof ApiV1AccountsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
-  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
-  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
   '/(app)/_app/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
-  '/api/v1/posts/$id': typeof ApiV1PostsIdRoute
-  '/api/v1/tools/$name': typeof ApiV1ToolsNameRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
   '/(app)/_app/library/': typeof appAppLibraryIndexRoute
@@ -253,22 +226,19 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/privacy'
     | '/terms'
+    | '/mcp/tools.json'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/v1/accounts'
+    | '/api/v1/$'
     | '/api/v1/openapi.json'
-    | '/api/v1/posts'
-    | '/api/v1/tools'
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
-    | '/api/v1/posts/$id'
-    | '/api/v1/tools/$name'
     | '/api-keys/'
     | '/channels/'
     | '/library/'
@@ -279,22 +249,19 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/privacy'
     | '/terms'
+    | '/mcp/tools.json'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/'
     | '/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/v1/accounts'
+    | '/api/v1/$'
     | '/api/v1/openapi.json'
-    | '/api/v1/posts'
-    | '/api/v1/tools'
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
-    | '/api/v1/posts/$id'
-    | '/api/v1/tools/$name'
     | '/api-keys'
     | '/channels'
     | '/library'
@@ -307,22 +274,19 @@ export interface FileRouteTypes {
     | '/(app)/_app'
     | '/(public)/privacy'
     | '/(public)/terms'
+    | '/mcp_/tools.json'
     | '/robots/txt'
     | '/sitemap/xml'
     | '/(public)/'
     | '/(public)/connect/done'
     | '/api/auth/$'
     | '/api/connect/$provider'
-    | '/api/v1/accounts'
+    | '/api/v1/$'
     | '/api/v1/openapi.json'
-    | '/api/v1/posts'
-    | '/api/v1/tools'
     | '/(app)/_app/settings/account'
     | '/(app)/_app/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/storage/file/$'
-    | '/api/v1/posts/$id'
-    | '/api/v1/tools/$name'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
     | '/(app)/_app/library/'
@@ -334,14 +298,13 @@ export interface RootRouteChildren {
   publicRouteRoute: typeof publicRouteRouteWithChildren
   McpRoute: typeof McpRoute
   appAppRouteRoute: typeof appAppRouteRouteWithChildren
+  McpToolsDotjsonRoute: typeof McpToolsDotjsonRoute
   RobotsTxtRoute: typeof RobotsTxtRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
-  ApiV1AccountsRoute: typeof ApiV1AccountsRoute
+  ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
-  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
-  ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
   ApiStorageFileSplatRoute: typeof ApiStorageFileSplatRoute
 }
 
@@ -389,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof publicTermsRouteImport
       parentRoute: typeof publicRouteRoute
     }
+    '/mcp_/tools.json': {
+      id: '/mcp_/tools.json'
+      path: '/mcp/tools.json'
+      fullPath: '/mcp/tools.json'
+      preLoaderRoute: typeof McpToolsDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/robots/txt': {
       id: '/robots/txt'
       path: '/robots/txt'
@@ -424,11 +394,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/accounts': {
-      id: '/api/v1/accounts'
-      path: '/api/v1/accounts'
-      fullPath: '/api/v1/accounts'
-      preLoaderRoute: typeof ApiV1AccountsRouteImport
+    '/api/v1/$': {
+      id: '/api/v1/$'
+      path: '/api/v1/$'
+      fullPath: '/api/v1/$'
+      preLoaderRoute: typeof ApiV1SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/openapi.json': {
@@ -436,20 +406,6 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/openapi.json'
       fullPath: '/api/v1/openapi.json'
       preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/posts': {
-      id: '/api/v1/posts'
-      path: '/api/v1/posts'
-      fullPath: '/api/v1/posts'
-      preLoaderRoute: typeof ApiV1PostsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/tools': {
-      id: '/api/v1/tools'
-      path: '/api/v1/tools'
-      fullPath: '/api/v1/tools'
-      preLoaderRoute: typeof ApiV1ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/_app/api-keys/': {
@@ -515,20 +471,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageFileSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/posts/$id': {
-      id: '/api/v1/posts/$id'
-      path: '/$id'
-      fullPath: '/api/v1/posts/$id'
-      preLoaderRoute: typeof ApiV1PostsIdRouteImport
-      parentRoute: typeof ApiV1PostsRoute
-    }
-    '/api/v1/tools/$name': {
-      id: '/api/v1/tools/$name'
-      path: '/$name'
-      fullPath: '/api/v1/tools/$name'
-      preLoaderRoute: typeof ApiV1ToolsNameRouteImport
-      parentRoute: typeof ApiV1ToolsRoute
-    }
   }
 }
 
@@ -585,42 +527,17 @@ const ApiConnectProviderRouteChildren: ApiConnectProviderRouteChildren = {
 const ApiConnectProviderRouteWithChildren =
   ApiConnectProviderRoute._addFileChildren(ApiConnectProviderRouteChildren)
 
-interface ApiV1PostsRouteChildren {
-  ApiV1PostsIdRoute: typeof ApiV1PostsIdRoute
-}
-
-const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
-  ApiV1PostsIdRoute: ApiV1PostsIdRoute,
-}
-
-const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
-  ApiV1PostsRouteChildren,
-)
-
-interface ApiV1ToolsRouteChildren {
-  ApiV1ToolsNameRoute: typeof ApiV1ToolsNameRoute
-}
-
-const ApiV1ToolsRouteChildren: ApiV1ToolsRouteChildren = {
-  ApiV1ToolsNameRoute: ApiV1ToolsNameRoute,
-}
-
-const ApiV1ToolsRouteWithChildren = ApiV1ToolsRoute._addFileChildren(
-  ApiV1ToolsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   publicRouteRoute: publicRouteRouteWithChildren,
   McpRoute: McpRoute,
   appAppRouteRoute: appAppRouteRouteWithChildren,
+  McpToolsDotjsonRoute: McpToolsDotjsonRoute,
   RobotsTxtRoute: RobotsTxtRoute,
   SitemapXmlRoute: SitemapXmlRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
-  ApiV1AccountsRoute: ApiV1AccountsRoute,
+  ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
-  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
-  ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
   ApiStorageFileSplatRoute: ApiStorageFileSplatRoute,
 }
 export const routeTree = rootRouteImport

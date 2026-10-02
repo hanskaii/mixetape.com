@@ -1,36 +1,64 @@
 import spec from "../api/openapi.json";
+import { platformLabel } from "./platforms";
 
 /**
- * The API reference's overview, from the OpenAPI document. The site builds no tag pages
- * (/api/tags/*): a tag is a group of operations, listed on the overview and in the
- * sidebar. These helpers give the overview its facts and keep the text outputs
+ * The REST reference's overview, from the OpenAPI document. The site builds no tag pages
+ * (/api/tags/*): a tag is a resource's group of operations, listed on the overview and in
+ * the sidebar. These helpers give the overview its facts and keep the text outputs
  * (Markdown, llms.txt) free of links to pages that do not exist.
  */
 
-type Operation = { operationId: string; summary?: string; tags?: string[] };
+type Operation = {
+  operationId: string;
+  summary?: string;
+  tags?: string[];
+  "x-permission"?: string;
+  "x-platforms"?: string[];
+};
 
 export const baseUrl = spec.servers[0]?.url ?? "";
 
-/** The permission groups, with what each allows (the tags' descriptions). */
-export const permissions = spec.tags
-  .filter((tag) => tag.name !== "Accounts and posts")
-  .map((tag) => ({ name: tag.name, description: tag.description }));
+/** What each permission allows. */
+export const permissions = Object.entries(
+  (spec.components.securitySchemes.apiKey as { "x-permissions"?: Record<string, string> })[
+    "x-permissions"
+  ] ?? {},
+).map(([name, description]) => ({ name, description }));
 
-/** Every group's operations, in the document's order, with their reference URLs. */
+const operations = Object.entries(spec.paths).flatMap(([path, methods]) =>
+  Object.entries(methods as Record<string, unknown>)
+    .filter(
+      (entry): entry is [string, Operation] =>
+        typeof entry[1] === "object" && entry[1] !== null && "operationId" in entry[1],
+    )
+    .map(([method, operation]) => ({ method: method.toUpperCase(), path, ...operation })),
+);
+
+const hrefOf = (operation: Operation) =>
+  `/api/${(operation.tags?.[0] ?? "").replace(/\s+/g, "-")}/${operation.operationId}`;
+
+/** An operation's permission and platforms, by its operationId (the last part of its URL). */
+export function operationFacts(operationId: string) {
+  const operation = operations.find((candidate) => candidate.operationId === operationId);
+  return operation
+    ? { permission: operation["x-permission"], platforms: operation["x-platforms"] }
+    : null;
+}
+
+/** Every resource's operations, in the document's order, with their reference URLs. */
 export function groups() {
-  const operations = Object.values(spec.paths).flatMap((methods) =>
-    Object.values(methods as Record<string, unknown>).filter(
-      (value): value is Operation =>
-        typeof value === "object" && value !== null && "operationId" in value,
-    ),
-  );
   return spec.tags.map((tag) => ({
     name: tag.name,
+    description: tag.description,
     operations: operations
       .filter((operation) => operation.tags?.[0] === tag.name)
       .map((operation) => ({
         label: operation.summary ?? operation.operationId,
-        href: `/api/${tag.name.replace(/\s+/g, "-")}/${operation.operationId}`,
+        method: operation.method,
+        path: operation.path,
+        permission: operation["x-permission"],
+        platforms: operation["x-platforms"],
+        href: hrefOf(operation),
       })),
   }));
 }
@@ -40,7 +68,12 @@ export function groupsMarkdown() {
   return groups()
     .map(
       (group) =>
-        `## ${group.name}\n\n${group.operations.map((op) => `- [${op.label}](${op.href})`).join("\n")}`,
+        `## ${group.name}\n\n${group.operations
+          .map(
+            (op) =>
+              `- [${op.label}](${op.href}) — \`${op.method} ${op.path}\` (${platformLabel(op.platforms)})`,
+          )
+          .join("\n")}`,
     )
     .join("\n\n");
 }

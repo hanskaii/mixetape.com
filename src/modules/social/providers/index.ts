@@ -34,6 +34,23 @@ export function capabilitiesOf(provider: SocialProvider): Capability[] {
   return CAPABILITIES.filter((capability) => provider[capability] !== undefined);
 }
 
+/**
+ * What an action needs from a platform: one of its capabilities, or account-level analytics
+ * (which not every platform with post analytics reports).
+ */
+export type Need = Capability | "accountAnalytics";
+
+const meets = (provider: SocialProvider, need: Need) =>
+  need === "accountAnalytics"
+    ? provider.analytics?.account !== undefined
+    : provider[need] !== undefined;
+
+/** The platforms an action works on: all of them when it needs nothing in particular. */
+export const platformsWith = (need?: Need) =>
+  Object.values(PROVIDERS)
+    .filter((provider) => !need || meets(provider, need))
+    .map((provider) => provider.id);
+
 export const PROVIDER_LIST = Object.values(PROVIDERS).map((provider) => ({
   id: provider.id,
   name: provider.name,

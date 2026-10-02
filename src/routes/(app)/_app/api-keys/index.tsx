@@ -93,8 +93,8 @@ function ApiKeysPage() {
             {`claude mcp add --transport http mixetape ${baseUrl}/mcp \\\n  --header "Authorization: Bearer mxt_…"`}
           </pre>
           <p {...stylex.props(styles.hint)}>
-            Or REST: <Mono>GET {baseUrl}/api/v1/tools</Mono> lists what the key may do,{" "}
-            <Mono>POST /api/v1/tools/:name</Mono> runs a tool.
+            Scripts use the REST API instead: <Mono>{baseUrl}/api/v1</Mono>, described in{" "}
+            <Mono>/api/v1/openapi.json</Mono>.
           </p>
         </div>
       </Panel>

@@ -119,7 +119,9 @@ export async function readyFiles(userId: string, fileIds: string[]) {
     const file = files.find((candidate) => candidate.id === id);
     if (!file) throw new ServiceError(`File not found: ${id}`, 404);
     if (file.status !== "ready")
-      throw new ServiceError(`File ${file.name} is not ready — finish its upload first`, 409);
+      throw new ServiceError(`File ${file.name} is not ready — finish its upload first`, 409, {
+        code: "file_not_ready",
+      });
     return file;
   });
 }

@@ -1,48 +1,31 @@
-import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
+import { object } from "#/modules/api/input";
+import { READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as groups from "./groups.service";
 import * as publishing from "./publish.service";
+import {
+  groupChanges,
+  groupFilter,
+  groupInput,
+  publishOptions,
+  selection,
+  target,
+} from "./library.args";
+import {
+  GROUP_FIELDS,
+  GROUP_FILTERS,
+  PUBLISH_OPTIONS,
+  SELECTION_FIELDS,
+  TARGET,
+} from "./library.schemas";
 
 /**
  * The library for agents: groups — files that go out together, with the words drafted for
  * them — ready for the person to publish from the workspace in a few clicks, or for the
- * agent to publish itself (plan_group, publish_group).
+ * agent to publish itself (plan_group, publish_group). Field schemas are shared with the
+ * REST API (library.schemas.ts).
  */
 
 const GROUP_ID = { type: "string", description: "Group id (list_groups)" };
-const FIELDS = {
-  title: { type: "string", description: "Title where the platform has one (YouTube, Pinterest)" },
-  caption: { type: "string", description: "The post text; the default on every platform" },
-  description: { type: "string", description: "Longer description where the platform has one" },
-  fileIds: {
-    type: "array",
-    items: { type: "string" },
-    description:
-      "Files from storage (list_files ids), in order — a carousel's order. Each must be ready (finish_upload done); a file in another group moves here. To upload straight into a group, pass groupId to create_upload or import_file instead.",
-  },
-  metadata: {
-    type: "object",
-    description:
-      "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides (same fields as create_post's metadata for that platform; a caption there replaces the caption on that platform). On update it is merged; null clears a field or a platform.",
-  },
-};
-
-const TARGET = {
-  brandIds: {
-    type: "array",
-    items: { type: "string" },
-    description: "Brands (list_brands): every channel in them",
-  },
-  accountIds: {
-    type: "array",
-    items: { type: "string" },
-    description: "Single channels (list_accounts)",
-  },
-};
-
-const target = (input: Parameters<Tool["run"]>[1]) => ({
-  brandIds: input.strings("brandIds"),
-  accountIds: input.strings("accountIds"),
-});
 
 export const libraryTools: Tool[] = [
   {
@@ -50,36 +33,16 @@ export const libraryTools: Tool[] = [
     scope: "library",
     description:
       "Make a group in the library: files that go out together (a carousel), with the title, caption and metadata you drafted, so the user can publish it from the workspace in a few clicks. Empty is fine — then upload into it with create_upload or import_file (groupId). Answers the group with its files (kind, size, orientation, duration).",
-    inputSchema: object(FIELDS),
-    run: (userId, input) =>
-      groups.createGroup(
-        userId,
-        {
-          title: input.optionalString("title"),
-          caption: input.optionalString("caption"),
-          description: input.optionalString("description"),
-          fileIds: input.strings("fileIds"),
-          metadata: input.object("metadata"),
-        },
-        "agent",
-      ),
+    inputSchema: object(GROUP_FIELDS),
+    run: (userId, input) => groups.createGroup(userId, groupInput(input), "agent"),
   },
   {
     name: "update_group",
     scope: "library",
     description:
       "Change a group: the given fields only (null clears one); fileIds, when given, replaces its files and their order (the ones left out stay in storage); metadata is merged.",
-    inputSchema: object({ id: GROUP_ID, ...FIELDS }, ["id"]),
-    run: (userId, input) => {
-      const text = (name: string) => (input.raw(name) === null ? null : input.optionalString(name));
-      return groups.updateGroup(userId, input.string("id"), {
-        title: text("title"),
-        caption: text("caption"),
-        description: text("description"),
-        fileIds: input.strings("fileIds"),
-        metadata: input.raw("metadata") === null ? null : input.object("metadata"),
-      });
-    },
+    inputSchema: object({ id: GROUP_ID, ...GROUP_FIELDS }, ["id"]),
+    run: (userId, input) => groups.updateGroup(userId, input.string("id"), groupChanges(input)),
   },
   {
     name: "get_group",
@@ -95,18 +58,9 @@ export const libraryTools: Tool[] = [
     scope: "library",
     description:
       "List the library's groups, newest first, with their files — narrowed by words in the title, caption or description. Returns { groups, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
-    inputSchema: object({
-      search: { type: "string", description: "Words in the title, caption or description" },
-      limit: { type: "number", description: "Groups per page: default 50, max 200" },
-      cursor: { type: "string", description: "nextCursor from the previous page" },
-    }),
+    inputSchema: object(GROUP_FILTERS),
     annotations: READ_ONLY,
-    run: (userId, input) =>
-      groups.listGroups(userId, {
-        search: input.optionalString("search"),
-        limit: input.number("limit"),
-        cursor: input.optionalString("cursor"),
-      }),
+    run: (userId, input) => groups.listGroups(userId, groupFilter(input)),
   },
   {
     name: "delete_group",
@@ -139,38 +93,50 @@ export const libraryTools: Tool[] = [
   },
   {
     name: "publish_group",
+    idempotent: true,
     scope: "publish",
     description:
-      "Publish a group to brands and/or channels: one post per channel that can take it (see plan_group), all at scheduledAt. Channels that cannot are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts behave like any from create_post — editable and cancellable until they go out. Once every post is out, the files are deleted from storage (and the emptied group), unless keepFiles.",
-    inputSchema: object(
-      {
-        id: GROUP_ID,
-        ...TARGET,
-        scheduledAt: {
-          type: "string",
-          description: "ISO 8601 with timezone offset. Omit to post now (live after each lead).",
-        },
-        leadMinutes: {
-          type: "number",
-          description: "Same for every channel; omit to keep each platform's default",
-        },
-        keepFiles: {
-          type: "boolean",
-          description: "Keep the files in storage after the posts are out (default: delete them)",
-        },
-      },
-      ["id"],
-    ),
+      "Publish a group to brands and/or channels: one post per channel that can take it (see plan_group), all at scheduledAt. Channels that cannot are skipped with their reasons; answers { scheduled: [{ accountId, postId }], skipped, failed }. The posts behave like any from create_post — editable and cancellable until they go out. Once every post is out (or cancelled), the files are deleted from storage, and the emptied group with them.",
+    inputSchema: object({ id: GROUP_ID, ...TARGET, ...PUBLISH_OPTIONS }, ["id"]),
     run: async (userId, input) =>
       publishing.publishPost(
         userId,
         await publishing.groupSource(userId, input.string("id")),
         target(input),
-        {
-          scheduledAt: input.optionalString("scheduledAt"),
-          leadMinutes: input.number("leadMinutes"),
-          keepFiles: input.raw("keepFiles") === true,
-        },
+        publishOptions(input),
       ),
+  },
+  {
+    name: "plan_files",
+    scope: "library",
+    description:
+      "Like plan_group, for files that are not in a group: for each channel of the given brands and channels, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.",
+    inputSchema: object({ ...SELECTION_FIELDS, ...TARGET }, ["fileIds"]),
+    annotations: READ_ONLY,
+    run: async (userId, input) => {
+      const { fileIds, draft } = selection(input);
+      return publishing.planPost(
+        userId,
+        await publishing.filesSource(userId, fileIds, draft),
+        target(input),
+      );
+    },
+  },
+  {
+    name: "publish_files",
+    idempotent: true,
+    scope: "publish",
+    description:
+      "Like publish_group, for files that are not in a group: one post per channel that can take them (see plan_files), all at scheduledAt; the others are skipped with their reasons. Answers { scheduled: [{ accountId, postId }], skipped, failed }. Once every post is out (or cancelled), the files are deleted from storage.",
+    inputSchema: object({ ...SELECTION_FIELDS, ...TARGET, ...PUBLISH_OPTIONS }, ["fileIds"]),
+    run: async (userId, input) => {
+      const { fileIds, draft } = selection(input);
+      return publishing.publishPost(
+        userId,
+        await publishing.filesSource(userId, fileIds, draft),
+        target(input),
+        publishOptions(input),
+      );
+    },
   },
 ];

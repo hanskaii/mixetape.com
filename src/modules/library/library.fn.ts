@@ -56,7 +56,7 @@ export const getLibraryData = createServerFn({ method: "GET" }).handler(async ()
         takesDescription: Boolean(provider.textFields?.description),
       };
     }),
-    retentionDays: files.RETENTION_DAYS,
+    retentionHours: files.UNATTACHED_HOURS,
   };
 });
 
@@ -125,12 +125,11 @@ export const planSelection = createServerFn({ method: "POST" })
   });
 
 export const publishSelection = createServerFn({ method: "POST" })
-  .validator((data: Selection & { scheduledAt?: string; keepFiles: boolean }) => data)
+  .validator((data: Selection & { scheduledAt?: string }) => data)
   .handler(async ({ data }) => {
     const userId = await currentUserId();
     const result = await publishing.publishPost(userId, await source(userId, data), data, {
       scheduledAt: data.scheduledAt,
-      keepFiles: data.keepFiles,
     });
     // The group keeps the words it went out with, for next time.
     if (data.groupId) {

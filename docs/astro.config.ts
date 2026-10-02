@@ -21,19 +21,31 @@ const nimbusConfig = defineNimbusConfig({
     items: [
       "introduction",
       "quickstart",
-      "tips",
       { label: "Concepts", autogenerate: { directory: "concepts" } },
-      { label: "Connect an agent", autogenerate: { directory: "connect-an-agent" } },
-      "tools",
+      { label: "Agents (MCP)", autogenerate: { directory: "agents" } },
+      {
+        label: "REST API",
+        items: ["rest-api", { label: "API reference", link: "/api" }],
+      },
       { label: "Platforms", autogenerate: { directory: "platforms" } },
-      { label: "API reference", link: "/api", icon: "ph:code" },
     ],
   },
 });
 
 export default defineConfig({
   // No landing page: the docs open on their introduction.
-  redirects: { "/": "/introduction" },
+  redirects: {
+    "/": "/introduction",
+    // Pages that moved when agents (MCP) and the REST API got their own sections.
+    "/tools": "/agents/tools",
+    "/tips": "/agents/tips",
+    "/connect-an-agent/mcp": "/agents",
+    "/connect-an-agent/claude-code": "/agents/claude-code",
+    "/connect-an-agent/codex": "/agents/codex",
+    "/connect-an-agent/cursor": "/agents/cursor",
+    "/connect-an-agent/opencode": "/agents/opencode",
+    "/connect-an-agent/rest-api": "/rest-api",
+  },
   // nimbus:adapter
   output: "static",
   // Tailwind v4 via its Vite plugin (the integration Astro recommends for

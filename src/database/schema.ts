@@ -153,8 +153,6 @@ export const socialPosts = sqliteTable(
     media: text("media", { mode: "json" }).$type<{ url: string; kind: "video" | "image" }[]>(),
     // The library group the post was published from, if any.
     groupId: text("group_id").references(() => mediaGroups.id, { onDelete: "set null" }),
-    // Delete the post's files from storage once it is published (library publishing).
-    cleanup: integer("cleanup", { mode: "boolean" }).notNull().default(false),
     caption: text("caption"),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, JsonValue>>(), // per-platform fields
     scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }).notNull(),
@@ -205,11 +203,37 @@ export const apiKeys = sqliteTable(
   (table) => [index("api_keys_user_idx").on(table.userId)],
 );
 
+// A write sent with an Idempotency-Key (REST header, or the MCP tools' idempotencyKey): the
+// first request runs and its answer is kept for 24 hours, so a retry gets that answer back
+// instead of scheduling the same post twice.
+export const idempotencyKeys = sqliteTable(
+  "idempotency_keys",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    // SHA-256 of what the request asked for: the same key with another request is refused.
+    fingerprint: text("fingerprint").notNull(),
+    // Null while the first request still runs.
+    status: integer("status"),
+    response: text("response", { mode: "json" }).$type<unknown>(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.key] }),
+    index("idempotency_keys_created_idx").on(table.createdAt),
+  ],
+);
+
 // ── Library ────────────────────────────────────────────────────────────────────
 //
 // Files in mixetape storage (R2, under media/<userId>/), indexed here with what was read
-// from the file itself (kept 30 days at most); groups — files that go out together, with the
-// words drafted for them; and brands, the user's own groups of channels.
+// from the file itself (staged: kept until a post is out, or 24 hours with none); groups —
+// files that go out together, with the words drafted for them; and brands, the user's own
+// groups of channels.
 
 export const mediaFiles = sqliteTable(
   "media_files",

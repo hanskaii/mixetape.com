@@ -1,5 +1,6 @@
 import type { Caller } from "./api-keys.service";
-import { ServiceError } from "#/modules/api/errors";
+import { errorBody, ServiceError } from "#/modules/api/errors";
+import { countCall } from "./rate-limit";
 import { findTool, runTool, toolsFor } from "./tools";
 
 /**
@@ -54,6 +55,7 @@ export async function handleMessage(
       const tool = findTool(String(message.params?.name));
       if (!tool) return fail(id, -32602, `Unknown tool: ${String(message.params?.name)}`);
       try {
+        await countCall(caller.userId);
         const args = message.params?.arguments;
         const result = await runTool(
           caller,
@@ -63,9 +65,19 @@ export async function handleMessage(
         return ok(id, { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] });
       } catch (error) {
         // A tool that fails answers with isError, so the agent sees why and can adjust.
-        const text = error instanceof ServiceError ? error.message : "The tool failed unexpectedly";
-        if (!(error instanceof ServiceError)) console.error("[mcp]", error);
-        return ok(id, { content: [{ type: "text", text }], isError: true });
+        if (!(error instanceof ServiceError)) {
+          console.error("[mcp]", error);
+          return ok(id, {
+            content: [{ type: "text", text: "The tool failed unexpectedly" }],
+            isError: true,
+          });
+        }
+        // The message for the agent to read; the code (and field) for a program to branch on.
+        return ok(id, {
+          content: [{ type: "text", text: error.message }],
+          structuredContent: errorBody(error),
+          isError: true,
+        });
       }
     }
     default:

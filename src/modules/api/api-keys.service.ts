@@ -77,6 +77,7 @@ export function requireScope(caller: Caller, scope: ApiScope) {
     throw new ServiceError(
       `This API key does not have the "${scope}" permission (${API_SCOPES[scope].toLowerCase()}). Create a key that has it on /api-keys.`,
       403,
+      { code: "missing_permission" },
     );
   }
 }

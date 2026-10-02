@@ -38,7 +38,10 @@ type Use<C extends Capability> = NonNullable<SocialProvider[C]>;
 
 function capability<C extends Capability>(provider: SocialProvider, name: C): Use<C> {
   const found = provider[name];
-  if (!found) throw new ServiceError(`${provider.name} does not support ${LABELS[name]}`, 409);
+  if (!found)
+    throw new ServiceError(`${provider.name} does not support ${LABELS[name]}`, 409, {
+      code: "not_supported_by_platform",
+    });
   return found as Use<C>;
 }
 
@@ -49,7 +52,9 @@ export async function platformCall<T>(run: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (error instanceof ServiceError) throw error;
     if (error instanceof InvalidInputError) throw new ServiceError(error.message);
-    throw new ServiceError(error instanceof Error ? error.message : String(error), 502);
+    throw new ServiceError(error instanceof Error ? error.message : String(error), 502, {
+      code: "platform_error",
+    });
   }
 }
 
@@ -80,7 +85,8 @@ export async function onPlatform<C extends Capability>(userId: string, postId: s
     );
   }
   const loaded = await loadForPublishing(postId);
-  if (!loaded) throw new ServiceError("The post's account is gone", 409);
+  if (!loaded)
+    throw new ServiceError("The post's account is gone", 409, { code: "account_needs_reconnect" });
   const use = capability(getProvider(post.provider), name);
   ensureScopes(loaded.account);
   return {

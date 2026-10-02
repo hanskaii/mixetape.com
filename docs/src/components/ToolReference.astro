@@ -1,0 +1,48 @@
+---
+/**
+ * Every MCP tool, grouped by permission: where it works, what it does and its arguments.
+ * Generated from the app's tool catalog, so it cannot fall behind the tools agents see.
+ */
+import PlatformIcons from "./PlatformIcons.astro";
+import { fieldsOf, toolGroups } from "@/lib/tools";
+
+const groups = toolGroups();
+---
+
+<div class="not-prose flex flex-col gap-10">
+  {groups.map((group) => (
+    <section class="flex flex-col gap-4">
+      <h2 id={`permission-${group.name}`} class="m-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">
+        <code>{group.name}</code>
+      </h2>
+      <p class="m-0 text-sm text-muted-foreground">{group.description}.</p>
+      {group.tools.map((tool) => (
+        <article id={tool.name} class="scroll-mt-20 rounded-lg border border-border p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <a href={`#${tool.name}`} class="font-mono text-[0.9375rem] font-semibold text-foreground no-underline hover:underline">
+              {tool.name}
+            </a>
+            <PlatformIcons platforms={tool.platforms} />
+          </div>
+          <p class="mt-2 mb-0 text-sm leading-relaxed text-foreground">{tool.description}</p>
+          {fieldsOf(tool).length > 0 && (
+            <dl class="mt-3 mb-0 grid gap-x-4 gap-y-2 border-t border-border pt-3 text-sm sm:grid-cols-[minmax(9rem,max-content)_1fr]">
+              {fieldsOf(tool).map((field) => (
+                <>
+                  <dt class="font-mono text-[0.8125rem] text-foreground">
+                    {field.name}
+                    {field.required && <span class="ml-1 text-xs text-danger">required</span>}
+                  </dt>
+                  <dd class="m-0 text-muted-foreground">
+                    <span class="text-xs">{field.type}</span>
+                    {field.description && <span> — {field.description}</span>}
+                  </dd>
+                </>
+              ))}
+            </dl>
+          )}
+        </article>
+      ))}
+    </section>
+  ))}
+</div>

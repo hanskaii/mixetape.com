@@ -57,10 +57,11 @@ sent from your machine.
 `list_files` lists your files, newest first; `get_file` answers one, by id or `r2://` URL.
 `delete_file` refuses while a post that has not gone out yet points at the file.
 
-Storage is a staging area, not an archive. A file goes **30 days** after it was stored
-(`expiresAt` on every file) — never while a post that has not gone out still needs it — and
-files published from the [library](/concepts/library) go as soon as every post with them is
-out, unless the publish kept them.
+Storage is a staging area, not an archive. A file goes as soon as every post with it is
+published (or cancelled before it went out). A file no post needs goes **24 hours** after it
+was stored (`expiresAt` on every file) — one waiting in a [library](/concepts/library) group
+included, and an upload never finished. A file is never deleted while a post that has not
+gone out still needs it.
 
 ## What each platform takes
 

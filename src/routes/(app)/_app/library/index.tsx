@@ -165,7 +165,7 @@ const fileHeight = (file: FileView, column: number) =>
 function LibraryPage() {
   const router = useRouter();
   const data = Route.useLoaderData();
-  const { groups, accounts, brands, platforms, scheduled, retentionDays } = data;
+  const { groups, accounts, brands, platforms, scheduled, retentionHours } = data;
   const { confirm } = useConfirmModal();
   const { openModal, closeModal } = useModal();
   const input = useRef<HTMLInputElement>(null);
@@ -313,7 +313,6 @@ function LibraryPage() {
         brands={brands}
         platforms={platforms}
         images={list.files.filter((file) => file.kind === "image")}
-        retentionDays={retentionDays}
         onClose={closeModal}
         onPublished={() => {
           setSelected([]);
@@ -532,7 +531,8 @@ function LibraryPage() {
                 <span {...stylex.props(styles.emptyTitle)}>Drop videos and images here</span>
                 <span {...stylex.props(styles.emptyText)}>
                   Or ask your agent to upload them into a carousel with its captions written — then
-                  you only pick where it goes. Files stay {retentionDays} days.
+                  you only pick where it goes. Files not scheduled within {retentionHours} hours are
+                  deleted.
                 </span>
               </button>
             ) : (

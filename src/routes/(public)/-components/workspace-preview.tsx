@@ -41,7 +41,6 @@ const post = (
   mediaUrl: "r2://sample.mp4",
   media: null,
   groupId: null,
-  cleanup: false,
   caption: null,
   metadata: { title },
   scheduledAt: new Date(scheduledAt),

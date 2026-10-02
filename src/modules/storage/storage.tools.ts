@@ -1,18 +1,17 @@
-import { object, READ_ONLY, type Tool } from "#/modules/api/tool";
+import { object } from "#/modules/api/input";
+import { READ_ONLY, type Tool } from "#/modules/api/tool";
 import * as files from "./files.service";
+import { fileFilter, importInput, uploadInput } from "./storage.args";
+import { FILE_FILTERS, IMPORT_FIELDS, UPLOAD_FIELDS } from "./storage.schemas";
 
 /**
  * mixetape's file storage for agents. Independent of scheduling: a stored file is an
  * `r2://` URL, which anything that takes a media URL (create_post) accepts, and can sit in a
- * library group. Storage is a staging area: files go 30 days after upload, or once the posts
- * published from the library with them are out.
- * Each file is indexed with what was read from it — kind, size in pixels, duration.
+ * library group. Storage is a staging area: a file goes once its post is published or
+ * cancelled, or 24 hours after upload if no post uses it — a file in a group included.
+ * Each file is indexed with what was read from it — kind, size in pixels, duration. Field
+ * schemas are shared with the REST API (storage.schemas.ts).
  */
-
-const GROUP = {
-  type: "string",
-  description: "Put the file in this library group (create_group), after its other files",
-};
 
 const FILE = {
   type: "string",
@@ -24,23 +23,9 @@ export const storageTools: Tool[] = [
     name: "create_upload",
     scope: "storage",
     description:
-      "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that library group. Storage keeps a file 30 days (expiresAt), never while a post not yet sent needs it. For a file already on the web use import_file.",
-    inputSchema: object(
-      {
-        fileName: { type: "string" },
-        contentType: { type: "string", description: 'e.g. "video/mp4", "image/jpeg"' },
-        size: { type: "number", description: "Size in bytes, to refuse files over 5 GB early" },
-        groupId: GROUP,
-      },
-      ["fileName"],
-    ),
-    run: (userId, input) =>
-      files.createFileUpload(userId, {
-        fileName: input.string("fileName"),
-        contentType: input.optionalString("contentType"),
-        size: input.number("size"),
-        groupId: input.optionalString("groupId"),
-      }),
+      "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that library group. Storage is temporary: the file is deleted once its post is published or cancelled, or 24 hours after upload (expiresAt) if no post uses it by then — schedule it within a day. For a file already on the web use import_file.",
+    inputSchema: object(UPLOAD_FIELDS, ["fileName"]),
+    run: (userId, input) => files.createFileUpload(userId, uploadInput(input)),
   },
   {
     name: "finish_upload",
@@ -54,51 +39,21 @@ export const storageTools: Tool[] = [
   },
   {
     name: "import_file",
+    idempotent: true,
     scope: "storage",
     description:
       "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it and reads what it is; nothing is sent from your machine. Answers the file, ready to use.",
-    inputSchema: object(
-      {
-        url: { type: "string" },
-        fileName: { type: "string", description: "Defaults to the URL's file name" },
-        groupId: GROUP,
-      },
-      ["url"],
-    ),
-    run: (userId, input) =>
-      files.importFile(userId, {
-        url: input.string("url"),
-        fileName: input.optionalString("fileName"),
-        groupId: input.optionalString("groupId"),
-      }),
+    inputSchema: object(IMPORT_FIELDS, ["url"]),
+    run: (userId, input) => files.importFile(userId, importInput(input)),
   },
   {
     name: "list_files",
     scope: "storage",
     description:
       "List the files in your mixetape storage, newest first — each with url (r2://…), kind, size, width, height, orientation (vertical/horizontal/square) and duration. Narrow by kind or words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
-    inputSchema: object({
-      kind: {
-        type: "array",
-        items: { type: "string", enum: ["video", "image", "other"] },
-        description: "Only these kinds",
-      },
-      search: { type: "string", description: "Words in the file name (case-insensitive)" },
-      groupId: { type: "string", description: "Only the files in this group" },
-      loose: { type: "boolean", description: "Only files in no group" },
-      limit: { type: "number", description: "Files per page: default 50, max 1000" },
-      cursor: { type: "string", description: "nextCursor from the previous page" },
-    }),
+    inputSchema: object(FILE_FILTERS),
     annotations: READ_ONLY,
-    run: (userId, input) =>
-      files.listFiles(userId, {
-        kind: input.strings("kind"),
-        search: input.optionalString("search"),
-        groupId: input.optionalString("groupId"),
-        loose: input.raw("loose") === true,
-        limit: input.number("limit"),
-        cursor: input.optionalString("cursor"),
-      }),
+    run: (userId, input) => files.listFiles(userId, fileFilter(input)),
   },
   {
     name: "get_file",

@@ -11,7 +11,6 @@ import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { PlatformLogo } from "#/components/ui/platform-logo";
 import { Segmented } from "#/components/ui/segmented";
-import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import type { JsonValue } from "#/database/schema";
 import { planSelection, publishSelection } from "#/modules/library/library.fn";
@@ -250,19 +249,6 @@ const styles = stylex.create({
   },
   tab: { alignItems: "center", display: "inline-flex", gap: "0.375rem" },
   hint: { color: colors.mutedForeground, fontSize: "0.6875rem", margin: 0 },
-  clear: {
-    alignItems: "center",
-    backgroundColor: `color-mix(in oklab, ${colors.muted} 60%, transparent)`,
-    borderRadius: radius.xl,
-    cursor: "pointer",
-    display: "flex",
-    gap: "0.75rem",
-    justifyContent: "space-between",
-    paddingBlock: "0.625rem",
-    paddingInline: "0.75rem",
-  },
-  clearText: { display: "grid", gap: "0.125rem" },
-  clearLabel: { fontSize: "0.8125rem", fontWeight: 500 },
   footer: {
     alignItems: "center",
     flexWrap: "wrap",
@@ -343,7 +329,6 @@ export function PublishModal({
   accounts,
   brands,
   platforms,
-  retentionDays,
   onClose,
   onPublished,
   images,
@@ -354,7 +339,6 @@ export function PublishModal({
   accounts: Account[];
   brands: Brand[];
   platforms: Platform[];
-  retentionDays: number;
   onClose: () => void;
   onPublished: () => void;
   /** The library's images, for choosing a cover. */
@@ -379,7 +363,6 @@ export function PublishModal({
   const [tab, setTab] = useState<string | null>(null);
   const [when, setWhen] = useState<"now" | "later">("later");
   const [at, setAt] = useState(tomorrow);
-  const [keepFiles, setKeepFiles] = useState(false);
   const [plan, setPlan] = useState<PlanRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -552,7 +535,6 @@ export function PublishModal({
             brandIds: [],
             accountIds: ready.map((row) => row.accountId),
             scheduledAt: when === "later" ? time.toISOString() : undefined,
-            keepFiles,
           },
         }),
       );
@@ -581,10 +563,8 @@ export function PublishModal({
               {result.scheduled.length === 1 ? "" : "s"}
             </ModalTitle>
             <ModalDescription>
-              {keepFiles
-                ? "The files stay in your library."
-                : "The files leave your library once every post is out."}{" "}
-              Until then each post can be changed or cancelled in Publish.
+              The files leave your library once every post is out. Until then each post can be
+              changed or cancelled in Publish.
             </ModalDescription>
           </ModalHeader>
           {left.length > 0 && (
@@ -826,22 +806,6 @@ export function PublishModal({
                 />
               </section>
             )}
-
-            {/* ── afterwards ────────────────────────────────────────────────────── */}
-            <section {...stylex.props(styles.section)}>
-              <label {...stylex.props(styles.clear)}>
-                <span {...stylex.props(styles.clearText)}>
-                  <span {...stylex.props(styles.clearLabel)}>Clear the files once they're out</span>
-                  <span {...stylex.props(styles.hint)}>
-                    Keeps your library tidy. Anything left goes after {retentionDays} days anyway.
-                  </span>
-                </span>
-                <Switch
-                  checked={!keepFiles}
-                  onCheckedChange={(checked) => setKeepFiles(!checked)}
-                />
-              </label>
-            </section>
           </div>
 
           {/* ── preview ─────────────────────────────────────────────────────────── */}

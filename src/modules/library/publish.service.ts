@@ -67,7 +67,11 @@ export async function filesSource(
   draft: Draft,
   groupId?: string,
 ): Promise<Source> {
-  if (!fileIds.length) throw new ServiceError("Choose the files to publish");
+  if (!fileIds.length)
+    throw new ServiceError("Choose the files to publish", 400, {
+      code: "missing_field",
+      field: "fileIds",
+    });
   const files = await readyFiles(userId, fileIds);
   return { files: files.map((file) => fileView(file, groupId ?? null)), draft, groupId };
 }
@@ -77,7 +81,10 @@ async function channelsFor(userId: string, target: Target) {
   const brandIds = [...new Set(target.brandIds ?? [])];
   const accountIds = new Set(target.accountIds ?? []);
   if (!brandIds.length && !accountIds.size)
-    throw new ServiceError("Choose brands or channels to publish to");
+    throw new ServiceError("Choose brands or channels to publish to", 400, {
+      code: "missing_field",
+      field: "accountIds",
+    });
 
   const [allBrands, accounts] = await Promise.all([
     brandIds.length ? brands.listBrands(userId) : [],
@@ -214,7 +221,8 @@ function planFor(source: Source, channel: Channel): PlanRow {
 
 /** Channel by channel: can the files go there, as what, and what would be posted. */
 export async function planPost(userId: string, source: Source, target: Target) {
-  if (!source.files.length) throw new ServiceError("There is no file to publish", 409);
+  if (!source.files.length)
+    throw new ServiceError("There is no file to publish", 409, { code: "nothing_to_publish" });
   const channels = await channelsFor(userId, target);
   return { channels: channels.map((channel) => planFor(source, channel)) };
 }
@@ -222,16 +230,17 @@ export async function planPost(userId: string, source: Source, target: Target) {
 /**
  * Publishes the files to every targeted channel that can take them, one post each. Channels
  * that cannot are skipped with their reasons; a post a platform check still refuses is
- * reported as failed without stopping the others. Unless `keepFiles`, the files are deleted
- * from storage once every post is out.
+ * reported as failed without stopping the others. Each post lets go of the files once it is
+ * out; storage deletes them when the last one is.
  */
 export async function publishPost(
   userId: string,
   source: Source,
   target: Target,
-  options: { scheduledAt?: string; leadMinutes?: number; keepFiles?: boolean } = {},
+  options: { scheduledAt?: string; leadMinutes?: number } = {},
 ) {
-  if (!source.files.length) throw new ServiceError("There is no file to publish", 409);
+  if (!source.files.length)
+    throw new ServiceError("There is no file to publish", 409, { code: "nothing_to_publish" });
   const channels = await channelsFor(userId, target);
 
   const scheduled: { accountId: string; name: string; provider: string; postId: string }[] = [];
@@ -256,7 +265,6 @@ export async function publishPost(
         // Omitted, each platform keeps its own default; one it refuses fails only that channel.
         leadMinutes: options.leadMinutes,
         groupId: source.groupId,
-        cleanup: !options.keepFiles,
       });
       scheduled.push({ ...who, postId: post.id });
     } catch (error) {

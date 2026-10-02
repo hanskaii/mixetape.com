@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "openapi:sync": "curl -fsS \"https://mixetape.com/api/v1/openapi.json?fresh=$(date +%s)\" | node -e \"process.stdout.write(JSON.stringify(JSON.parse(require('fs').readFileSync(0, 'utf8')), null, 2) + '\\n')\" > src/api/openapi.json",
+    "tools:sync": "curl -fsS \"https://mixetape.com/mcp/tools.json?fresh=$(date +%s)\" | node -e \"process.stdout.write(JSON.stringify(JSON.parse(require('fs').readFileSync(0, 'utf8')), null, 2) + '\\n')\" > src/api/tools.json",
+    "sync": "pnpm openapi:sync && pnpm tools:sync",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

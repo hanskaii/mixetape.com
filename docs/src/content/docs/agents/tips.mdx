@@ -2,7 +2,7 @@
 title: Tips
 description: Habits that keep scheduled posts going out on time, from agents and pipelines that use mixetape every day.
 sidebar:
-  order: 2
+  order: 6
 ---
 
 ## Keep the media in mixetape storage
@@ -50,15 +50,26 @@ A `firstComment` on a Short is a good place for a link to the full video.
 ## Check how it went
 
 After a post's time, `get_post` tells you how it went: `published` with its link, or `failed`
-with the reason. Fix what the reason says and `retry_post` — it goes now, or at its original
+with the reason. To catch up on many posts at once, `list_posts` with `updatedSince` set to
+your last check answers only the posts that changed since. Fix what the reason says and `retry_post` — it goes now, or at its original
 time if that is still ahead. YouTube's upload quota resets at midnight Pacific time; retry a
 post that failed on it after that.
 
 ## Make a pipeline safe to run twice
 
-A script that may be retried should look before it schedules: `list_posts` with `from`/`to`
-around the time, and skip the post if one with the same `mediaUrl` is already there. Then an
-interrupted run never schedules the same video twice.
+Give every `create_post`, `publish_group`, `publish_files` and `import_file` an
+`idempotencyKey` — any unique text, the same on a retry (over REST, the `Idempotency-Key`
+header). A call repeated with the same key, say after a timeout, answers with the first
+result instead of scheduling the same video twice. Derive the key from what the call is for —
+`episode-12-youtube` — so a rerun of the whole pipeline reuses it too. Keys are kept for 24
+hours; the same key with a different request is refused (`idempotency_key_reused`).
+
+## Branch on the error code, not the message
+
+A refused call answers with a stable `code` next to its message — `invalid_post_state`,
+`account_needs_reconnect`, `media_not_supported`, `unknown_field`, `rate_limited`… — and,
+for a bad argument, the `field` it is about. The message may be reworded; the code is not.
+On `rate_limited` (over 120 calls a minute), wait a minute and go on.
 
 ## One key per agent
 

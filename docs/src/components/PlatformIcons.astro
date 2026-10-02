@@ -1,0 +1,41 @@
+---
+/**
+ * Where an endpoint or a tool works: every platform it supports as an icon (named on
+ * hover and for screen readers), and "All platforms" when it works everywhere.
+ */
+import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
+import { cn } from "@/lib/cn";
+import { PLATFORMS, isEveryPlatform, platformLabel, platformsOf } from "@/lib/platforms";
+
+interface Props {
+  platforms?: readonly string[];
+  /** Hide the words, keeping only the icons (in dense lists). */
+  compact?: boolean;
+  class?: string;
+}
+
+const { platforms, compact = false, class: className } = Astro.props;
+const shown = platformsOf(platforms);
+const every = isEveryPlatform(platforms);
+---
+
+<span
+  class={cn("inline-flex items-center gap-1.5 align-middle", className)}
+  aria-label={`Works on: ${platformLabel(platforms)}`}
+  role="img"
+>
+  <span class="inline-flex items-center gap-1" aria-hidden="true">
+    {shown.map((platform) => (
+      <Icon
+        name={platform.icon}
+        title={platform.name}
+        class={cn("size-4 shrink-0", every ? "text-muted-foreground" : "text-foreground")}
+      />
+    ))}
+  </span>
+  {!compact && (
+    <span class="text-xs text-muted-foreground" aria-hidden="true">
+      {every ? "All platforms" : `${shown.length} of ${PLATFORMS.length}`}
+    </span>
+  )}
+</span>

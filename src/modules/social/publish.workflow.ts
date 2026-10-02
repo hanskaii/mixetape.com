@@ -10,7 +10,7 @@ import {
   updatePost,
 } from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
-import { cleanUpAfterPublish } from "#/modules/storage/files.service";
+import { releasePostFiles } from "#/modules/storage/files.service";
 import { publishTiming } from "./timing";
 
 export type PublishParams = { postId: string };
@@ -140,12 +140,12 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
   }
 }
 
-/** Library posts free their files once out; storage is not needed after that. */
+/** A published post lets go of its files in storage; the platform has them now. */
 async function cleanUp(step: WorkflowStep, postId: string) {
   try {
-    await step.do("clean up files", async () => cleanUpAfterPublish(postId));
+    await step.do("clean up files", async () => releasePostFiles(postId));
   } catch (error) {
-    // The post is out either way; the daily expiry catches what is left.
+    // The post is out either way; the hourly expiry catches what is left.
     console.warn("[cleanup]", postId, error);
   }
 }

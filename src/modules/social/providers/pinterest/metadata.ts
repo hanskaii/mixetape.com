@@ -3,7 +3,7 @@ import { InvalidInputError, type Metadata, type MetadataSpec } from "../types";
 
 /** A Pin's metadata. */
 export type PinterestPinMeta = {
-  /** The board the Pin goes to (list_collections); required. */
+  /** The board the Pin goes to (one of the account's collections); required. */
   boardId?: string;
   title?: string;
   description?: string;
@@ -54,7 +54,8 @@ export const pinterestMetadata: MetadataSpec = {
       const check = FIELDS[key] ?? fail(`Unknown Pinterest field "${key}"`);
       metadata[key] = check(value);
     }
-    if (!metadata.boardId) fail("A Pin needs boardId: pick a board with list_collections");
+    if (!metadata.boardId)
+      fail("A Pin needs boardId: one of the account's boards (its collections)");
     if (metadata.description === undefined && caption?.trim())
       metadata.description = text("description", 800)(caption);
     return metadata;
@@ -65,7 +66,10 @@ export const pinterestMetadata: MetadataSpec = {
     description:
       "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
     properties: {
-      boardId: { type: "string", description: "Board id from list_collections (required)" },
+      boardId: {
+        type: "string",
+        description: "A board id from the account's collections (required)",
+      },
       title: { type: "string", maxLength: 100 },
       description: { type: "string", maxLength: 800, description: "Defaults to the post caption" },
       link: { type: "string", description: "Destination URL when the Pin is clicked" },

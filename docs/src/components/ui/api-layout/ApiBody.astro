@@ -21,7 +21,8 @@ import { authFields } from "./auth";
 import { cn } from "@/lib/cn";
 import { withBase } from "@cloudflare/nimbus-docs/runtime";
 import { ApiMethodChip } from "@/components/ui/api-sidebar";
-import { baseUrl, permissions } from "@/lib/api-overview";
+import { baseUrl, operationFacts, permissions } from "@/lib/api-overview";
+import PlatformIcons from "@/components/PlatformIcons.astro";
 import type { ApiNav, ApiPageProps, ApiResponseView } from "@cloudflare/nimbus-docs/api";
 
 interface Props {
@@ -34,11 +35,10 @@ const { page, nav } = Astro.props;
 // The overview's groups: every nav group that has operations (tags have no page here).
 const overviewGroups = page.kind === "api" ? (nav?.items ?? []).filter((item) => item.children.length) : [];
 const markdownUrl = page.markdownHref;
-// "Tools under the **read** permission: see channels…." → "See channels…"
-const allows = (description: string) => {
-  const text = description.replace(/^Tools under the \*\*\w+\*\* permission: /, "").replace(/\.$/, "");
-  return text.charAt(0).toUpperCase() + text.slice(1);
-};
+// An operation's URL ends with its operationId: its permission and platforms come from there.
+const factsOf = (href: string | undefined) =>
+  href ? operationFacts(href.replace(/\/$/, "").split("/").pop() ?? "") : null;
+const facts = page.kind === "operation" ? factsOf(page.href) : null;
 // A tag is a group, not a page here: its crumb is plain text.
 const breadcrumbs = page.breadcrumbs.map((crumb) =>
   crumb.href?.includes("/api/tags/") ? { ...crumb, href: undefined } : crumb,
@@ -117,6 +117,19 @@ const deprecationHtml = page.deprecated
 
   {page.kind === "operation" && (
     <ApiEndpointCard method={page.method} path={page.path} server={page.server} isWebhook={page.isWebhook} />
+  )}
+
+  {facts && (
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm" data-pagefind-ignore>
+      <span class="inline-flex items-center gap-2">
+        <span class="text-muted-foreground">Permission</span>
+        <code class="text-[0.8125rem]">{facts.permission}</code>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="text-muted-foreground">Works on</span>
+        <PlatformIcons platforms={facts.platforms} />
+      </span>
+    </div>
   )}
 
   <PageActions markdownUrl={markdownUrl} />
@@ -323,24 +336,32 @@ const deprecationHtml = page.deprecated
           {permissions.map((permission) => (
             <li class="flex gap-3">
               <code class="shrink-0">{permission.name}</code>
-              <span class="text-muted-foreground">{allows(permission.description)}</span>
+              <span class="text-muted-foreground">{permission.description}</span>
             </li>
           ))}
         </ul>
 
-        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Tools</h2>
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Platforms</h2>
         <p>
-          Every tool is also an MCP tool of the same name at <code>{baseUrl}/mcp</code>. Over REST,
-          call it with <code>POST /api/v1/tools/{"{name}"}</code> and its arguments as JSON; the
-          answer is <code>{'{ "result": … }'}</code>.
+          Every endpoint says where it works. Most work on every platform; the ones that depend on
+          a platform feature — playlists and boards, captions, comments, account analytics — list
+          the platforms that have it, and answer <code>409</code> for a post or account elsewhere.
+        </p>
+
+        <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">For agents</h2>
+        <p>
+          AI agents use the MCP server at <code>{baseUrl}/mcp</code> instead, with its own
+          tools — see <a href="/agents">Agents</a>.
         </p>
 
         <h2 class="mt-4 mb-0 text-foreground" style="font-size:var(--nb-h2-size);font-weight:var(--nb-h2-weight);letter-spacing:var(--nb-h2-tracking)">Errors</h2>
         <p>
           A failed call answers <code>{'{ "error": "…" }'}</code> in plain words: <code>400</code> invalid
           input, <code>401</code> no valid key, <code>403</code> a missing permission, <code>404</code> not
-          found (or not yours), <code>409</code> not possible right now (for example, the channel must
-          be reconnected), <code>503</code> a platform mixetape cannot connect yet.
+          found (or not yours), <code>405</code> a method the path does not take, <code>409</code> not
+          possible right now (for example, the account must be reconnected, or its platform lacks
+          the feature), <code>410</code> an expired choice, <code>503</code> a platform mixetape cannot
+          connect yet.
         </p>
       </div>
       {overviewGroups.map((group) => (
@@ -354,7 +375,8 @@ const deprecationHtml = page.deprecated
                   class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-foreground no-underline transition-colors hover:bg-accent"
                 >
                   {op.method && <ApiMethodChip method={op.method} display="label" />}
-                  <span class={cn(op.label.includes("_") && "font-mono text-[0.8125rem]")}>{op.label}</span>
+                  <span class={cn("flex-1", op.label.includes("_") && "font-mono text-[0.8125rem]")}>{op.label}</span>
+                  <PlatformIcons platforms={factsOf(op.href)?.platforms} compact />
                 </a>
               </li>
             ))}

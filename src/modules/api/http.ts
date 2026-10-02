@@ -6,7 +6,7 @@ import {
   type ApiScope,
   type Caller,
 } from "./api-keys.service";
-import { ServiceError } from "#/modules/api/errors";
+import { errorBody, ServiceError } from "#/modules/api/errors";
 
 async function sessionUserId(request: Request): Promise<string | null> {
   const session = await (
@@ -49,8 +49,10 @@ export async function respond(handler: () => Promise<unknown>, status = 200): Pr
     return Response.json(await handler(), { status });
   } catch (error) {
     if (error instanceof ServiceError)
-      return Response.json({ error: error.message }, { status: error.status });
+      return Response.json(errorBody(error), { status: error.status });
     console.error("[api]", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json(errorBody(new ServiceError("Internal server error", 500)), {
+      status: 500,
+    });
   }
 }

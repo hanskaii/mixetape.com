@@ -243,7 +243,7 @@ export const youtubeMetadata: MetadataSpec = {
       playlistIds: {
         type: "array",
         items: { type: "string" },
-        description: "Playlists (list_collections) the video joins right after upload",
+        description: "Playlists (the account's collections) the video joins right after upload",
       },
       captions: {
         type: "array",

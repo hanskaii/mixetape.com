@@ -11,6 +11,8 @@ vi.mock("../social/social.service", () => ({
   beginConnect: vi.fn(),
   connectResult: vi.fn(),
   chooseChannels: vi.fn(),
+  postView: (post: unknown) => post,
+  accountView: (account: unknown) => account,
 }));
 vi.mock("../social/platform.service", () => ({ postComment: vi.fn(), postInsights: vi.fn() }));
 vi.mock("../social/analytics.service", () => ({ accountAnalytics: vi.fn() }));
@@ -40,6 +42,24 @@ vi.mock("../social/brands.service", () => ({
   updateBrand: vi.fn(),
   deleteBrand: vi.fn(),
 }));
+vi.mock("./rate-limit", () => ({ countCall: vi.fn(), RETRY_AFTER_SECONDS: 60 }));
+// The idempotency store without D1: same contract, kept in memory.
+vi.mock("./idempotency.service", () => {
+  const kept = new Map<string, unknown>();
+  return {
+    once: async (
+      _userId: string,
+      key: string,
+      _request: unknown,
+      run: () => Promise<{ status: number; body: unknown }>,
+    ) => {
+      if (kept.has(key)) return { status: 200, body: kept.get(key), replayed: true };
+      const answer = await run();
+      kept.set(key, answer.body);
+      return { ...answer, replayed: false };
+    },
+  };
+});
 vi.mock("./api-keys.service", async () => {
   const { ServiceError } = await import("./errors");
   return {
@@ -113,6 +133,7 @@ describe("mixetape MCP", () => {
       "post_comment",
       "reply_to_comment",
       "moderate_comment",
+      "disconnect_channel",
       "connect_channel",
       "get_connection",
       "choose_channels",
@@ -129,6 +150,8 @@ describe("mixetape MCP", () => {
       "delete_group",
       "plan_group",
       "publish_group",
+      "plan_files",
+      "publish_files",
       "create_upload",
       "finish_upload",
       "import_file",
@@ -197,6 +220,9 @@ describe("mixetape MCP", () => {
     };
     expect(reply.result).toEqual({
       content: [{ type: "text", text: "id must be text" }],
+      structuredContent: {
+        error: { code: "invalid_field", message: "id must be text", field: "id" },
+      },
       isError: true,
     });
     expect(social.getPost).not.toHaveBeenCalled();
@@ -204,11 +230,14 @@ describe("mixetape MCP", () => {
 
   it("reports a refused action as a tool error, not a protocol error", async () => {
     vi.mocked(social.cancelPost).mockRejectedValue(
-      new ServiceError("A published post cannot be cancelled", 409),
+      new ServiceError("A published post cannot be cancelled", 409, { code: "invalid_post_state" }),
     );
     const reply = (await call("cancel_post", { id: "p1" })) as { result: unknown };
     expect(reply.result).toEqual({
       content: [{ type: "text", text: "A published post cannot be cancelled" }],
+      structuredContent: {
+        error: { code: "invalid_post_state", message: "A published post cannot be cancelled" },
+      },
       isError: true,
     });
   });
@@ -330,7 +359,7 @@ describe("the library over MCP", () => {
     expect(changes.title).toBeUndefined();
   });
 
-  it("publishes a group and deletes its files afterwards unless told to keep them", async () => {
+  it("publishes a group to brands at a time", async () => {
     vi.mocked(publishing.groupSource).mockResolvedValue({ files: [], draft: {} } as never);
     vi.mocked(publishing.publishPost).mockResolvedValue({ scheduled: [] } as never);
     await call("publish_group", {
@@ -342,11 +371,39 @@ describe("the library over MCP", () => {
       "user-1",
       { files: [], draft: {} },
       { brandIds: ["b1"], accountIds: undefined },
-      { scheduledAt: "2026-10-01T10:00:00Z", leadMinutes: undefined, keepFiles: false },
+      { scheduledAt: "2026-10-01T10:00:00Z", leadMinutes: undefined },
     );
   });
 
   it("keeps the library to keys with the library permission", async () => {
     expect(await toolNames(publisher)).not.toContain("create_group");
+  });
+
+  it("refuses an argument the tool does not take", async () => {
+    const reply = (await call("get_post", { id: "p1", postId: "p1" })) as {
+      result: { structuredContent: unknown; isError: boolean };
+    };
+    expect(reply.result.isError).toBe(true);
+    expect(reply.result.structuredContent).toMatchObject({
+      error: { code: "unknown_field", field: "postId" },
+    });
+    expect(social.getPost).not.toHaveBeenCalled();
+  });
+
+  it("creates a post once per idempotencyKey, and offers the key in its schema", async () => {
+    vi.mocked(social.createPost).mockResolvedValue({ id: "p7" } as never);
+    const args = { accountId: "a1", mediaUrl: "r2://v.mp4", idempotencyKey: "k-1" };
+    await call("create_post", args);
+    await call("create_post", args);
+    expect(social.createPost).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(social.createPost).mock.calls[0][1]).not.toHaveProperty("idempotencyKey");
+
+    const listed = (await handleMessage(everything, {
+      jsonrpc: "2.0",
+      id: 9,
+      method: "tools/list",
+    })) as { result: { tools: { name: string; inputSchema: { properties: object } }[] } };
+    const schema = listed.result.tools.find((tool) => tool.name === "create_post")!.inputSchema;
+    expect(schema.properties).toHaveProperty("idempotencyKey");
   });
 });

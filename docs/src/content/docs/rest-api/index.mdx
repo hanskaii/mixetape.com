@@ -1,0 +1,108 @@
+---
+title: REST API
+description: The same actions as MCP, as resources over plain HTTP — for scripts and pipelines.
+sidebar:
+  order: 5
+---
+
+Base URL: `https://mixetape.com/api/v1`. Every request carries an [API key](/concepts/api-keys),
+and each endpoint needs one of its permissions:
+
+```sh
+curl https://mixetape.com/api/v1/accounts -H "Authorization: Bearer mxt_…"
+```
+
+The [API reference](/api) lists every endpoint with its fields; this page is the overview.
+
+## Resources
+
+| Resource | Endpoints |
+|---|---|
+| Accounts | `GET /accounts` · `DELETE /accounts/{id}` · collections and analytics under `/accounts/{id}/…` |
+| Connections | `POST /connections` (a sign-in link) · `GET /connections/{state}` · `POST /connections/{state}/accounts` |
+| Brands | `GET` `POST /brands` · `PATCH` `DELETE /brands/{id}` |
+| Posts | `GET` `POST /posts` · `GET` `PATCH /posts/{id}` · `POST /posts/{id}/cancel` · `POST /posts/{id}/retry` |
+| Posts on the platform | `GET` `PATCH /posts/{id}/platform` · thumbnail, collections, captions under `/posts/{id}/…` |
+| Comments | `GET` `POST /posts/{id}/comments` · replies and moderation under `/comments/{commentId}` |
+| Library groups | `GET` `POST /groups` · `GET` `PATCH` `DELETE /groups/{id}` · `GET /groups/{id}/plan` · `POST /groups/{id}/publish` |
+| Files | `GET /files` · `POST /files/uploads` · `POST /files/uploads/{id}/complete` · `POST /files/imports` · `GET` `DELETE /files/{id}` · `POST /files/plan` · `POST /files/publish` |
+
+```sh
+curl -X POST https://mixetape.com/api/v1/posts \
+  -H "Authorization: Bearer mxt_…" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: episode-12-youtube" \
+  -d '{
+    "accountId": "…",
+    "mediaUrl": "r2://media/…/episode-12.mp4",
+    "scheduledAt": "2026-10-02T17:30:00+07:00",
+    "metadata": { "title": "Episode 12" }
+  }'
+# → 201 { "post": { "id": "…", "status": "scheduled", … } }
+```
+
+A body takes only the fields its endpoint lists: a misspelled one (`schedueldAt`) is refused
+with `unknown_field` rather than dropped.
+
+## Lists come in pages
+
+`GET /posts`, `GET /files` and `GET /groups` answer one page at a time, with a `nextCursor`.
+Pass it back as `cursor` — with the same filters — for the next page; it is `null` on the
+last one. Comma-separated values (`accountId=a,b`, `status=scheduled,failed`) match any of
+them.
+
+```sh
+curl "https://mixetape.com/api/v1/posts?accountId=…&search=pompeii&limit=20" \
+  -H "Authorization: Bearer mxt_…"
+# → { "posts": [ … ], "nextCursor": "WzE3O…" }
+```
+
+To follow what happened since you last looked — which posts went out, which failed — ask for
+`GET /posts?updatedSince=<time of your last check>`.
+
+## Safe retries
+
+`POST /posts`, `POST /groups/{id}/publish`, `POST /files/publish` and `POST /files/imports`
+take an `Idempotency-Key` header: any unique text for that one request. Sent again with the
+same key — after a timeout, say — the request is not run twice: the first response comes back,
+with the header `Idempotent-Replayed: true`. Keys are kept for 24 hours. The same key with a
+different body is refused (`422 idempotency_key_reused`), and one whose first request is
+still running answers `409 idempotency_in_progress` — try again in a few seconds.
+
+## Errors
+
+A failed request answers with its status and a stable `code` to branch on; `message` explains
+it in plain words, and `field` names the input it is about, when there is one:
+
+```json
+{ "error": { "code": "invalid_field", "message": "scheduledAt must be text", "field": "scheduledAt" } }
+```
+
+| Status | Codes |
+|---|---|
+| `400` | `invalid_request`, `invalid_field`, `missing_field`, `unknown_field`, `media_not_supported` |
+| `401` | `unauthorized` — no valid API key |
+| `403` | `missing_permission` — the key lacks the permission this needs |
+| `404` | `not_found` — not found, or not yours |
+| `409` | `invalid_post_state`, `account_needs_reconnect`, `file_not_ready`, `nothing_to_publish`, `not_supported_by_platform`, `already_exists`, `idempotency_in_progress` |
+| `422` | `idempotency_key_reused` |
+| `429` | `rate_limited` — over 120 requests a minute; wait `Retry-After` seconds |
+| `502` | `source_unreachable` — the file at the URL could not be fetched; `platform_error` — the platform refused the call |
+| `503` | `platform_unavailable` — mixetape cannot connect that platform yet |
+
+The full list, with what each code means, is in the [API reference](/api).
+
+## Changes from the first version
+
+- `DELETE /posts/{id}` still cancels a post, but `POST /posts/{id}/cancel` is the endpoint to
+  use: the post is cancelled, not deleted.
+- `/api/v1/tools/{name}`, which ran an MCP tool over HTTP, is gone: every tool is now a
+  resource endpoint above. Agents keep using the tools over [MCP](/agents).
+- Errors used to be `{ "error": "…" }`; they are now an object with `code` and `message`.
+
+## OpenAPI
+
+The whole API is described at
+[`https://mixetape.com/api/v1/openapi.json`](https://mixetape.com/api/v1/openapi.json)
+(OpenAPI 3.1, generated from the same list the server routes by). The [API reference](/api)
+is built from it.

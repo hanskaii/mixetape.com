@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, not, or, sql } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
   mediaFiles,
@@ -21,16 +21,17 @@ import * as uploads from "./upload.service";
  * about them.
  *
  * An upload is a row from `createFileUpload` (status 'uploading') until `finishUpload` has
- * found the file in R2 and read it ('ready'). Uploads never finished go after a day.
+ * found the file in R2 and read it ('ready').
  *
- * Storage is a staging area, not an archive: a file goes once the posts published from the
- * library with it are out (`cleanUpAfterPublish`), and every file goes 30 days after it was
- * stored (`expireFiles`, daily) — never while a post that has not gone out still needs it.
+ * Storage is a staging area, not an archive. Only a post holds a file; a file goes:
+ * - when its post is published, or the scheduled post is cancelled (`releasePostFiles`) —
+ *   once no other post still needs it;
+ * - 24 hours after it was stored, if no post needs it (`expireFiles`, hourly) — a file in a
+ *   library group included, and an upload never finished.
  */
 
-const STALE_UPLOAD = 24 * 60 * 60 * 1000;
-export const RETENTION_DAYS = 30;
-const RETENTION = RETENTION_DAYS * 24 * 60 * 60 * 1000;
+export const UNATTACHED_HOURS = 24;
+const UNATTACHED = UNATTACHED_HOURS * 60 * 60 * 1000;
 /** Posts that still need their files: not out yet, or failed and waiting for a retry. */
 const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed"];
 
@@ -61,8 +62,8 @@ export function fileView(file: MediaFile, groupId: string | null = null) {
     /** The group the file is in, if any. */
     groupId,
     createdAt: file.createdAt,
-    /** When storage deletes it, if nothing still needs it then. */
-    expiresAt: new Date(file.createdAt.getTime() + RETENTION),
+    /** When storage deletes it, unless a post needs it by then. */
+    expiresAt: new Date(file.createdAt.getTime() + UNATTACHED),
   };
 }
 
@@ -89,21 +90,6 @@ async function inspect(file: MediaFile) {
   };
   await db.update(mediaFiles).set(values).where(eq(mediaFiles.id, file.id));
   return { ...file, ...values };
-}
-
-/** Uploads started more than a day ago and never finished: the row, and any bytes. */
-async function dropStaleUploads(userId: string) {
-  const stale = await db.query.mediaFiles.findMany({
-    where: and(
-      eq(mediaFiles.userId, userId),
-      eq(mediaFiles.status, "uploading"),
-      lt(mediaFiles.createdAt, new Date(Date.now() - STALE_UPLOAD)),
-    ),
-  });
-  for (const file of stale) {
-    await deleteUserFile(userId, file.key);
-    await db.delete(mediaFiles).where(eq(mediaFiles.id, file.id));
-  }
 }
 
 /** Puts a new file at the end of a group of the user's. */
@@ -136,7 +122,6 @@ export async function createFileUpload(
   input: { fileName: string; contentType?: string; size?: number; groupId?: string },
 ) {
   await checkGroup(userId, input.groupId);
-  await dropStaleUploads(userId);
   const upload = await uploads.createUpload(userId, input);
   const contentType = upload.headers["Content-Type"];
   const id = crypto.randomUUID();
@@ -323,47 +308,47 @@ export async function deleteFile(userId: string, idOrUrl: string) {
 }
 
 /**
- * After a post published from the library (cleanup set) is out: deletes its files that no
- * other post still needs, and its group once that is empty.
+ * Once a post is published or a scheduled one cancelled, it lets go of its files: those in
+ * storage that no other post still needs are deleted, and a group they emptied with them.
  */
-export async function cleanUpAfterPublish(postId: string) {
+export async function releasePostFiles(postId: string) {
   const post = await db.query.socialPosts.findFirst({ where: eq(socialPosts.id, postId) });
-  if (!post?.cleanup || post.status !== "published") return { deleted: 0 };
+  if (!post || !["published", "cancelled"].includes(post.status)) return { deleted: 0 };
   const keys = (post.media?.map((item) => item.url) ?? [post.mediaUrl])
     .filter((url) => url.startsWith("r2://"))
     .map((url) => url.slice("r2://".length));
   let deleted = 0;
+  const groups = new Set<string>();
   for (const key of keys) {
     const file = await db.query.mediaFiles.findFirst({
       where: and(eq(mediaFiles.userId, post.userId), eq(mediaFiles.key, key)),
     });
     if (!file || (await postsUsing(post.userId, key, NEEDS_FILES))) continue;
+    const group = await groupOf(file.id);
+    if (group) groups.add(group);
     await remove(file);
     deleted++;
   }
-  if (post.groupId) await dropEmptyGroups([post.groupId]);
+  await dropEmptyGroups(groups);
   return { deleted };
 }
 
 /**
- * Daily: deletes files stored more than 30 days ago that no post still needs, uploads never
- * finished, and groups emptied by it. A batch at a time; the next run takes the rest.
+ * Hourly: deletes files stored more than 24 hours ago that no post needs — in a library
+ * group or not, uploads never finished included — and the groups emptied by it. A batch at a
+ * time; the next run takes the rest.
  */
 export async function expireFiles(now = Date.now(), batch = 200) {
-  const old = await db.query.mediaFiles.findMany({
-    where: or(
-      lt(mediaFiles.createdAt, new Date(now - RETENTION)),
-      and(
-        eq(mediaFiles.status, "uploading"),
-        lt(mediaFiles.createdAt, new Date(now - STALE_UPLOAD)),
-      ),
-    ),
-    limit: batch,
-  });
+  // Filtered in the query, so files posts still need never fill a batch.
+  const neededByAPost = sql`exists (select 1 from ${socialPosts} where ${socialPosts.userId} = ${mediaFiles.userId} and ${inArray(socialPosts.status, NEEDS_FILES)} and instr(${socialPosts.mediaUrl} || coalesce(${socialPosts.media}, '') || coalesce(${socialPosts.metadata}, ''), ${mediaFiles.key}) > 0)`;
+  const old = await db
+    .select()
+    .from(mediaFiles)
+    .where(and(lt(mediaFiles.createdAt, new Date(now - UNATTACHED)), not(neededByAPost)))
+    .limit(batch);
   let deleted = 0;
   const groups = new Set<string>();
   for (const file of old) {
-    if (file.status === "ready" && (await postsUsing(file.userId, file.key, NEEDS_FILES))) continue;
     const group = await groupOf(file.id);
     if (group) groups.add(group);
     await remove(file);

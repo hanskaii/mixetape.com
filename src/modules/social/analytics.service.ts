@@ -59,7 +59,7 @@ export async function accountAnalytics(
   const reportAccount = use.account;
   if (!reportAccount) {
     throw new ServiceError(
-      "This platform has no account-level analytics; use get_post_analytics per post",
+      "This platform has no account-level analytics; read each post's analytics instead",
       409,
     );
   }

@@ -58,7 +58,11 @@ async function checkName(userId: string, name: string, except?: string) {
   const taken = (await db.query.brands.findMany({ where: eq(brands.userId, userId) })).some(
     (brand) => brand.id !== except && brand.name.toLowerCase() === trimmed.toLowerCase(),
   );
-  if (taken) throw new ServiceError(`There is already a brand called ${trimmed}`, 409);
+  if (taken)
+    throw new ServiceError(`There is already a brand called ${trimmed}`, 409, {
+      code: "already_exists",
+      field: "name",
+    });
   return trimmed;
 }
 

@@ -1,351 +1,198 @@
-import { API_SCOPES, type ApiScope } from "./api-keys.service";
-import { TOOLS, findTool } from "./tools";
+import { platformsWith } from "#/modules/social/providers";
+import { API_SCOPES } from "./api-keys.service";
+import { ERROR_CODES } from "./errors";
+import { ENDPOINTS } from "./endpoints";
+import { BASE, type Endpoint } from "./rest";
 
 /**
- * The public API as an OpenAPI 3.1 document, built from the same tool registry MCP and
- * REST serve — so it cannot drift from the code. Served at /api/v1/openapi.json; the docs
- * site (docs/) copies it for its API reference.
+ * The REST API as an OpenAPI 3.1 document, built from the same endpoint list the router
+ * serves — so it cannot drift from the code. Served at /api/v1/openapi.json; the docs site
+ * (docs/) copies it for its API reference. MCP tools are not in it: they are a separate
+ * interface, documented on their own.
  */
 
-const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 const json = (schema: unknown) => ({ "application/json": { schema } });
-const ok = (description: string, schema: unknown) => ({ description, content: json(schema) });
-const ERRORS = {
-  "400": { $ref: "#/components/responses/BadRequest" },
-  "401": { $ref: "#/components/responses/Unauthorized" },
-  "403": { $ref: "#/components/responses/Forbidden" },
-};
-const postBody = { type: "object", properties: { post: ref("Post") }, required: ["post"] };
-const withId = { name: "id", in: "path", required: true, schema: { type: "string" } };
 
-/** A tool's input schema without some fields, e.g. `id`, which REST takes in the path. */
-function inputWithout(tool: string, ...fields: string[]) {
-  const schema = findTool(tool)?.inputSchema as {
-    properties?: Record<string, unknown>;
-    required?: string[];
+const ERRORS: Record<number, string> = {
+  400: "BadRequest",
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "NotFound",
+  409: "Conflict",
+  410: "Gone",
+  422: "IdempotencyKeyReused",
+  429: "TooManyRequests",
+  502: "BadGateway",
+  503: "Unavailable",
+};
+
+/** The reference's sections, in reading order. */
+const TAGS = [
+  ["Accounts", "Connected channels, their collections and analytics."],
+  ["Connections", "Connecting an account: a sign-in link for the person who owns it."],
+  ["Brands", "Groups of accounts, to publish to all of them at once."],
+  ["Posts", "Scheduling posts, and managing them once they are on the platform."],
+  ["Comments", "Reading, posting, replying to and moderating comments."],
+  ["Groups", "Library groups: files that go out together, with their drafted words."],
+  [
+    "Files",
+    "mixetape storage: uploads, imports and the files' index; files published without a group.",
+  ],
+] as const;
+
+const IDEMPOTENCY_KEY = {
+  name: "Idempotency-Key",
+  in: "header",
+  required: false,
+  description:
+    "Any unique text (e.g. a UUID) for this one request. Repeating the request with the same key — say after a timeout — answers with the first response (header Idempotent-Replayed: true) instead of doing it twice. Kept for 24 hours; the same key with a different request is refused (422).",
+  schema: { type: "string", maxLength: 255 },
+};
+
+function operation(endpoint: Endpoint) {
+  const statuses = [
+    ...new Set([
+      400,
+      401,
+      403,
+      429,
+      ...(endpoint.idempotent ? [409, 422] : []),
+      ...(endpoint.errors ?? []),
+    ]),
+  ].sort();
+  const pathParams = [...endpoint.path.matchAll(/\{(\w+)\}/g)].map(([, name]) => ({
+    name,
+    in: "path",
+    required: true,
+    description: endpoint.params?.[name],
+    schema: { type: "string" },
+  }));
+  const queryParams = Object.entries(endpoint.query ?? {}).map(([name, schema]) => ({
+    name,
+    in: "query",
+    description:
+      schema.type === "array"
+        ? `${String(schema.description ?? "")} (comma-separated)`.trim()
+        : schema.description,
+    schema,
+    ...(schema.type === "array" && { style: "form", explode: false }),
+  }));
+  const parameters = [
+    ...pathParams,
+    ...queryParams,
+    ...(endpoint.idempotent ? [IDEMPOTENCY_KEY] : []),
+  ];
+  const needs = `Needs the **${endpoint.scope}** permission.`;
+  return {
+    operationId: endpoint.operationId,
+    summary: endpoint.summary,
+    description: `${endpoint.description}\n\n${needs}`,
+    tags: [endpoint.tag],
+    ...(endpoint.deprecated && { deprecated: true }),
+    "x-permission": endpoint.scope,
+    // The platforms it works on; every one unless it needs a capability some lack.
+    "x-platforms": platformsWith(endpoint.needs),
+    ...(parameters.length && { parameters }),
+    ...(endpoint.body && { requestBody: { required: true, content: json(endpoint.body) } }),
+    responses: {
+      [String(endpoint.status ?? 200)]: {
+        description: endpoint.response.description,
+        content: json(endpoint.response.schema),
+      },
+      ...Object.fromEntries(
+        statuses.map((status) => [
+          String(status),
+          { $ref: `#/components/responses/${ERRORS[status]}` },
+        ]),
+      ),
+    },
   };
-  const properties = Object.fromEntries(
-    Object.entries(schema?.properties ?? {}).filter(([key]) => !fields.includes(key)),
-  );
-  const required = (schema?.required ?? []).filter((key) => !fields.includes(key));
-  return { type: "object", properties, ...(required.length && { required }) };
 }
 
-const permission = (scope: ApiScope) => `Needs the **${scope}** permission.`;
-
 export function openApiDocument(serverUrl: string) {
-  const toolPaths = Object.fromEntries(
-    TOOLS.map((tool) => [
-      `/api/v1/tools/${tool.name}`,
-      {
-        post: {
-          operationId: tool.name,
-          summary: tool.name,
-          description: `${tool.description} ${permission(tool.scope)} Also available as the MCP tool \`${tool.name}\`.`,
-          tags: [tool.scope],
-          "x-permission": tool.scope,
-          requestBody: { required: true, content: json(tool.inputSchema) },
-          responses: {
-            "200": ok("The tool's result.", {
-              type: "object",
-              properties: { result: { description: "What the tool returns" } },
-              required: ["result"],
-            }),
-            ...ERRORS,
-            "404": { $ref: "#/components/responses/NotFound" },
-          },
-        },
-      },
-    ]),
-  );
+  const paths: Record<string, Record<string, unknown>> = {};
+  for (const endpoint of ENDPOINTS) {
+    const path = `${BASE}${endpoint.path}`;
+    paths[path] = { ...paths[path], [endpoint.method.toLowerCase()]: operation(endpoint) };
+  }
+
+  const error = (description: string) => ({
+    description,
+    content: json({ $ref: "#/components/schemas/Error" }),
+  });
 
   return {
     openapi: "3.1.0",
     info: {
       title: "mixetape API",
       version: "1.0.0",
-      summary: "Schedule and manage posts on connected social channels.",
+      summary: "Schedule and manage posts on connected social accounts.",
       description:
-        "Schedule and manage posts on connected social channels — the same actions agents use over MCP.",
+        "The REST API for scripts and integrations: accounts, posts, comments, library groups and files as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools.",
     },
     servers: [{ url: serverUrl }],
     security: [{ apiKey: [] }],
-    tags: [
-      {
-        name: "Accounts and posts",
-        description: "The plain REST resources; every tool below covers the rest.",
-      },
-      ...Object.entries(API_SCOPES).map(([name, description]) => ({
-        name,
-        description: `Tools under the **${name}** permission: ${description.toLowerCase()}.`,
-      })),
-    ],
-    paths: {
-      "/api/v1/accounts": {
-        get: {
-          operationId: "listAccountsRest",
-          summary: "List connected channels",
-          description: `The channels this key can post to, with what each platform supports. ${permission("read")}`,
-          tags: ["Accounts and posts"],
-          responses: {
-            "200": ok("The connected channels.", {
-              type: "object",
-              properties: { accounts: { type: "array", items: ref("Account") } },
-              required: ["accounts"],
-            }),
-            ...ERRORS,
-          },
-        },
-      },
-      "/api/v1/posts": {
-        get: {
-          operationId: "listPostsRest",
-          summary: "List posts",
-          description: `Posts, newest scheduled first, a page at a time; pass \`nextCursor\` back as \`cursor\` for the next page. ${permission("read")}`,
-          tags: ["Accounts and posts"],
-          parameters: [
-            {
-              name: "accountId",
-              in: "query",
-              description: "Comma-separated account ids: only posts on these accounts",
-              schema: { type: "string" },
-            },
-            {
-              name: "provider",
-              in: "query",
-              description: "Comma-separated platforms, e.g. `youtube,instagram`",
-              schema: { type: "string" },
-            },
-            {
-              name: "search",
-              in: "query",
-              description: "Words in the title, caption or description (case-insensitive)",
-              schema: { type: "string" },
-            },
-            {
-              name: "cursor",
-              in: "query",
-              description: "`nextCursor` from the previous page",
-              schema: { type: "string" },
-            },
-            {
-              name: "status",
-              in: "query",
-              description: "Comma-separated statuses, e.g. `scheduled,failed`",
-              schema: { type: "string" },
-            },
-            {
-              name: "from",
-              in: "query",
-              description: "ISO time; scheduled at or after",
-              schema: { type: "string", format: "date-time" },
-            },
-            {
-              name: "to",
-              in: "query",
-              description: "ISO time; scheduled at or before",
-              schema: { type: "string", format: "date-time" },
-            },
-            {
-              name: "limit",
-              in: "query",
-              description: "Default 100, max 500",
-              schema: { type: "integer", default: 100, maximum: 500 },
-            },
-          ],
-          responses: {
-            "200": ok("A page of posts.", {
-              type: "object",
-              properties: {
-                posts: { type: "array", items: ref("Post") },
-                nextCursor: {
-                  type: ["string", "null"],
-                  description: "Pass as `cursor` for the next page; null on the last",
-                },
-              },
-              required: ["posts", "nextCursor"],
-            }),
-            ...ERRORS,
-          },
-        },
-        post: {
-          operationId: "createPostRest",
-          summary: "Schedule a post",
-          description: `${findTool("create_post")?.description ?? ""} ${permission("publish")}`,
-          tags: ["Accounts and posts"],
-          requestBody: { required: true, content: json(inputWithout("create_post")) },
-          responses: {
-            "201": ok("The scheduled post.", postBody),
-            ...ERRORS,
-          },
-        },
-      },
-      "/api/v1/posts/{id}": {
-        parameters: [withId],
-        get: {
-          operationId: "getPostRest",
-          summary: "Get a post",
-          description: `One post and its status. Add \`?insights=1\` for its live platform status and metrics instead. ${permission("read")}`,
-          tags: ["Accounts and posts"],
-          parameters: [
-            {
-              name: "insights",
-              in: "query",
-              description: "Any value: answer with get_post_insights' result instead",
-              schema: { type: "string" },
-            },
-          ],
-          responses: {
-            "200": ok("The post.", postBody),
-            ...ERRORS,
-            "404": { $ref: "#/components/responses/NotFound" },
-          },
-        },
-        patch: {
-          operationId: "updatePostRest",
-          summary: "Change a scheduled post",
-          description: `${findTool("update_post")?.description ?? ""} ${permission("publish")}`,
-          tags: ["Accounts and posts"],
-          requestBody: { required: true, content: json(inputWithout("update_post", "id")) },
-          responses: {
-            "200": ok("The changed post.", postBody),
-            ...ERRORS,
-            "404": { $ref: "#/components/responses/NotFound" },
-          },
-        },
-        delete: {
-          operationId: "cancelPostRest",
-          summary: "Cancel a scheduled post",
-          description: `Cancels a post that is still waiting in mixetape. ${permission("publish")}`,
-          tags: ["Accounts and posts"],
-          responses: {
-            "200": ok("The cancelled post.", postBody),
-            ...ERRORS,
-            "404": { $ref: "#/components/responses/NotFound" },
-          },
-        },
-        post: {
-          operationId: "retryPostRest",
-          summary: "Retry a failed post, or set its thumbnail",
-          description: `Without a body, sends a failed post again. With \`{ thumbnailUrl }\`, sets or replaces the thumbnail of a post already on the platform. ${permission("publish")}`,
-          tags: ["Accounts and posts"],
-          requestBody: {
-            required: false,
-            content: json({
-              type: "object",
-              properties: {
-                thumbnailUrl: { type: "string", description: "A public image URL or r2:// URL" },
-              },
-            }),
-          },
-          responses: {
-            "200": ok("The post.", postBody),
-            ...ERRORS,
-            "404": { $ref: "#/components/responses/NotFound" },
-          },
-        },
-      },
-      "/api/v1/tools": {
-        get: {
-          operationId: "listTools",
-          summary: "List the tools this key may call",
-          description:
-            "The same tools the MCP server offers, filtered by the key's permissions, with their input schemas.",
-          tags: ["Accounts and posts"],
-          responses: {
-            "200": ok("The tools.", {
-              type: "object",
-              properties: {
-                tools: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      description: { type: "string" },
-                      inputSchema: { type: "object" },
-                    },
-                  },
-                },
-              },
-            }),
-            "401": { $ref: "#/components/responses/Unauthorized" },
-          },
-        },
-      },
-      ...toolPaths,
-    },
+    tags: TAGS.map(([name, description]) => ({ name, description })),
+    paths,
     components: {
       securitySchemes: {
         apiKey: {
           type: "http",
           scheme: "bearer",
-          description: "An API key from the workspace (API keys page), starting with `mxt_`.",
+          description: `An API key from the workspace (API keys page), starting with \`mxt_\`. Each endpoint needs one of its permissions: ${Object.keys(API_SCOPES).join(", ")}.`,
+          // What each permission allows, for the reference's overview.
+          "x-permissions": API_SCOPES,
         },
       },
       responses: {
-        BadRequest: ok("The request is invalid; `error` says why.", ref("Error")),
-        Unauthorized: ok("No valid API key.", ref("Error")),
-        Forbidden: ok("The key lacks the permission this needs.", ref("Error")),
-        NotFound: ok("Not found, or not yours.", ref("Error")),
+        BadRequest: error(
+          "The request is invalid; error.code says how (invalid_field, missing_field, unknown_field, media_not_supported, …) and error.field which field.",
+        ),
+        Unauthorized: error("No valid API key."),
+        Forbidden: error("The key lacks the permission this needs."),
+        NotFound: error("Not found, or not yours."),
+        Conflict: error(
+          "Not possible in its current state: invalid_post_state, account_needs_reconnect, file_not_ready, idempotency_in_progress, …",
+        ),
+        IdempotencyKeyReused: error(
+          "The Idempotency-Key was already used with a different request (idempotency_key_reused).",
+        ),
+        TooManyRequests: {
+          ...error("Over 120 requests a minute (rate_limited); wait and retry."),
+          headers: {
+            "Retry-After": {
+              description: "Seconds to wait before retrying",
+              schema: { type: "integer" },
+            },
+          },
+        },
+        Gone: error("The choice expired; connect again."),
+        BadGateway: error(
+          "Something mixetape depends on failed: the file at a URL could not be fetched (source_unreachable) or the platform refused the call (platform_error).",
+        ),
+        Unavailable: error("mixetape cannot connect that platform yet."),
       },
       schemas: {
         Error: {
           type: "object",
-          properties: { error: { type: "string", description: "What went wrong, in plain words" } },
+          properties: {
+            error: {
+              type: "object",
+              properties: {
+                code: {
+                  type: "string",
+                  enum: Object.keys(ERROR_CODES),
+                  description: `A stable code to branch on:\n\n${Object.entries(ERROR_CODES)
+                    .map(([code, meaning]) => `- \`${code}\`: ${meaning}`)
+                    .join("\n")}`,
+                },
+                message: { type: "string", description: "What went wrong, in plain words" },
+                field: { type: "string", description: "The input field it is about, if any" },
+              },
+              required: ["code", "message"],
+            },
+          },
           required: ["error"],
-        },
-        Account: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "mixetape account id, used as accountId" },
-            provider: {
-              type: "string",
-              enum: ["youtube", "facebook", "instagram", "threads", "tiktok", "pinterest"],
-            },
-            platformAccountId: { type: "string", description: "The platform's own id" },
-            name: { type: "string" },
-            handle: { type: ["string", "null"] },
-            status: {
-              type: "string",
-              enum: ["active", "reconnect"],
-              description: "`reconnect`: connect the channel again before posting to it",
-            },
-            capabilities: {
-              type: "array",
-              items: { type: "string" },
-              description: "What its platform supports, e.g. comments, analytics",
-            },
-          },
-          required: ["id", "provider", "platformAccountId", "name", "status", "capabilities"],
-        },
-        Post: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            accountId: { type: "string" },
-            provider: { type: "string" },
-            mediaUrl: { type: "string" },
-            caption: { type: ["string", "null"] },
-            metadata: { type: ["object", "null"], description: "The platform's own fields" },
-            scheduledAt: { type: "string", format: "date-time", description: "When it goes live" },
-            leadMinutes: {
-              type: ["integer", "null"],
-              description: "Uploaded or prepared this long before scheduledAt",
-            },
-            status: {
-              type: "string",
-              enum: ["scheduled", "publishing", "uploaded", "published", "failed", "cancelled"],
-            },
-            platformPostId: { type: ["string", "null"] },
-            platformUrl: { type: ["string", "null"] },
-            error: { type: ["string", "null"], description: "Why it failed, when it did" },
-            attempts: { type: "integer" },
-            publishedAt: { type: ["string", "null"], format: "date-time" },
-            createdAt: { type: "string", format: "date-time" },
-            updatedAt: { type: "string", format: "date-time" },
-          },
-          required: ["id", "accountId", "provider", "mediaUrl", "scheduledAt", "status"],
         },
       },
     },

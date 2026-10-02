@@ -97,14 +97,17 @@ export async function importFromUrl(
   if (!input.url.startsWith("https://")) throw new ServiceError("url must be a public https URL");
   const res = await fetch(input.url);
   if (!res.ok || !res.body)
-    throw new ServiceError(`The file could not be fetched (${res.status})`, 502);
+    throw new ServiceError(`The file could not be fetched (${res.status})`, 502, {
+      code: "source_unreachable",
+      field: "url",
+    });
   const size = Number(res.headers.get("content-length") ?? 0);
   if (!size)
     throw new ServiceError(
-      "The server did not say how large the file is (no Content-Length) — use create_upload instead",
+      "The server did not say how large the file is (no Content-Length) — upload the file instead",
     );
   if (size > MAX_SIZE)
-    throw new ServiceError("Imports are limited to 5 GB — use create_upload instead");
+    throw new ServiceError("Imports are limited to 5 GB — upload the file instead");
 
   const contentType = res.headers.get("content-type")?.split(";")[0] || "application/octet-stream";
   const fileName =
