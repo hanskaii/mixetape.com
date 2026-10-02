@@ -224,6 +224,27 @@ export function LoginModal({
               {loading ? "Sending Code..." : "Send Verification Code"}
             </Button>
           </form>
+
+          {/* Platform API policies (YouTube's among them) require agreeing before use. */}
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+            By continuing you agree to the{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              className="text-foreground underline underline-offset-2"
+            >
+              Terms
+            </a>{" "}
+            and{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              className="text-foreground underline underline-offset-2"
+            >
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       ) : (
         <form onSubmit={handleVerifyOtp} className="space-y-3 pt-2">

@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { WorkspaceLayout } from "#/components/layouts/workspace-layout";
+import { PageTitleLevel } from "#/components/layouts/workspace-page";
 import { PublishView, type PublishData } from "../../(app)/_app/publish/-components/publish-view";
 import { colors } from "../../../components/ui/tokens.stylex";
 
@@ -132,9 +133,11 @@ export function WorkspacePreview() {
     <figure {...stylex.props(styles.figure)}>
       <div {...stylex.props(styles.frame)}>
         <div inert {...stylex.props(styles.window)}>
-          <WorkspaceLayout activePath="/publish">
-            <PublishView {...SAMPLE} />
-          </WorkspaceLayout>
+          <PageTitleLevel value="h2">
+            <WorkspaceLayout activePath="/publish">
+              <PublishView {...SAMPLE} />
+            </WorkspaceLayout>
+          </PageTitleLevel>
         </div>
       </div>
       <figcaption {...stylex.props(styles.caption)}>

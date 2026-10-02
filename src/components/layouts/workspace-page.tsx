@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { colors } from "../ui/tokens.stylex";
@@ -154,6 +154,12 @@ export const Page = ({ children }: { children: ReactNode }) => (
   <div {...stylex.props(styles.page)}>{children}</div>
 );
 
+/**
+ * The heading level of a page title. A workspace page shown inside another page (the landing
+ * page's preview) sets it to "h2", so that page keeps a single h1.
+ */
+export const PageTitleLevel = createContext<"h1" | "h2">("h1");
+
 export function PageHeader({
   title,
   description,
@@ -163,10 +169,11 @@ export function PageHeader({
   description?: ReactNode;
   actions?: ReactNode;
 }) {
+  const Title = useContext(PageTitleLevel);
   return (
     <header {...stylex.props(styles.header)}>
       <div>
-        <h1 {...stylex.props(styles.title)}>{title}</h1>
+        <Title {...stylex.props(styles.title)}>{title}</Title>
         {description && <p {...stylex.props(styles.description)}>{description}</p>}
       </div>
       {actions && <div {...stylex.props(styles.actions)}>{actions}</div>}

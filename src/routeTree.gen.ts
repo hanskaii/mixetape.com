@@ -10,14 +10,16 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as publicRouteRouteImport } from './routes/(public)/route'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as appAppRouteRouteImport } from './routes/(app)/_app/route'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
+import { Route as publicPricingRouteImport } from './routes/(public)/pricing'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
 import { Route as publicTermsRouteImport } from './routes/(public)/terms'
 import { Route as McpToolsDotjsonRouteImport } from './routes/mcp_.tools[.]json'
-import { Route as RobotsTxtRouteImport } from './routes/robots.txt'
-import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as publicConnectDoneRouteImport } from './routes/(public)/connect/done'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiConnectProviderRouteImport } from './routes/api/connect/$provider'
@@ -37,9 +39,24 @@ const publicRouteRoute = publicRouteRouteImport.update({
   id: '/(public)',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appAppRouteRoute = appAppRouteRouteImport.update({
@@ -49,6 +66,11 @@ const appAppRouteRoute = appAppRouteRouteImport.update({
 const publicIndexRoute = publicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicPricingRoute = publicPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => publicRouteRoute,
 } as any)
 const publicPrivacyRoute = publicPrivacyRouteImport.update({
@@ -64,16 +86,6 @@ const publicTermsRoute = publicTermsRouteImport.update({
 const McpToolsDotjsonRoute = McpToolsDotjsonRouteImport.update({
   id: '/mcp_/tools.json',
   path: '/mcp/tools.json',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RobotsTxtRoute = RobotsTxtRouteImport.update({
-  id: '/robots/txt',
-  path: '/robots/txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapXmlRoute = SitemapXmlRouteImport.update({
-  id: '/sitemap/xml',
-  path: '/sitemap/xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const publicConnectDoneRoute = publicConnectDoneRouteImport.update({
@@ -149,12 +161,14 @@ const ApiStorageFileSplatRoute = ApiStorageFileSplatRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
-  '/robots/txt': typeof RobotsTxtRoute
-  '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -172,12 +186,14 @@ export interface FileRoutesByFullPath {
   '/queue/': typeof appAppQueueIndexRoute
 }
 export interface FileRoutesByTo {
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
-  '/robots/txt': typeof RobotsTxtRoute
-  '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof publicIndexRoute
   '/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -197,13 +213,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(public)': typeof publicRouteRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/(app)/_app': typeof appAppRouteRouteWithChildren
+  '/(public)/pricing': typeof publicPricingRoute
   '/(public)/privacy': typeof publicPrivacyRoute
   '/(public)/terms': typeof publicTermsRoute
   '/mcp_/tools.json': typeof McpToolsDotjsonRoute
-  '/robots/txt': typeof RobotsTxtRoute
-  '/sitemap/xml': typeof SitemapXmlRoute
   '/(public)/': typeof publicIndexRoute
   '/(public)/connect/done': typeof publicConnectDoneRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -223,12 +241,14 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/llms.txt'
     | '/mcp'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/pricing'
     | '/privacy'
     | '/terms'
     | '/mcp/tools.json'
-    | '/robots/txt'
-    | '/sitemap/xml'
     | '/'
     | '/connect/done'
     | '/api/auth/$'
@@ -246,12 +266,14 @@ export interface FileRouteTypes {
     | '/queue/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/llms.txt'
     | '/mcp'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/pricing'
     | '/privacy'
     | '/terms'
     | '/mcp/tools.json'
-    | '/robots/txt'
-    | '/sitemap/xml'
     | '/'
     | '/connect/done'
     | '/api/auth/$'
@@ -270,13 +292,15 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/(public)'
+    | '/llms.txt'
     | '/mcp'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/(app)/_app'
+    | '/(public)/pricing'
     | '/(public)/privacy'
     | '/(public)/terms'
     | '/mcp_/tools.json'
-    | '/robots/txt'
-    | '/sitemap/xml'
     | '/(public)/'
     | '/(public)/connect/done'
     | '/api/auth/$'
@@ -296,11 +320,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   publicRouteRoute: typeof publicRouteRouteWithChildren
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   McpRoute: typeof McpRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   appAppRouteRoute: typeof appAppRouteRouteWithChildren
   McpToolsDotjsonRoute: typeof McpToolsDotjsonRoute
-  RobotsTxtRoute: typeof RobotsTxtRoute
-  SitemapXmlRoute: typeof SitemapXmlRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
   ApiV1SplatRoute: typeof ApiV1SplatRoute
@@ -317,11 +342,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof publicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/_app': {
@@ -336,6 +382,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof publicIndexRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/pricing': {
+      id: '/(public)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof publicPricingRouteImport
       parentRoute: typeof publicRouteRoute
     }
     '/(public)/privacy': {
@@ -357,20 +410,6 @@ declare module '@tanstack/react-router' {
       path: '/mcp/tools.json'
       fullPath: '/mcp/tools.json'
       preLoaderRoute: typeof McpToolsDotjsonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots/txt': {
-      id: '/robots/txt'
-      path: '/robots/txt'
-      fullPath: '/robots/txt'
-      preLoaderRoute: typeof RobotsTxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap/xml': {
-      id: '/sitemap/xml'
-      path: '/sitemap/xml'
-      fullPath: '/sitemap/xml'
-      preLoaderRoute: typeof SitemapXmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(public)/connect/done': {
@@ -475,6 +514,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface publicRouteRouteChildren {
+  publicPricingRoute: typeof publicPricingRoute
   publicPrivacyRoute: typeof publicPrivacyRoute
   publicTermsRoute: typeof publicTermsRoute
   publicIndexRoute: typeof publicIndexRoute
@@ -482,6 +522,7 @@ interface publicRouteRouteChildren {
 }
 
 const publicRouteRouteChildren: publicRouteRouteChildren = {
+  publicPricingRoute: publicPricingRoute,
   publicPrivacyRoute: publicPrivacyRoute,
   publicTermsRoute: publicTermsRoute,
   publicIndexRoute: publicIndexRoute,
@@ -529,11 +570,12 @@ const ApiConnectProviderRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   publicRouteRoute: publicRouteRouteWithChildren,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   McpRoute: McpRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   appAppRouteRoute: appAppRouteRouteWithChildren,
   McpToolsDotjsonRoute: McpToolsDotjsonRoute,
-  RobotsTxtRoute: RobotsTxtRoute,
-  SitemapXmlRoute: SitemapXmlRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
   ApiV1SplatRoute: ApiV1SplatRoute,

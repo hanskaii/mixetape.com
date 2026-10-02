@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteConfig } from "#/config/site";
+import { publicHead } from "./-lib/head";
 
 export const Route = createFileRoute("/(public)/terms")({
-  head: () => ({ meta: [{ title: `Terms | ${siteConfig.name}` }] }),
+  head: () =>
+    publicHead({
+      path: "/terms",
+      title: `Terms of Service | ${siteConfig.name}`,
+      description:
+        "The terms for using mixetape to schedule and publish posts to your social channels, including YouTube's Terms of Service and each platform's rules.",
+    }),
   component: Terms,
 });
 
@@ -12,7 +19,7 @@ function Terms() {
     <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Terms of Service</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated October 1, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated October 2, 2026</p>
       </div>
 
       <section className="space-y-2">
@@ -50,6 +57,14 @@ function Terms() {
           post, limit your account or remove content; {siteConfig.name} does not control those
           decisions. You can revoke {siteConfig.name}'s access at any time from the platform's
           settings or by disconnecting the channel.
+        </p>
+        <p>
+          {siteConfig.name} uses YouTube API Services. By using {siteConfig.name} with a YouTube
+          channel you agree to be bound by the{" "}
+          <a href="https://www.youtube.com/t/terms" className="text-foreground underline">
+            YouTube Terms of Service
+          </a>
+          .
         </p>
       </section>
 
@@ -89,8 +104,8 @@ function Terms() {
         <p>
           We may update these terms; the date above shows the latest version, and continued use
           means you accept it. Questions:{" "}
-          <a href="mailto:hanssn@mixetape.com" className="text-foreground underline">
-            hanssn@mixetape.com
+          <a href={`mailto:${siteConfig.contactEmail}`} className="text-foreground underline">
+            {siteConfig.contactEmail}
           </a>
           .
         </p>

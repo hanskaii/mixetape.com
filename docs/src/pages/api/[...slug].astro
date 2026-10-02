@@ -16,11 +16,33 @@ const result = await getApiRoute(Astro);
 if (result instanceof Response) return result;
 const { page, nav, collection, version, coordinate } = result;
 const socialImage = `/og${page.href.replace(/\/$/, "")}.png`;
+
+// The meta description: an operation's description runs to paragraphs, which a search result
+// cuts off mid-word. The operation's title, then whole sentences as plain text, within ~155
+// characters. A sentence ends before a capital, so "e.g. a" does not end one.
+function metaDescription(title: string, text: string | undefined) {
+  const plain = (text ?? "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const sentences = [`${title.replace(/[.!?]?$/, ".")}`, ...plain.split(/(?<=[.!?])\s+(?=[A-Z])/)];
+  let description = "";
+  for (const sentence of sentences.filter(Boolean)) {
+    const next = description ? `${description} ${sentence}` : sentence;
+    if (next.length > 155) {
+      if (description.length < 70) description = `${next.slice(0, 154).replace(/\s+\S*$/, "")}…`;
+      break;
+    }
+    description = next;
+  }
+  return description;
+}
 ---
 
 <BaseLayout
   title={`${page.title} · API`}
-  description={page.description}
+  description={metaDescription(page.title, page.description)}
   markdownUrl={page.markdownHref}
   socialImage={socialImage}
   collection={collection}

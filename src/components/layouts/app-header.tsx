@@ -99,6 +99,9 @@ export function AppHeader() {
             <a href="/#agents" {...stylex.props(styles.section)}>
               For agents
             </a>
+            <Link to="/pricing" {...stylex.props(styles.section)}>
+              Pricing
+            </Link>
           </div>
         )}
 

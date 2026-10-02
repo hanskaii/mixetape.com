@@ -2,8 +2,11 @@ export const siteConfig = {
   name: "mixetape",
   title: "mixetape | Agent-first social media scheduling",
   description:
-    "Let AI agents and pipelines schedule social posts through MCP or the API. mixetape holds each post, keeps it editable until it goes out, and reports back when it is live. YouTube today; X, Instagram, LinkedIn, TikTok and more coming.",
+    "Let AI agents schedule posts to YouTube, TikTok, Instagram, Facebook, Threads and Pinterest through MCP or a REST API — editable until they go out.",
+  /** The share card (1200×630), served from public/. */
+  ogImage: "/og.png",
   url: process.env.SITE_URL || "http://localhost:3000",
+  contactEmail: "hanssn@mixetape.com",
   /** The documentation site (its own project, in docs/). */
   docsUrl: "https://docs.mixetape.com",
   /** Bump when the favicon's pixels change, so browsers that cache it by URL fetch the new one. */

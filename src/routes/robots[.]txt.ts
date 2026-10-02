@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteConfig } from "#/config/site";
 
-export const Route = createFileRoute("/robots/txt")({
+// The workspace pages redirect a crawler to the landing page; keep crawlers out of them. No
+// trailing slash: "/publish/" would not match "/publish" itself.
+const PRIVATE = ["/api/", "/publish", "/library", "/queue", "/channels", "/api-keys", "/settings"];
+
+export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
       GET: () => {
         const robots = `User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /publish/
-Disallow: /channels/
-Disallow: /api-keys/
-Disallow: /settings/
+${PRIVATE.map((path) => `Disallow: ${path}`).join("\n")}
 
 Sitemap: ${siteConfig.url}/sitemap.xml
 `;
