@@ -44,6 +44,10 @@
     {
       "name": "Files",
       "description": "mixetape storage: uploads, imports and the files' index; files published without a group."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Endpoints told when posts go up, go live, fail or are cancelled, and when a channel needs reconnecting; signed per Standard Webhooks."
     }
   ],
   "paths": {
@@ -8404,6 +8408,741 @@
           }
         }
       }
+    },
+    "/api/v1/webhooks": {
+      "get": {
+        "operationId": "listWebhooks",
+        "summary": "List webhooks",
+        "description": "Every webhook, with how its last delivery went.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "responses": {
+          "200": {
+            "description": "The webhooks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhooks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "events": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "post.uploaded",
+                                "post.published",
+                                "post.failed",
+                                "post.cancelled",
+                                "account.reconnect_needed"
+                              ]
+                            }
+                          },
+                          "enabled": {
+                            "type": "boolean",
+                            "description": "Turned off by hand, or after 20 events in a row failed every retry"
+                          },
+                          "failures": {
+                            "type": "integer",
+                            "description": "Events in a row that failed every retry"
+                          },
+                          "lastDeliveryAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "lastStatus": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "The endpoint's last HTTP status"
+                          },
+                          "lastError": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "url",
+                          "events",
+                          "enabled",
+                          "failures",
+                          "createdAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "webhooks"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebhook",
+        "summary": "Create a webhook",
+        "description": "An https endpoint mixetape POSTs events to, signed per Standard Webhooks (webhook-id, webhook-timestamp, webhook-signature). The answer holds its secret, shown only this once.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "The https endpoint that receives the events"
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "post.uploaded",
+                        "post.published",
+                        "post.failed",
+                        "post.cancelled",
+                        "account.reconnect_needed"
+                      ]
+                    },
+                    "description": "What to be told about: post.uploaded (a post is on the platform, waiting for its publish time); post.published (a post went live); post.failed (a post failed; its error says why); post.cancelled (a post was cancelled); account.reconnect_needed (a channel lost its access and must be connected again). Left out on create, all of them."
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "A note on what it is for"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new webhook and its signing secret.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "post.uploaded",
+                              "post.published",
+                              "post.failed",
+                              "post.cancelled",
+                              "account.reconnect_needed"
+                            ]
+                          }
+                        },
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Turned off by hand, or after 20 events in a row failed every retry"
+                        },
+                        "failures": {
+                          "type": "integer",
+                          "description": "Events in a row that failed every retry"
+                        },
+                        "lastDeliveryAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "lastStatus": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "The endpoint's last HTTP status"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "url",
+                        "events",
+                        "enabled",
+                        "failures",
+                        "createdAt"
+                      ]
+                    },
+                    "secret": {
+                      "type": "string",
+                      "description": "The signing secret (whsec_…), shown only now. Verify each delivery's webhook-signature with it (Standard Webhooks)."
+                    }
+                  },
+                  "required": [
+                    "webhook",
+                    "secret"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}": {
+      "get": {
+        "operationId": "getWebhook",
+        "summary": "Get a webhook",
+        "description": "One webhook, with how its last delivery went.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The webhook's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The webhook.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "post.uploaded",
+                              "post.published",
+                              "post.failed",
+                              "post.cancelled",
+                              "account.reconnect_needed"
+                            ]
+                          }
+                        },
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Turned off by hand, or after 20 events in a row failed every retry"
+                        },
+                        "failures": {
+                          "type": "integer",
+                          "description": "Events in a row that failed every retry"
+                        },
+                        "lastDeliveryAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "lastStatus": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "The endpoint's last HTTP status"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "url",
+                        "events",
+                        "enabled",
+                        "failures",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "webhook"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateWebhook",
+        "summary": "Change a webhook",
+        "description": "The given fields only; enabled: true turns a webhook that was turned off back on.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The webhook's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "The https endpoint that receives the events"
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "post.uploaded",
+                        "post.published",
+                        "post.failed",
+                        "post.cancelled",
+                        "account.reconnect_needed"
+                      ]
+                    },
+                    "description": "What to be told about: post.uploaded (a post is on the platform, waiting for its publish time); post.published (a post went live); post.failed (a post failed; its error says why); post.cancelled (a post was cancelled); account.reconnect_needed (a channel lost its access and must be connected again). Left out on create, all of them."
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "A note on what it is for"
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "false turns it off; true turns it back on and clears its failure count"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The webhook.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "post.uploaded",
+                              "post.published",
+                              "post.failed",
+                              "post.cancelled",
+                              "account.reconnect_needed"
+                            ]
+                          }
+                        },
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Turned off by hand, or after 20 events in a row failed every retry"
+                        },
+                        "failures": {
+                          "type": "integer",
+                          "description": "Events in a row that failed every retry"
+                        },
+                        "lastDeliveryAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "lastStatus": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "The endpoint's last HTTP status"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "url",
+                        "events",
+                        "enabled",
+                        "failures",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "webhook"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWebhook",
+        "summary": "Delete a webhook",
+        "description": "It stops receiving events at once.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The webhook's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "deleted",
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}/test": {
+      "post": {
+        "operationId": "testWebhook",
+        "summary": "Send a test event",
+        "description": "POSTs a webhook.test event now, once, and answers how the endpoint responded.\n\nNeeds the **webhooks** permission.",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-permission": "webhooks",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The webhook's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "How the delivery went.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "delivered": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "The endpoint's HTTP status"
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "delivered",
+                    "status",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -8411,7 +9150,7 @@
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "An API key from the workspace (API keys page), starting with `mxt_`. Each endpoint needs one of its permissions: read, publish, manage, comments, analytics, storage, channels, library.",
+        "description": "An API key from the workspace (API keys page), starting with `mxt_`. Each endpoint needs one of its permissions: read, publish, manage, comments, analytics, storage, channels, library, webhooks.",
         "x-permissions": {
           "read": "See channels, posts, their status, playlists and captions",
           "publish": "Schedule, change, cancel and retry posts, and set thumbnails",
@@ -8420,7 +9159,8 @@
           "analytics": "Read post and channel analytics",
           "storage": "Upload, import, list and delete files in mixetape's storage",
           "channels": "Start connecting channels (you still approve each one on the platform)",
-          "library": "Make, change and read groups in the library (files that go out together, with drafted words)"
+          "library": "Make, change and read groups in the library (files that go out together, with drafted words)",
+          "webhooks": "Add, change and remove webhooks that are told when posts and channels change"
         }
       }
     },

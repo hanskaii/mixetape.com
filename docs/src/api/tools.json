@@ -2440,6 +2440,179 @@
       "annotations": {
         "destructiveHint": true
       }
+    },
+    {
+      "name": "list_webhooks",
+      "description": "List the webhooks, with the events each gets and how its last delivery went.",
+      "permission": "webhooks",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "create_webhook",
+      "description": "Add an https endpoint mixetape POSTs events to (post.uploaded, post.published, post.failed, post.cancelled, account.reconnect_needed), signed per Standard Webhooks. Answers { webhook, secret }: the secret is shown only now — hand it to whoever verifies the signatures.",
+      "permission": "webhooks",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The https endpoint that receives the events"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "post.uploaded",
+                "post.published",
+                "post.failed",
+                "post.cancelled",
+                "account.reconnect_needed"
+              ]
+            },
+            "description": "What to be told about: post.uploaded (a post is on the platform, waiting for its publish time); post.published (a post went live); post.failed (a post failed; its error says why); post.cancelled (a post was cancelled); account.reconnect_needed (a channel lost its access and must be connected again). Left out on create, all of them."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A note on what it is for"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "update_webhook",
+      "description": "Change a webhook: the given fields only; enabled: true turns one that was turned off back on.",
+      "permission": "webhooks",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Webhook id (list_webhooks)"
+          },
+          "url": {
+            "type": "string",
+            "description": "The https endpoint that receives the events"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "post.uploaded",
+                "post.published",
+                "post.failed",
+                "post.cancelled",
+                "account.reconnect_needed"
+              ]
+            },
+            "description": "What to be told about: post.uploaded (a post is on the platform, waiting for its publish time); post.published (a post went live); post.failed (a post failed; its error says why); post.cancelled (a post was cancelled); account.reconnect_needed (a channel lost its access and must be connected again). Left out on create, all of them."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A note on what it is for"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "false turns it off; true turns it back on and clears its failure count"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_webhook",
+      "description": "Delete a webhook; it stops receiving events at once.",
+      "permission": "webhooks",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Webhook id (list_webhooks)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
+      "name": "test_webhook",
+      "description": "Send a webhook.test event to a webhook now, once, and answer how its endpoint responded.",
+      "permission": "webhooks",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Webhook id (list_webhooks)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
     }
   ]
 }
