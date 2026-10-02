@@ -82,6 +82,11 @@
             "format": "date-time",
             "description": "Scheduled at or before: ISO 8601 with a timezone offset"
           },
+          "updatedSince": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Changed at or after — status, error, time or words. Poll with the time of your last check to see what went out or failed since: ISO 8601 with a timezone offset"
+          },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -583,6 +588,10 @@
                 "title": "Pinterest"
               }
             ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Any unique text (e.g. a UUID) for this one action. Repeating the call with the same key — say after a timeout — returns the first result instead of doing it twice."
           }
         },
         "required": [
@@ -1502,6 +1511,34 @@
       }
     },
     {
+      "name": "disconnect_channel",
+      "description": "Remove a channel from mixetape, with its posts and their history; nothing changes on the platform. Refused while the channel has posts waiting to go out — cancel them first (cancel_post). Only when the user asks for it.",
+      "permission": "channels",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "Account id (list_accounts)"
+          }
+        },
+        "required": [
+          "accountId"
+        ]
+      },
+      "annotations": {
+        "destructiveHint": true
+      }
+    },
+    {
       "name": "connect_channel",
       "description": "Start connecting a channel: returns a sign-in link for the platform. Give the link to the user — they open it in any browser, sign in with the account that owns the channel and allow access; nothing is connected until they do. The link works once, for 10 minutes. Then call get_connection with the returned state.",
       "permission": "channels",
@@ -2051,10 +2088,147 @@
             "type": "integer",
             "minimum": 0,
             "description": "The same lead for every channel; left out, each platform keeps its default"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Any unique text (e.g. a UUID) for this one action. Repeating the call with the same key — say after a timeout — returns the first result instead of doing it twice."
           }
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "plan_files",
+      "description": "Like plan_group, for files that are not in a group: for each channel of the given brands and channels, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.",
+      "permission": "library",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files from storage, in order — several make a carousel or album. Each must be ready (its upload finished)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title where the platform has one (YouTube, Pinterest)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "The post text; the default on every platform"
+          },
+          "description": {
+            "type": "string",
+            "description": "Longer description where the platform has one"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides."
+          },
+          "brandIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Brands: every channel in them"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Single channels"
+          }
+        },
+        "required": [
+          "fileIds"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "publish_files",
+      "description": "Like publish_group, for files that are not in a group: one post per channel that can take them (see plan_files), all at scheduledAt; the others are skipped with their reasons. Answers { scheduled: [{ accountId, postId }], skipped, failed }. Once every post is out (or cancelled), the files are deleted from storage.",
+      "permission": "publish",
+      "platforms": [
+        "youtube",
+        "facebook",
+        "instagram",
+        "threads",
+        "tiktok",
+        "pinterest"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files from storage, in order — several make a carousel or album. Each must be ready (its upload finished)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title where the platform has one (YouTube, Pinterest)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "The post text; the default on every platform"
+          },
+          "description": {
+            "type": "string",
+            "description": "Longer description where the platform has one"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides."
+          },
+          "brandIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Brands: every channel in them"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Single channels"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 with a timezone offset; left out, each post goes live after its lead"
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The same lead for every channel; left out, each platform keeps its default"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Any unique text (e.g. a UUID) for this one action. Repeating the call with the same key — say after a timeout — returns the first result instead of doing it twice."
+          }
+        },
+        "required": [
+          "fileIds"
         ]
       }
     },
@@ -2145,6 +2319,10 @@
           "groupId": {
             "type": "string",
             "description": "Put the file in this library group, after its other files"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Any unique text (e.g. a UUID) for this one action. Repeating the call with the same key — say after a timeout — returns the first result instead of doing it twice."
           }
         },
         "required": [

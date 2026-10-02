@@ -4,7 +4,7 @@
     "title": "mixetape API",
     "version": "1.0.0",
     "summary": "Schedule and manage posts on connected social accounts.",
-    "description": "The REST API for scripts and integrations: accounts, posts, comments, library groups and files as resources. Every request carries an API key; each endpoint needs one of its permissions. AI agents use the MCP server at /mcp instead, with its own tools."
+    "description": "The REST API for scripts and integrations: accounts, posts, comments, library groups and files as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools."
   },
   "servers": [
     {
@@ -43,7 +43,7 @@
     },
     {
       "name": "Files",
-      "description": "mixetape storage: uploads, imports and the files' index."
+      "description": "mixetape storage: uploads, imports and the files' index; files published without a group."
     }
   ],
   "paths": {
@@ -161,6 +161,85 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}": {
+      "delete": {
+        "operationId": "disconnectAccount",
+        "summary": "Disconnect an account",
+        "description": "Removes the channel from mixetape, with its posts and their history; nothing changes on the platform. An account with posts still waiting to go out is refused (409) until they are cancelled.\n\nNeeds the **channels** permission.",
+        "tags": [
+          "Accounts"
+        ],
+        "x-permission": "channels",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The account's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Disconnected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "deleted",
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -249,6 +328,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       },
@@ -361,6 +446,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -614,6 +705,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -699,6 +796,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "503": {
             "$ref": "#/components/responses/Unavailable"
@@ -810,6 +910,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -898,6 +1001,9 @@
           },
           "410": {
             "$ref": "#/components/responses/Gone"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -972,6 +1078,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -1066,6 +1175,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -1173,6 +1285,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -1238,6 +1353,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -1346,6 +1464,16 @@
               "type": "string",
               "format": "date-time",
               "description": "Scheduled at or before: ISO 8601 with a timezone offset"
+            }
+          },
+          {
+            "name": "updatedSince",
+            "in": "query",
+            "description": "Changed at or after — status, error, time or words. Poll with the time of your last check to see what went out or failed since: ISO 8601 with a timezone offset",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Changed at or after — status, error, time or words. Poll with the time of your last check to see what went out or failed since: ISO 8601 with a timezone offset"
             }
           },
           {
@@ -1536,6 +1664,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -1554,6 +1685,18 @@
           "threads",
           "tiktok",
           "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Any unique text (e.g. a UUID) for this one request. Repeating the request with the same key — say after a timeout — answers with the first response (header Idempotent-Replayed: true) instead of doing it twice. Kept for 24 hours; the same key with a different request is refused (422).",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -2098,6 +2241,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/IdempotencyKeyReused"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -2289,6 +2438,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -2856,13 +3008,217 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       },
       "delete": {
+        "operationId": "deletePost",
+        "summary": "Cancel a scheduled post (old path)",
+        "description": "The same as POST /posts/{id}/cancel, kept for scripts written before it. The post is cancelled, not deleted: it stays listed as cancelled.\n\nNeeds the **publish** permission.",
+        "tags": [
+          "Posts"
+        ],
+        "deprecated": true,
+        "x-permission": "publish",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The post's id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cancelled post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "accountId": {
+                          "type": "string"
+                        },
+                        "provider": {
+                          "type": "string"
+                        },
+                        "mediaUrl": {
+                          "type": "string",
+                          "description": "The first file"
+                        },
+                        "media": {
+                          "type": "array",
+                          "description": "Every file, in order",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "video",
+                                  "image"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "kind"
+                            ]
+                          }
+                        },
+                        "groupId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "The library group it came from"
+                        },
+                        "caption": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "description": "The platform's own fields"
+                        },
+                        "scheduledAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "When it goes live"
+                        },
+                        "leadMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Sent this long before scheduledAt"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "scheduled",
+                            "publishing",
+                            "uploaded",
+                            "published",
+                            "failed",
+                            "cancelled"
+                          ],
+                          "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
+                        },
+                        "platformPostId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "platformUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "error": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Why it failed, when it did"
+                        },
+                        "attempts": {
+                          "type": "integer"
+                        },
+                        "publishedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "accountId",
+                        "provider",
+                        "mediaUrl",
+                        "media",
+                        "scheduledAt",
+                        "status",
+                        "attempts"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{id}/cancel": {
+      "post": {
         "operationId": "cancelPost",
         "summary": "Cancel a scheduled post",
-        "description": "Stops a post that still waits in mixetape; it stays listed as cancelled.\n\nNeeds the **publish** permission.",
+        "description": "Stops a post that still waits in mixetape; it stays listed as cancelled. Cancelling it again answers 409 invalid_post_state.\n\nNeeds the **publish** permission.",
         "tags": [
           "Posts"
         ],
@@ -3048,6 +3404,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -3242,6 +3601,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -3485,6 +3847,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       },
@@ -3855,6 +4223,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4063,6 +4437,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4154,6 +4534,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4244,6 +4630,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       },
@@ -4364,6 +4756,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4529,6 +4927,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       },
@@ -4676,6 +5080,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4834,6 +5244,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -4946,6 +5362,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -5136,6 +5558,12 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -5409,6 +5837,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -5679,6 +6110,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -5924,6 +6358,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -6205,6 +6642,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -6285,6 +6725,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -6459,6 +6902,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -6488,6 +6934,16 @@
             "description": "The group's id",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Any unique text (e.g. a UUID) for this one request. Repeating the request with the same key — say after a timeout — answers with the first response (header Idempotent-Replayed: true) instead of doing it twice. Kept for 24 hours; the same key with a different request is refused (422).",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
             }
           }
         ],
@@ -6622,6 +7078,398 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/IdempotencyKeyReused"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/files/plan": {
+      "post": {
+        "operationId": "planFiles",
+        "summary": "Plan publishing files",
+        "description": "Like planning a group, for files that are not in one: for each account of the given brands and accounts, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.\n\nNeeds the **library** permission.",
+        "tags": [
+          "Files"
+        ],
+        "x-permission": "library",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Files from storage, in order — several make a carousel or album. Each must be ready (its upload finished)."
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Title where the platform has one (YouTube, Pinterest)"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "description": "The post text; the default on every platform"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Longer description where the platform has one"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides."
+                  },
+                  "brandIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Brands: every channel in them"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Single channels"
+                  }
+                },
+                "required": [
+                  "fileIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The plan, account by account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "channels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "platform": {
+                            "type": "string"
+                          },
+                          "brands": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "The chosen brands this channel is in"
+                          },
+                          "fits": {
+                            "type": "boolean",
+                            "description": "The platform takes these files at all"
+                          },
+                          "ready": {
+                            "type": "boolean",
+                            "description": "Nothing stops it: it would be posted"
+                          },
+                          "format": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "video",
+                              "image",
+                              "carousel",
+                              null
+                            ]
+                          },
+                          "label": {
+                            "type": "string",
+                            "description": "What it is there: Short, Reel, Carousel, Album…"
+                          },
+                          "problems": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "What stops it"
+                          },
+                          "warnings": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "What would go out, but not ideally"
+                          },
+                          "caption": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "description": "What the post would carry"
+                          }
+                        },
+                        "required": [
+                          "accountId",
+                          "provider",
+                          "fits",
+                          "ready",
+                          "label",
+                          "problems",
+                          "warnings"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "channels"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/v1/files/publish": {
+      "post": {
+        "operationId": "publishFiles",
+        "summary": "Publish files",
+        "description": "Like publishing a group, for files that are not in one: one post per account that can take them, all at scheduledAt; the others are skipped with their reasons. Once every post is out (or cancelled), the files are deleted from storage.\n\nNeeds the **publish** permission.",
+        "tags": [
+          "Files"
+        ],
+        "x-permission": "publish",
+        "x-platforms": [
+          "youtube",
+          "facebook",
+          "instagram",
+          "threads",
+          "tiktok",
+          "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Any unique text (e.g. a UUID) for this one request. Repeating the request with the same key — say after a timeout — answers with the first response (header Idempotent-Replayed: true) instead of doing it twice. Kept for 24 hours; the same key with a different request is refused (422).",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Files from storage, in order — several make a carousel or album. Each must be ready (its upload finished)."
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Title where the platform has one (YouTube, Pinterest)"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "description": "The post text; the default on every platform"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Longer description where the platform has one"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Fields every platform shares (tags, thumbnailUrl, firstComment, …) and platforms: { youtube: { … }, instagram: { … } } with each platform's overrides."
+                  },
+                  "brandIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Brands: every channel in them"
+                  },
+                  "accountIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Single channels"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 with a timezone offset; left out, each post goes live after its lead"
+                  },
+                  "leadMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The same lead for every channel; left out, each platform keeps its default"
+                  }
+                },
+                "required": [
+                  "fileIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "What was scheduled, skipped and failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "scheduled": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "postId": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "skipped": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "problems": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "scheduled",
+                    "skipped",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/IdempotencyKeyReused"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -6843,6 +7691,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -6851,7 +7702,7 @@
       "post": {
         "operationId": "createUpload",
         "summary": "Start an upload",
-        "description": "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then finish it with POST /files/{fileId}/finish. With groupId, the file lands in that library group.\n\nNeeds the **storage** permission.",
+        "description": "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then complete it with POST /files/uploads/{fileId}/complete. With groupId, the file lands in that library group.\n\nNeeds the **storage** permission.",
         "tags": [
           "Files"
         ],
@@ -6960,14 +7811,17 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
     },
-    "/api/v1/files/{id}/finish": {
+    "/api/v1/files/uploads/{id}/complete": {
       "post": {
-        "operationId": "finishUpload",
-        "summary": "Finish an upload",
+        "operationId": "completeUpload",
+        "summary": "Complete an upload",
         "description": "Once the PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Safe to call again.\n\nNeeds the **storage** permission.",
         "tags": [
           "Files"
@@ -7119,6 +7973,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -7139,6 +7996,18 @@
           "threads",
           "tiktok",
           "pinterest"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Any unique text (e.g. a UUID) for this one request. Repeating the request with the same key — say after a timeout — answers with the first response (header Idempotent-Replayed: true) instead of doing it twice. Kept for 24 hours; the same key with a different request is refused (422).",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -7291,6 +8160,18 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/IdempotencyKeyReused"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -7447,6 +8328,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       },
@@ -7514,6 +8398,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -7539,7 +8426,7 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "The request is invalid; error says which field and why.",
+        "description": "The request is invalid; error.code says how (invalid_field, missing_field, unknown_field, media_not_supported, …) and error.field which field.",
         "content": {
           "application/json": {
             "schema": {
@@ -7579,7 +8466,7 @@
         }
       },
       "Conflict": {
-        "description": "Not possible in its current state, e.g. the account must reconnect.",
+        "description": "Not possible in its current state: invalid_post_state, account_needs_reconnect, file_not_ready, idempotency_in_progress, …",
         "content": {
           "application/json": {
             "schema": {
@@ -7588,8 +8475,46 @@
           }
         }
       },
+      "IdempotencyKeyReused": {
+        "description": "The Idempotency-Key was already used with a different request (idempotency_key_reused).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Over 120 requests a minute (rate_limited); wait and retry.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before retrying",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        }
+      },
       "Gone": {
         "description": "The choice expired; connect again.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Something mixetape depends on failed: the file at a URL could not be fetched (source_unreachable) or the platform refused the call (platform_error).",
         "content": {
           "application/json": {
             "schema": {
@@ -7614,8 +8539,51 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "string",
-            "description": "What went wrong, in plain words"
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_request",
+                  "invalid_field",
+                  "missing_field",
+                  "unknown_field",
+                  "unauthorized",
+                  "missing_permission",
+                  "forbidden",
+                  "not_found",
+                  "method_not_allowed",
+                  "invalid_post_state",
+                  "account_needs_reconnect",
+                  "file_not_ready",
+                  "media_not_supported",
+                  "not_supported_by_platform",
+                  "nothing_to_publish",
+                  "already_exists",
+                  "conflict",
+                  "idempotency_key_reused",
+                  "idempotency_in_progress",
+                  "source_unreachable",
+                  "platform_error",
+                  "rate_limited",
+                  "platform_unavailable",
+                  "internal_error"
+                ],
+                "description": "A stable code to branch on:\n\n- `invalid_request`: The request is malformed, e.g. the body is not a JSON object\n- `invalid_field`: A field has the wrong type or value (see field)\n- `missing_field`: A required field is missing (see field)\n- `unknown_field`: A field this endpoint does not take, often a typo (see field)\n- `unauthorized`: No valid API key\n- `missing_permission`: The API key lacks the permission this needs\n- `forbidden`: Not allowed for this caller\n- `not_found`: Not found, or not yours\n- `method_not_allowed`: The path exists but not with this method\n- `invalid_post_state`: The post's status does not allow this, e.g. cancelling a published post\n- `account_needs_reconnect`: The channel must be connected again before it can post\n- `file_not_ready`: The file's upload is not finished\n- `media_not_supported`: The platform cannot take these files as one post\n- `not_supported_by_platform`: The platform has no such feature\n- `nothing_to_publish`: The selection or group has no files\n- `already_exists`: Something with that name already exists\n- `conflict`: Not possible in the current state\n- `idempotency_key_reused`: The Idempotency-Key was used before with a different request\n- `idempotency_in_progress`: A request with this Idempotency-Key is still running\n- `source_unreachable`: The file at the given URL could not be fetched; check it is public\n- `platform_error`: The platform refused or failed the call; the message says why\n- `rate_limited`: Too many requests; wait Retry-After seconds\n- `platform_unavailable`: mixetape cannot connect that platform yet\n- `internal_error`: Something failed on mixetape's side"
+              },
+              "message": {
+                "type": "string",
+                "description": "What went wrong, in plain words"
+              },
+              "field": {
+                "type": "string",
+                "description": "The input field it is about, if any"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
           }
         },
         "required": [
