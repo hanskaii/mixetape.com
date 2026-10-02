@@ -170,6 +170,12 @@
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-pinterest-app-secret",
     },
+    {
+      // Bluesky OAuth: mixetape's ES256 private key as a JWK (providers/bluesky).
+      "binding": "SS_BLUESKY_PRIVATE_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-bluesky-private-key",
+    },
   ],
   "vars": {
     "APP_ENV": "production",

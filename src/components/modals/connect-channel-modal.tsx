@@ -22,6 +22,8 @@ export interface ConnectChannelModalProps {
   platform: string;
   /** Set when reconnecting an existing channel, for the title. */
   channel?: string;
+  /** Who is connecting, where the platform asks (a Mastodon account, a Bluesky handle). */
+  account?: string;
   /**
    * The tab the consent screen goes to — opened by the caller inside the click handler,
    * since a tab opened later (after an await) is what popup blockers stop.
@@ -46,6 +48,7 @@ export function ConnectChannelModal({
   provider,
   platform,
   channel,
+  account,
   tab,
   onConnected,
 }: ConnectChannelModalProps) {
@@ -69,7 +72,7 @@ export function ConnectChannelModal({
     if (started.current) return;
     started.current = true;
     setBlocked(!tab);
-    beginChannelConnect({ data: { provider } })
+    beginChannelConnect({ data: { provider, account } })
       .then((started) => {
         setUrl(started.url);
         setState(started.state);
@@ -79,7 +82,7 @@ export function ConnectChannelModal({
         tab?.close();
         setError(err instanceof Error ? err.message : "Could not start connecting");
       });
-  }, [provider, tab]);
+  }, [provider, account, tab]);
 
   // Watch the attempt: the callback stores its outcome under the state.
   useEffect(() => {

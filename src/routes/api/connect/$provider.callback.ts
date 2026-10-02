@@ -22,7 +22,12 @@ export const Route = createFileRoute("/api/connect/$provider/callback")({
         if (!code || !state) return failed("The sign-in response was incomplete");
 
         try {
-          const result = await finishConnect(params.provider, code, state);
+          const result = await finishConnect(
+            params.provider,
+            code,
+            state,
+            url.searchParams.get("iss"),
+          );
           if (result.status === "choose") return done(`choose=1&via=${result.via}`);
           return done(`connected=${encodeURIComponent(result.channels.join(", "))}`);
         } catch (error) {

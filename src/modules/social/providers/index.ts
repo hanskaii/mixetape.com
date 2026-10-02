@@ -1,6 +1,8 @@
 import { CAPABILITIES, type Capability, type SocialProvider } from "./types";
+import { bluesky } from "./bluesky";
 import { facebook } from "./facebook";
 import { instagram } from "./instagram";
+import { mastodon } from "./mastodon";
 import { threads } from "./threads";
 import { pinterestProvider } from "./pinterest";
 import { tiktokProvider } from "./tiktok";
@@ -17,6 +19,8 @@ const PROVIDERS: Record<string, SocialProvider> = {
   threads,
   tiktok: tiktokProvider,
   pinterest: pinterestProvider,
+  bluesky,
+  mastodon,
 };
 
 export function getProvider(id: string): SocialProvider {
@@ -55,6 +59,8 @@ export const PROVIDER_LIST = Object.values(PROVIDERS).map((provider) => ({
   id: provider.id,
   name: provider.name,
   capabilities: capabilitiesOf(provider),
+  /** What connecting asks first (a Mastodon account, a Bluesky handle), or null. */
+  asks: provider.connect.asks ?? null,
 }));
 
 export type * from "./types";

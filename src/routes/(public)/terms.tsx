@@ -52,11 +52,11 @@ function Terms() {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Platform rules</h2>
         <p>
-          Each platform (YouTube, Facebook, Instagram, Threads, TikTok, Pinterest) has its own
-          terms, content policies and limits, and they apply to your posts. A platform may refuse a
-          post, limit your account or remove content; {siteConfig.name} does not control those
-          decisions. You can revoke {siteConfig.name}'s access at any time from the platform's
-          settings or by disconnecting the channel.
+          Each platform (YouTube, Facebook, Instagram, Threads, TikTok, Pinterest, Bluesky,
+          Mastodon) has its own terms, content policies and limits, and they apply to your posts. A
+          platform may refuse a post, limit your account or remove content; {siteConfig.name} does
+          not control those decisions. You can revoke {siteConfig.name}'s access at any time from
+          the platform's settings or by disconnecting the channel.
         </p>
         <p>
           {siteConfig.name} uses YouTube API Services. By using {siteConfig.name} with a YouTube

@@ -55,8 +55,10 @@ export const removeBrand = createServerFn({ method: "POST" })
   .handler(async ({ data }) => brands.deleteBrand(await currentUserId(), data.id));
 
 export const beginChannelConnect = createServerFn({ method: "POST" })
-  .validator((data: { provider: string }) => data)
-  .handler(async ({ data }) => social.beginConnect(await currentUserId(), data.provider));
+  .validator((data: { provider: string; account?: string }) => data)
+  .handler(async ({ data }) =>
+    social.beginConnect(await currentUserId(), data.provider, "workspace", data.account),
+  );
 
 export const checkChannelConnect = createServerFn({ method: "POST" })
   .validator((data: { state: string }) => data)

@@ -1,7 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 import {
+  Butterfly,
   FacebookLogo,
   InstagramLogo,
+  MastodonLogo,
   PinterestLogo,
   ThreadsLogo,
   TiktokLogo,
@@ -25,6 +27,9 @@ const PLATFORMS = [
   { name: "Threads", Icon: ThreadsLogo, color: "bg-[#101010]", soon: false },
   { name: "Facebook", Icon: FacebookLogo, color: "bg-[#1877f2]", soon: false },
   { name: "Pinterest", Icon: PinterestLogo, color: "bg-[#e60023]", soon: false },
+  // Built; "soon" until their first live post has gone out.
+  { name: "Bluesky", Icon: Butterfly, color: "bg-[#1185fe]", soon: true },
+  { name: "Mastodon", Icon: MastodonLogo, color: "bg-[#6364ff]", soon: true },
 ] as const;
 
 const styles = stylex.create({

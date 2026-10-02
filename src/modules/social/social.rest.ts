@@ -150,7 +150,17 @@ const connections: Endpoint[] = [
     summary: "Start connecting an account",
     description:
       "Returns the platform's sign-in page for the person who owns the account. Nothing is connected until they sign in and allow access; follow the attempt with its state. The link works once, for 10 minutes.",
-    body: object({ platform: { type: "string", enum: PLATFORMS } }, ["platform"]),
+    body: object(
+      {
+        platform: { type: "string", enum: PLATFORMS },
+        account: {
+          type: "string",
+          description:
+            "Who is connecting, where the platform needs it: the Mastodon account (@you@mastodon.social — its server is what counts), or a Bluesky handle (optional)",
+        },
+      },
+      ["platform"],
+    ),
     status: 201,
     response: {
       description: "The sign-in link and the state that follows it.",
@@ -158,7 +168,12 @@ const connections: Endpoint[] = [
     },
     errors: [503],
     run: async (userId, input) => {
-      const started = await social.beginConnect(userId, input.string("platform"), "agent");
+      const started = await social.beginConnect(
+        userId,
+        input.string("platform"),
+        "agent",
+        input.optionalString("account"),
+      );
       return { url: started.url, state: started.state, expiresAt: started.expiresAt };
     },
   },

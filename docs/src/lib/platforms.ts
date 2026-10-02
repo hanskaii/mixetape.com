@@ -10,6 +10,8 @@ export const PLATFORMS = [
   { id: "threads", name: "Threads", icon: "ph:threads-logo" },
   { id: "tiktok", name: "TikTok", icon: "ph:tiktok-logo" },
   { id: "pinterest", name: "Pinterest", icon: "ph:pinterest-logo" },
+  { id: "bluesky", name: "Bluesky", icon: "ph:butterfly" },
+  { id: "mastodon", name: "Mastodon", icon: "ph:mastodon-logo" },
 ] as const;
 
 export type Platform = (typeof PLATFORMS)[number];

@@ -27,3 +27,7 @@ CREDENTIALS_KEY=
 
 # MCP Server Shared Secret (For programmatic agent access to /api/posts/mcp)
 MCP_API_KEY=your-custom-mcp-bearer-token
+
+# Bluesky OAuth: mixetape's ES256 private key as a JWK (one line of JSON). Empty locally:
+# the dev server connects as an atproto development client, which needs no key.
+BLUESKY_PRIVATE_KEY=

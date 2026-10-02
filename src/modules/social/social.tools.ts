@@ -300,11 +300,21 @@ export const socialTools: Tool[] = [
           enum: PLATFORMS,
           description: "The platform to connect; one mixetape has no app for yet is refused",
         },
+        account: {
+          type: "string",
+          description:
+            "Who is connecting, where the platform needs it: the Mastodon account (@you@mastodon.social — its server is what counts), or a Bluesky handle (optional)",
+        },
       },
       ["platform"],
     ),
     run: async (userId, input) => {
-      const started = await social.beginConnect(userId, input.string("platform"), "agent");
+      const started = await social.beginConnect(
+        userId,
+        input.string("platform"),
+        "agent",
+        input.optionalString("account"),
+      );
       return { url: started.url, state: started.state, expiresAt: started.expiresAt };
     },
   },

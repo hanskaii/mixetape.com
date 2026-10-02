@@ -71,7 +71,9 @@ With the `channels` permission, the agent can add an account for you:
 
 <Steps>
   <Step title="connect_channel">
-    `{ "platform": "facebook" }` returns a sign-in `url` and a `state`. The agent gives you the
+    `{ "platform": "facebook" }` returns a sign-in `url` and a `state`. Mastodon needs to
+    know the account first — `{ "platform": "mastodon", "account": "@you@mastodon.social" }` —
+    and Bluesky takes a handle the same way, optionally. The agent gives you the
     link; open it in any browser, sign in with the account that owns the channel, and allow
     access. The link works once, for 10 minutes.
   </Step>

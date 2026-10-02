@@ -1,0 +1,38 @@
+---
+title: Mastodon
+description: "Schedule videos, images and posts of up to 4 images to a Mastodon account on any server, with content warnings, visibility and a thread from firstComment."
+sidebar:
+  order: 7
+---
+
+**Connect:** an account on any Mastodon server. Give the account (`@you@mastodon.social`) or
+just its server — mixetape registers itself with that server the first time someone from it
+connects, then sends you to the server's own sign-in page. Agents pass it as `account` to
+`connect_channel`.
+
+**Posting:** a video, an image, or 2–4 images — the usual server limits; each server sets its
+own text length (500 characters on most, a link counting as 23) and file sizes, and mixetape
+checks them when it publishes. Posts go up at `scheduledAt`.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `text` | Defaults to the post caption |
+| `visibility` | `public` (default), `unlisted` or `private` (followers only) |
+| `spoilerText` | A content warning shown before the post |
+| `sensitive` | `true` hides the media behind a warning |
+| `language` | Two-letter code of the text, e.g. `en` |
+| `altTexts` | Descriptions of the images or video, one per file, in order |
+| `firstComment` | Posted as the account's own reply once the post is up — a thread |
+
+## After it is up
+
+Replies work like comments: read them and reply as the account (another person's reply gets
+an @mention). Status shows the post's favourites and replies. Mastodon has no analytics API.
+
+## Limits
+
+- An account cannot hide or remove other people's replies through the API.
+- Mastodon tokens do not expire; mixetape checks every 30 days that yours still works and asks
+  you to reconnect if you revoked it.

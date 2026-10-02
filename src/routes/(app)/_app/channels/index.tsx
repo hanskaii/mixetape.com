@@ -63,11 +63,12 @@ function ChannelsPage() {
   const nameOf = (provider: string) =>
     providers.find((platform) => platform.id === provider)?.name ?? provider;
 
-  const connect = (provider: string, channel?: string) =>
+  const connect = (provider: string, channel?: string, account?: string) =>
     openConnectChannel({
       provider,
       platform: nameOf(provider),
       channel,
+      account,
       onConnected: async (channels) => {
         await router.navigate({ to: "/channels", search: { connected: channels.join(", ") } });
         await refresh();
@@ -79,9 +80,9 @@ function ChannelsPage() {
       <ConnectPlatformModal
         providers={providers}
         connectable={connectable}
-        onChoose={(provider) => {
+        onChoose={(provider, account) => {
           closeModal();
-          connect(provider);
+          connect(provider, undefined, account);
         }}
         onClose={closeModal}
       />,
@@ -179,7 +180,12 @@ function ChannelsPage() {
                     {account.status === "active" ? (
                       <Badge variant="secondary">Active</Badge>
                     ) : (
-                      <Button size="xs" onClick={() => connect(account.provider, account.name)}>
+                      <Button
+                        size="xs"
+                        onClick={() =>
+                          connect(account.provider, account.name, account.handle ?? undefined)
+                        }
+                      >
                         Reconnect
                       </Button>
                     )}
@@ -187,7 +193,9 @@ function ChannelsPage() {
                       name={account.name}
                       platform={group.name}
                       url={channelUrl(account)}
-                      onRefresh={() => connect(account.provider, account.name)}
+                      onRefresh={() =>
+                        connect(account.provider, account.name, account.handle ?? undefined)
+                      }
                       onDisconnect={() => disconnect(account.id, account.name)}
                     />
                   </span>

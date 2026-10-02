@@ -1,7 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 import {
+  Butterfly,
   FacebookLogo,
   InstagramLogo,
+  MastodonLogo,
   PinterestLogo,
   ThreadsLogo,
   TiktokLogo,
@@ -19,6 +21,8 @@ const styles = stylex.create({
   facebook: { color: "#1877f2" },
   instagram: { color: "#d62976" },
   pinterest: { color: "#e60023" },
+  bluesky: { color: "#1185fe" },
+  mastodon: { color: "#6364ff" },
   ink: { color: colors.foreground },
 });
 
@@ -42,6 +46,10 @@ export function PlatformLogo({
       return <TiktokLogo weight="fill" aria-hidden {...props(styles.ink)} />;
     case "pinterest":
       return <PinterestLogo weight="fill" aria-hidden {...props(styles.pinterest)} />;
+    case "bluesky":
+      return <Butterfly weight="fill" aria-hidden {...props(styles.bluesky)} />;
+    case "mastodon":
+      return <MastodonLogo weight="fill" aria-hidden {...props(styles.mastodon)} />;
     default:
       return <YoutubeLogo weight="fill" aria-hidden {...props(styles.youtube)} />;
   }

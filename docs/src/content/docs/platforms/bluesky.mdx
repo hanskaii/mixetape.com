@@ -1,0 +1,36 @@
+---
+title: Bluesky
+description: "Schedule videos, images and posts of up to 4 images to Bluesky, with links, hashtags and mentions; replies, and a thread from firstComment."
+sidebar:
+  order: 6
+---
+
+**Connect:** any Bluesky account. Signing in uses Bluesky's own page (AT Protocol OAuth);
+give your handle (`you.bsky.social`) to go straight to your account's server and have it
+filled in — it is optional for accounts hosted by Bluesky. Agents pass it as `account` to
+`connect_channel`.
+
+**Posting:** a video (up to 3 minutes and 100 MB), an image, or 2–4 images. Bluesky cannot
+hold a post until a time, so mixetape publishes it at `scheduledAt`. Images over 1 MB, Bluesky's
+limit, are made smaller on the way when they are in mixetape storage. Links, `#hashtags` and
+`@handles` in the text become links.
+
+## Metadata
+
+| Field | Notes |
+|---|---|
+| `text` | At most 300 characters; defaults to the post caption |
+| `langs` | Up to 3 language codes, e.g. `["en"]` |
+| `altTexts` | Descriptions of the images or video, one per file, in order |
+| `contentWarning` | `sexual`, `nudity`, `porn` or `graphic-media` — labels the media |
+| `firstComment` | Posted as the account's own reply once the post is up — a thread |
+
+## After it is up
+
+Replies work like comments: read them and reply as the account. Status shows the post's likes
+and replies. Bluesky has no analytics API.
+
+## Limits
+
+- Hiding replies is not supported yet.
+- A retried publish never posts twice: each attempt writes one record with a fixed key.

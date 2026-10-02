@@ -141,7 +141,7 @@ describe("youtube.connect", () => {
 
   it("asks for exactly the two permissions it needs", () => {
     const url = new URL(
-      youtube.connect.authorizeUrl({ clientId: "id", redirectUri: "https://m/cb", state: "s" }),
+      youtube.connect.authorizeUrl!({ clientId: "id", redirectUri: "https://m/cb", state: "s" }),
     );
     expect(url.searchParams.get("scope")?.split(" ")).toEqual([
       "https://www.googleapis.com/auth/youtube.force-ssl",

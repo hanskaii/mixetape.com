@@ -55,21 +55,37 @@ export function redirectUri(provider: string): string {
 // id and secret are in the Secrets Store (secrets.service). Instagram has its own app id and
 // secret (Instagram Login), separate from the Facebook app's. A platform whose app does not
 // exist yet cannot be connected.
+//
+// Mastodon has no one app: mixetape registers itself with each person's server as they
+// connect (providers/mastodon). Bluesky's app is a key pair, its client id the URL of
+// mixetape's client metadata (providers/bluesky); running locally it needs neither, as a
+// development client.
 
-const APPS: Partial<Record<string, { id: SecretName; secret: SecretName }>> = {
+type AppSecrets = { id?: SecretName; secret?: SecretName; notNeededLocally?: boolean };
+
+const APPS: Partial<Record<string, AppSecrets>> = {
   youtube: { id: "YOUTUBE_CLIENT_ID", secret: "YOUTUBE_CLIENT_SECRET" },
   facebook: { id: "FACEBOOK_APP_ID", secret: "FACEBOOK_APP_SECRET" },
   instagram: { id: "INSTAGRAM_APP_ID", secret: "INSTAGRAM_APP_SECRET" },
   threads: { id: "THREADS_APP_ID", secret: "THREADS_APP_SECRET" },
   tiktok: { id: "TIKTOK_CLIENT_KEY", secret: "TIKTOK_CLIENT_SECRET" },
   pinterest: { id: "PINTEREST_APP_ID", secret: "PINTEREST_APP_SECRET" },
+  bluesky: { secret: "BLUESKY_PRIVATE_KEY", notNeededLocally: true },
+  mastodon: {},
 };
+
+const isLocal = () => /^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(siteUrl());
 
 async function platformApp(provider: string): Promise<AppCredentials | null> {
   const names = APPS[provider];
   if (!names) return null;
-  const [clientId, clientSecret] = await Promise.all([secret(names.id), secret(names.secret)]);
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
+  const [clientId, clientSecret] = await Promise.all([
+    names.id ? secret(names.id) : "",
+    names.secret ? secret(names.secret) : "",
+  ]);
+  const missing = (names.id && !clientId) || (names.secret && !clientSecret);
+  if (missing && !(names.notNeededLocally && isLocal())) return null;
+  return { clientId: clientId ?? "", clientSecret: clientSecret ?? "" };
 }
 
 async function requiredApp(provider: string): Promise<AppCredentials> {
@@ -91,7 +107,13 @@ export async function connectableProviders(): Promise<string[]> {
 /** Who started a connect attempt: the Channels page, or an agent through connect_channel. */
 export type ConnectVia = "workspace" | "agent";
 
-type OAuthState = { userId: string; provider: string; via?: ConnectVia };
+type OAuthState = {
+  userId: string;
+  provider: string;
+  via?: ConnectVia;
+  /** What the provider's begin kept for the callback, encrypted (ConnectContext). */
+  context?: string;
+};
 
 /** A channel the consent reached that the user has not connected yet, offered to choose. */
 export type ChannelChoice = {
@@ -119,8 +141,12 @@ type Pending = {
 };
 
 /** The URL to send the user to; the state that proves the callback is ours sits in KV. */
-export async function startConnect(userId: string, provider: string): Promise<string> {
-  return (await beginConnect(userId, provider)).url;
+export async function startConnect(
+  userId: string,
+  provider: string,
+  account?: string,
+): Promise<string> {
+  return (await beginConnect(userId, provider, "workspace", account)).url;
 }
 
 /**
@@ -132,18 +158,47 @@ export async function beginConnect(
   userId: string,
   provider: string,
   via: ConnectVia = "workspace",
+  account?: string,
 ) {
   if (!isProvider(provider)) throw new ServiceError(`Unsupported provider: ${provider}`);
+  const connect = getProvider(provider).connect;
+  const who = account?.trim() || undefined;
+  if (connect.asks?.required && !who)
+    throw new ServiceError(`${connect.asks.label} is needed to connect`, 400, {
+      code: "missing_field",
+      field: "account",
+    });
   const app = await requiredApp(provider);
   const state = randomToken(24);
-  const payload: OAuthState = { userId, provider, via };
+  let url: string;
+  let context: string | undefined;
+  if (connect.begin) {
+    try {
+      const begun = await connect.begin(app, {
+        redirectUri: redirectUri(provider),
+        state,
+        account: who,
+      });
+      url = begun.url;
+      context = await encrypt(JSON.stringify(begun.context));
+    } catch (error) {
+      if (error instanceof ServiceError) throw error;
+      throw new ServiceError(
+        error instanceof Error ? error.message : "Could not start connecting",
+        400,
+        { code: "invalid_field", field: "account" },
+      );
+    }
+  } else if (connect.authorizeUrl) {
+    url = connect.authorizeUrl({
+      clientId: app.clientId,
+      redirectUri: redirectUri(provider),
+      state,
+    });
+  } else throw new Error(`${provider} has no way to connect`);
+  const payload: OAuthState = { userId, provider, via, context };
   await env.KIT_CACHE.put(`oauth:state:${state}`, JSON.stringify(payload), {
     expirationTtl: OAUTH_STATE_TTL,
-  });
-  const url = getProvider(provider).connect.authorizeUrl({
-    clientId: app.clientId,
-    redirectUri: redirectUri(provider),
-    state,
   });
   return { url, state, expiresAt: new Date(Date.now() + OAUTH_STATE_TTL * 1000).toISOString() };
 }
@@ -153,10 +208,15 @@ export async function beginConnect(
  * ten minutes, so whichever page is waiting on this state learns it — even when the
  * consent screen was opened in another browser.
  */
-export async function finishConnect(provider: string, code: string, state: string) {
+export async function finishConnect(
+  provider: string,
+  code: string,
+  state: string,
+  issuer?: string | null,
+) {
   const resultKey = `oauth:result:${state}`;
   try {
-    const { userId, via, result } = await completeConnect(provider, code, state);
+    const { userId, via, result } = await completeConnect(provider, code, state, issuer);
     const stored: StoredResult = { ...result, userId };
     await env.KIT_CACHE.put(resultKey, JSON.stringify(stored), { expirationTtl: OAUTH_STATE_TTL });
     return { ...result, via };
@@ -191,6 +251,7 @@ async function completeConnect(
   provider: string,
   code: string,
   state: string,
+  issuer?: string | null,
 ): Promise<{
   userId: string;
   via: ConnectVia;
@@ -200,7 +261,12 @@ async function completeConnect(
   const saved = await env.KIT_CACHE.get(key);
   if (!saved) throw new ServiceError("This sign-in link expired — start connecting again", 400);
   await env.KIT_CACHE.delete(key); // one use only
-  const { userId, provider: expected, via = "workspace" } = JSON.parse(saved) as OAuthState;
+  const {
+    userId,
+    provider: expected,
+    via = "workspace",
+    context,
+  } = JSON.parse(saved) as OAuthState;
   if (expected !== provider) throw new ServiceError("Provider mismatch", 400);
 
   const app = await requiredApp(provider);
@@ -208,6 +274,8 @@ async function completeConnect(
   const { grant, accounts } = await getProvider(provider).connect.exchangeCode(app, {
     code,
     redirectUri: redirectUri(provider),
+    context: context ? JSON.parse(await decrypt(context)) : undefined,
+    issuer,
   });
 
   const connected = new Set(

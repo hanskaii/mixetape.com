@@ -97,13 +97,13 @@ export async function mediaStream(
  * A stored image as JPEG, made at the edge by Cloudflare Image Transformations from the
  * public URL — for platforms that take JPEG only. At most 1440 px wide, Instagram's limit.
  */
-export function jpegUrl(url: string): string {
+export function jpegUrl(url: string, width = 1440, quality = 92): string {
   const key = bucketKey(url);
   if (!key) return url;
   const base = (env.MEDIA_PUBLIC_URL ?? "").replace(/\/$/, "");
   if (!base) throw new Error("MEDIA_PUBLIC_URL is not set, so stored media has no public URL");
   const path = key.split("/").map(encodeURIComponent).join("/");
-  return `${base}/cdn-cgi/image/format=jpeg,quality=92,fit=scale-down,width=1440/${path}`;
+  return `${base}/cdn-cgi/image/format=jpeg,quality=${quality},fit=scale-down,width=${width}/${path}`;
 }
 
 /**

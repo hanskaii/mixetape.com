@@ -162,7 +162,7 @@ describe("facebook comments and captions", () => {
 describe("facebook.connect", () => {
   it("asks for the Page permissions on Facebook's own dialog", () => {
     const url = new URL(
-      facebook.connect.authorizeUrl({ clientId: "app", redirectUri: "https://m/cb", state: "s" }),
+      facebook.connect.authorizeUrl!({ clientId: "app", redirectUri: "https://m/cb", state: "s" }),
     );
     expect(url.origin + url.pathname).toBe("https://www.facebook.com/v25.0/dialog/oauth");
     expect(url.searchParams.get("scope")?.split(",")).toContain("pages_manage_posts");

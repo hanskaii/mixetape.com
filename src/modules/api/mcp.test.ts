@@ -262,7 +262,7 @@ describe("connecting channels over MCP", () => {
     const response = (await call("connect_channel", { platform: "facebook" })) as {
       result: { content: { text: string }[] };
     };
-    expect(social.beginConnect).toHaveBeenCalledWith("user-1", "facebook", "agent");
+    expect(social.beginConnect).toHaveBeenCalledWith("user-1", "facebook", "agent", undefined);
     expect(JSON.parse(response.result.content[0].text)).toEqual({
       url: "https://www.facebook.com/v25.0/dialog/oauth?state=s1",
       state: "s1",

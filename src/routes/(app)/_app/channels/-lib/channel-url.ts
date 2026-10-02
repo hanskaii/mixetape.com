@@ -20,6 +20,13 @@ export function channelUrl(account: {
       return name && `https://www.threads.com/@${name}`;
     case "pinterest":
       return name && `https://www.pinterest.com/${name}`;
+    case "bluesky":
+      return `https://bsky.app/profile/${id}`;
+    case "mastodon": {
+      // @user@server: the profile lives on the account's own server.
+      const [user, server] = (account.handle ?? "").replace(/^@/, "").split("@");
+      return user && server ? `https://${server}/@${encodeURIComponent(user)}` : null;
+    }
     default:
       return null;
   }

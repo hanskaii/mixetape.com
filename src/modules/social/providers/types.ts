@@ -61,15 +61,39 @@ export type TokenGrant = {
   scopes: string[];
 };
 
+/** What a connect attempt carries from its start to its callback (begin → exchangeCode). */
+export type ConnectContext = Record<string, JsonValue>;
+
 export interface ConnectCapability {
   /** The permissions mixetape asks for; an account granted fewer must reconnect. */
   readonly scopes: readonly string[];
+  /**
+   * Who the person is, asked before the consent screen: the Mastodon server their account
+   * lives on, a Bluesky handle. Absent when the platform has one sign-in for everyone.
+   */
+  readonly asks?: { label: string; placeholder: string; required: boolean };
   /** The platform's consent page for this app. */
-  authorizeUrl(input: { clientId: string; redirectUri: string; state: string }): string;
+  authorizeUrl?(input: { clientId: string; redirectUri: string; state: string }): string;
+  /**
+   * For a consent that needs a round trip first — registering with the person's Mastodon
+   * server, Bluesky's pushed authorization request: the consent page, and what the callback
+   * will need (kept encrypted with the state). Used instead of authorizeUrl.
+   */
+  begin?(
+    app: AppCredentials,
+    input: { redirectUri: string; state: string; account?: string },
+  ): Promise<{ url: string; context: ConnectContext }>;
   /** Trades the callback's code for tokens and the accounts they reach. */
   exchangeCode(
     app: AppCredentials,
-    input: { code: string; redirectUri: string },
+    input: {
+      code: string;
+      redirectUri: string;
+      /** What begin kept for this attempt. */
+      context?: ConnectContext;
+      /** The callback's `iss`, which a platform may send to name who answered. */
+      issuer?: string | null;
+    },
   ): Promise<{ grant: TokenGrant; accounts: ConnectedAccount[] }>;
   /**
    * A fresh access token, and a new refresh token when the platform rotates it; throws

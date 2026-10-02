@@ -446,7 +446,8 @@ export function PostPreview(props: PreviewProps) {
       </div>
     );
 
-  if (provider === "threads")
+  // Threads, Bluesky and Mastodon: text first, the media under it.
+  if (provider === "threads" || provider === "bluesky" || provider === "mastodon")
     return (
       <div {...stylex.props(styles.card)}>
         <div {...stylex.props(styles.thread)}>

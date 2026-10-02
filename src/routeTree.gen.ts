@@ -36,6 +36,7 @@ import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
+import { Route as ApiConnectBlueskyClientMetadataDotjsonRouteImport } from './routes/api/connect/bluesky.client-metadata[.]json'
 import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/file/$'
 
 const publicRouteRoute = publicRouteRouteImport.update({
@@ -172,6 +173,12 @@ const ApiConnectProviderCallbackRoute =
     path: '/callback',
     getParentRoute: () => ApiConnectProviderRoute,
   } as any)
+const ApiConnectBlueskyClientMetadataDotjsonRoute =
+  ApiConnectBlueskyClientMetadataDotjsonRouteImport.update({
+    id: '/api/connect/bluesky/client-metadata.json',
+    path: '/api/connect/bluesky/client-metadata.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiStorageFileSplatRoute = ApiStorageFileSplatRouteImport.update({
   id: '/api/storage/file/$',
   path: '/api/storage/file/$',
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
@@ -227,6 +235,7 @@ export interface FileRoutesByTo {
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
@@ -258,6 +267,7 @@ export interface FileRoutesById {
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
   '/(app)/_app/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/api-keys/'
     | '/channels/'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/api-keys'
     | '/channels'
@@ -346,6 +358,7 @@ export interface FileRouteTypes {
     | '/(app)/_app/settings/account'
     | '/(app)/_app/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
@@ -367,6 +380,7 @@ export interface RootRouteChildren {
   ApiConnectProviderRoute: typeof ApiConnectProviderRouteWithChildren
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
+  ApiConnectBlueskyClientMetadataDotjsonRoute: typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   ApiStorageFileSplatRoute: typeof ApiStorageFileSplatRoute
 }
 
@@ -561,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectProviderCallbackRouteImport
       parentRoute: typeof ApiConnectProviderRoute
     }
+    '/api/connect/bluesky/client-metadata.json': {
+      id: '/api/connect/bluesky/client-metadata.json'
+      path: '/api/connect/bluesky/client-metadata.json'
+      fullPath: '/api/connect/bluesky/client-metadata.json'
+      preLoaderRoute: typeof ApiConnectBlueskyClientMetadataDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/storage/file/$': {
       id: '/api/storage/file/$'
       path: '/api/storage/file/$'
@@ -643,6 +664,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectProviderRoute: ApiConnectProviderRouteWithChildren,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
+  ApiConnectBlueskyClientMetadataDotjsonRoute:
+    ApiConnectBlueskyClientMetadataDotjsonRoute,
   ApiStorageFileSplatRoute: ApiStorageFileSplatRoute,
 }
 export const routeTree = rootRouteImport
