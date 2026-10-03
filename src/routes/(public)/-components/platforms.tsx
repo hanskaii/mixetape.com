@@ -28,8 +28,8 @@ const PLATFORMS = [
   { name: "Facebook", Icon: FacebookLogo, color: "bg-[#1877f2]", soon: false },
   { name: "Pinterest", Icon: PinterestLogo, color: "bg-[#e60023]", soon: false },
   // Built; "soon" until their first live post has gone out.
-  { name: "Bluesky", Icon: Butterfly, color: "bg-[#1185fe]", soon: true },
-  { name: "Mastodon", Icon: MastodonLogo, color: "bg-[#6364ff]", soon: true },
+  { name: "Bluesky", Icon: Butterfly, color: "bg-[#1185fe]", soon: false },
+  { name: "Mastodon", Icon: MastodonLogo, color: "bg-[#6364ff]", soon: false },
 ] as const;
 
 const styles = stylex.create({

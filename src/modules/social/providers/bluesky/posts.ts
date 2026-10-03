@@ -165,7 +165,7 @@ async function uploadImages(session: Session, media: MediaItem[], alts: string[]
 type JobStatus = { jobId?: string; state?: string; blob?: Blob; error?: string; message?: string };
 
 /** A video through Bluesky's video service, which processes it before it can be posted. */
-async function uploadVideo(session: Session, item: MediaItem, alt?: string) {
+export async function uploadVideo(session: Session, item: MediaItem, alt?: string) {
   const { stream, size, contentType } = await mediaStream(item.url);
   if (size > 100 * 1024 * 1024)
     throw new PermanentPublishError("Bluesky takes videos up to 100 MB");
@@ -188,12 +188,25 @@ async function uploadVideo(session: Session, item: MediaItem, alt?: string) {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": contentType },
     body: readable,
   });
-  let job = (await res.json().catch(() => ({}))) as JobStatus;
+  // It answers { jobStatus }; a plain XRPC error is { error, message } instead.
+  const text = await res.text();
+  const body = ((): JobStatus & { jobStatus?: JobStatus } => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return {};
+    }
+  })();
+  let job: JobStatus = body.jobStatus ?? body;
   // The same video uploaded before answers 409 with its job.
-  if (!res.ok && !(res.status === 409 && job.jobId))
+  if (!res.ok && !(res.status === 409 && job.jobId)) {
+    const reason = job.error ?? body.error;
     throw new PermanentPublishError(
-      `Bluesky's video service refused the video: ${job.message ?? job.error ?? res.status}`,
+      reason === "unconfirmed_email"
+        ? "Bluesky takes videos only from accounts with a confirmed email: confirm it in Bluesky (Settings → Account), then retry"
+        : `Bluesky's video service refused the video (${res.status}): ${job.message ?? body.message ?? reason ?? (text.trim().slice(0, 300) || "no reason given")}`,
     );
+  }
 
   const until = Date.now() + MAX_WAIT_MS;
   while (!job.blob) {

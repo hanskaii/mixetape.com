@@ -603,8 +603,16 @@ export async function resolveMedia(
       })
     : [];
   const facts = checked.map((url): FileFacts => {
+    if (!url.startsWith("r2://")) return { kind: kindFromUrl(url) };
+    // Every stored file is indexed; one that is not was deleted (its post went out, or it
+    // sat unused for a day), so the post would fail at go-live — refuse it now.
     const file = indexed.find((candidate) => `r2://${candidate.key}` === url);
-    if (!file) return { kind: kindFromUrl(url) };
+    if (!file)
+      throw new ServiceError(
+        `${url.split("/").pop()} is no longer in storage — upload it again`,
+        404,
+        { code: "not_found" },
+      );
     if (file.status !== "ready")
       throw new ServiceError(`${file.name} is not ready — finish its upload first`, 409, {
         code: "file_not_ready",
