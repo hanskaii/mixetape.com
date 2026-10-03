@@ -6,7 +6,7 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { authClient } from "#/modules/auth/auth-client";
 import { useRouter } from "@tanstack/react-router";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { Spinner } from "#/components/ui/spinner";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -165,7 +165,7 @@ export function LoginModal({
               className="w-full flex items-center justify-center gap-2 h-9 text-xs font-semibold cursor-pointer"
             >
               {socialLoading === "google" ? (
-                <SpinnerGap className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
               ) : (
                 <GoogleIcon className="size-3.5" />
               )}
@@ -180,7 +180,7 @@ export function LoginModal({
               className="w-full flex items-center justify-center gap-2 h-9 text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white cursor-pointer"
             >
               {socialLoading === "github" ? (
-                <SpinnerGap className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
               ) : (
                 <GithubIcon className="size-3.5" />
               )}

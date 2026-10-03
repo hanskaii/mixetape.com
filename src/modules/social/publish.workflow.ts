@@ -68,8 +68,12 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         async () => publish(postId, event.instanceId),
       );
     } catch (error) {
-      // Retries are exhausted, or the error was permanent: the post says why.
-      const message = error instanceof Error ? error.message : String(error);
+      // Retries are exhausted, or the error was permanent: the post says why — without the
+      // "NonRetryableError: " the workflow runtime puts in front of a step's error.
+      const message = (error instanceof Error ? error.message : String(error)).replace(
+        /^(?:NonRetryableError|Error):\s*/,
+        "",
+      );
       await step.do("record failure", async () => {
         await updatePost(postId, { status: "failed", error: message.slice(0, 1000) });
       });

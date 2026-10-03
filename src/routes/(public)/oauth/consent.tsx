@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { SpinnerGap } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { siteConfig } from "#/config/site";
 import { authClient } from "#/modules/auth/auth-client";
 import { getConsentRequest } from "#/modules/oauth/oauth.fn";
 import { follow, OAuthCard, OAuthError, styles } from "./-components/oauth-card";
+import { Spinner } from "#/components/ui/spinner";
 
 /**
  * Better Auth's consent page (mcp plugin, auth.server.ts): an MCP client asks to use the
@@ -108,10 +108,10 @@ function ConsentPage() {
       {error && <OAuthError message={error} />}
       <div {...stylex.props(styles.actions)}>
         <Button variant="outline" disabled={busy !== null} onClick={() => decide(false)}>
-          {busy === "deny" && <SpinnerGap className="animate-spin" />} Deny
+          {busy === "deny" && <Spinner />} Deny
         </Button>
         <Button disabled={busy !== null || chosen.length === 0} onClick={() => decide(true)}>
-          {busy === "allow" && <SpinnerGap className="animate-spin" />} Allow
+          {busy === "allow" && <Spinner />} Allow
         </Button>
       </div>
     </OAuthCard>

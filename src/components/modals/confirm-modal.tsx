@@ -6,8 +6,9 @@ import {
   ModalTitle,
   ModalDescription,
 } from "#/components/ui/modal";
-import { Warning, SpinnerGap as Loader2 } from "@phosphor-icons/react";
+import { Warning } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import { Spinner } from "#/components/ui/spinner";
 
 export interface ConfirmModalProps {
   open?: boolean;
@@ -93,7 +94,7 @@ export function ConfirmModal({
           >
             {loading ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
                 <span>Processing...</span>
               </>
             ) : (

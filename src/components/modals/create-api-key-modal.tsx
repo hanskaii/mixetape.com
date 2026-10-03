@@ -1,11 +1,12 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Check, Copy, SpinnerGap } from "@phosphor-icons/react";
+import { Check, Copy } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { colors } from "../ui/tokens.stylex";
 import { createApiKey } from "#/modules/social/social.fn";
+import { Spinner } from "#/components/ui/spinner";
 
 export interface CreateApiKeyModalProps {
   /** Permission → what it allows (API_SCOPES). */
@@ -169,7 +170,7 @@ export function CreateApiKeyModal({ scopes, baseUrl, onClose, onCreated }: Creat
             Cancel
           </Button>
           <Button type="submit" disabled={busy || chosen.length === 0}>
-            {busy && <SpinnerGap className="animate-spin" />} Create key
+            {busy && <Spinner />} Create key
           </Button>
         </div>
       </form>

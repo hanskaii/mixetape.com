@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import { UploadSimple, Check, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
+import { UploadSimple, Check, WarningCircle } from "@phosphor-icons/react";
 import { authClient } from "#/modules/auth/auth-client";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
 import { Button } from "#/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
 import { uploadAvatar } from "#/modules/storage/browser-upload";
+import { Spinner } from "#/components/ui/spinner";
 
 export const Route = createFileRoute("/(app)/_app/settings/profile")({
   loader: async () => {
@@ -176,7 +177,7 @@ function ProfileSettingsPage() {
                   >
                     {isUploading ? (
                       <>
-                        <SpinnerGap className="size-3 animate-spin" />
+                        <Spinner className="size-3" />
                         <span>Uploading...</span>
                       </>
                     ) : (
@@ -263,7 +264,7 @@ function ProfileSettingsPage() {
             >
               {isSaving ? (
                 <>
-                  <SpinnerGap className="size-3.5 animate-spin" />
+                  <Spinner className="size-3.5" />
                   <span>Saving...</span>
                 </>
               ) : (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { Check, CheckCircle, SpinnerGap, Warning, WarningCircle } from "@phosphor-icons/react";
+import { Check, CheckCircle, Warning, WarningCircle } from "@phosphor-icons/react";
 import { AvatarStack } from "#/components/ui/avatar-stack";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -22,6 +22,7 @@ import { selectionSummary } from "../-lib/format";
 import { PostPreview } from "./post-preview";
 import { PublishButton } from "./publish-button";
 import { PlatformForm } from "./platform-form";
+import { Spinner } from "#/components/ui/spinner";
 
 type Values = Record<string, JsonValue>;
 type Account = {
@@ -58,15 +59,7 @@ function tomorrow() {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:00`;
 }
 
-const turn = stylex.keyframes({ to: { transform: "rotate(360deg)" } });
-
 const styles = stylex.create({
-  spin: {
-    animationDuration: "900ms",
-    animationIterationCount: "infinite",
-    animationName: turn,
-    animationTimingFunction: "linear",
-  },
   modal: { maxWidth: "64rem", padding: 0 },
   frame: { display: "flex", flexDirection: "column", maxHeight: "90vh" },
   // The form, and beside it on wide screens the post as it will look.
@@ -644,7 +637,7 @@ export function PublishModal({
 
               {!plan ? (
                 <p {...stylex.props(styles.quiet)}>
-                  <SpinnerGap {...stylex.props(styles.spin)} /> Checking where this fits…
+                  <Spinner /> Checking where this fits…
                 </p>
               ) : fitting.length ? (
                 <div {...stylex.props(styles.channels)}>

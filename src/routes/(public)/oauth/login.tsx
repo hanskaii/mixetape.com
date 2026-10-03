@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { SpinnerGap } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { useModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
 import { authClient } from "#/modules/auth/auth-client";
 import { Route as RootRoute } from "#/routes/__root";
 import { follow, OAuthCard, OAuthError, styles } from "./-components/oauth-card";
+import { Spinner } from "#/components/ui/spinner";
 
 /**
  * Better Auth's login page for the OAuth flow (mcp plugin, auth.server.ts): an MCP client
@@ -44,7 +44,7 @@ function LoginPage() {
     <OAuthCard title="Sign in to connect an app">
       {signedIn && !error ? (
         <p {...stylex.props(styles.text)}>
-          <SpinnerGap className="animate-spin" /> Continuing…
+          <Spinner /> Continuing…
         </p>
       ) : (
         <>

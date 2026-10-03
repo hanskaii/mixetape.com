@@ -1,12 +1,11 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { CalendarBlank, CaretDown, Check, PaperPlaneTilt, SpinnerGap } from "@phosphor-icons/react";
+import { CalendarBlank, CaretDown, Check, PaperPlaneTilt } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
-
-const turn = stylex.keyframes({ to: { transform: "rotate(360deg)" } });
+import { Spinner } from "#/components/ui/spinner";
 
 const styles = stylex.create({
   // The when and the button read as one control.
@@ -41,12 +40,6 @@ const styles = stylex.create({
   whenText: { flexGrow: 1, overflow: "hidden", textAlign: "start", textOverflow: "ellipsis" },
   caret: { color: colors.mutedForeground, flexShrink: 0 },
   go: { borderRadius: 0, flexShrink: 0, height: "100%", paddingInline: "1rem" },
-  spin: {
-    animationDuration: "900ms",
-    animationIterationCount: "infinite",
-    animationName: turn,
-    animationTimingFunction: "linear",
-  },
   menu: { gap: "0.25rem", padding: "0.375rem", width: "17rem" },
   option: {
     alignItems: "center",
@@ -168,7 +161,7 @@ export function PublishButton({
         </PopoverContent>
       </Popover>
       <Button onClick={onSubmit} disabled={disabled} style={styles.go}>
-        {busy && <SpinnerGap {...stylex.props(styles.spin)} />}
+        {busy && <Spinner />}
         {when === "now" ? "Publish" : "Schedule"}
         {count > 1 ? ` · ${count}` : ""}
       </Button>

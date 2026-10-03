@@ -1,18 +1,7 @@
 import { useEffect, useState } from "react";
-import { CheckCircle, Info, SpinnerGap, Warning, WarningCircle } from "@phosphor-icons/react";
-import * as stylex from "@stylexjs/stylex";
+import { CheckCircle, Info, Warning, WarningCircle } from "@phosphor-icons/react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
-
-const turn = stylex.keyframes({ to: { transform: "rotate(360deg)" } });
-
-const styles = stylex.create({
-  spin: {
-    animationDuration: "900ms",
-    animationIterationCount: "infinite",
-    animationName: turn,
-    animationTimingFunction: "linear",
-  },
-});
+import { Spinner } from "#/components/ui/spinner";
 
 /** The theme the page is in: the .dark class the theme toggle sets on <html>. */
 function usePageTheme(): "light" | "dark" {
@@ -42,7 +31,7 @@ export function Toaster(props: ToasterProps) {
         info: <Info size={16} />,
         warning: <Warning size={16} />,
         error: <WarningCircle size={16} weight="fill" />,
-        loading: <SpinnerGap size={16} {...stylex.props(styles.spin)} />,
+        loading: <Spinner size={16} />,
       }}
       style={
         {

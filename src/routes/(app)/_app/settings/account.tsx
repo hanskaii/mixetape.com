@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Copy,
   Check,
-  SpinnerGap,
   WarningCircle,
   DownloadSimple,
 } from "@phosphor-icons/react";
@@ -20,6 +19,7 @@ import { Switch } from "#/components/ui/switch";
 import { Modal, ModalHeader, ModalTitle, ModalDescription } from "#/components/ui/modal";
 import { useConfirmModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
+import { Spinner } from "#/components/ui/spinner";
 
 export const Route = createFileRoute("/(app)/_app/settings/account")({
   head: () => ({
@@ -482,7 +482,7 @@ function AccountSettingsPage() {
                         className="h-7 px-2 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-md cursor-pointer"
                       >
                         {isLinkingProvider === "google" ? (
-                          <SpinnerGap className="size-3 animate-spin" />
+                          <Spinner className="size-3" />
                         ) : (
                           <span>Disconnect</span>
                         )}
@@ -506,7 +506,7 @@ function AccountSettingsPage() {
                         }`}
                       >
                         {isLinkingProvider === "google" ? (
-                          <SpinnerGap className="size-3 animate-spin" />
+                          <Spinner className="size-3" />
                         ) : (
                           <span>Connect</span>
                         )}
@@ -546,7 +546,7 @@ function AccountSettingsPage() {
                         className="h-7 px-2 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-md cursor-pointer"
                       >
                         {isLinkingProvider === "github" ? (
-                          <SpinnerGap className="size-3 animate-spin" />
+                          <Spinner className="size-3" />
                         ) : (
                           <span>Disconnect</span>
                         )}
@@ -570,7 +570,7 @@ function AccountSettingsPage() {
                         }`}
                       >
                         {isLinkingProvider === "github" ? (
-                          <SpinnerGap className="size-3 animate-spin" />
+                          <Spinner className="size-3" />
                         ) : (
                           <span>Connect</span>
                         )}
@@ -680,7 +680,7 @@ function AccountSettingsPage() {
                     />
                   ) : (
                     <div className="size-full flex flex-col items-center justify-center gap-1 text-muted-foreground">
-                      <SpinnerGap className="size-5 animate-spin text-editorial" />
+                      <Spinner className="size-5 text-editorial" />
                       <span className="text-[10px] font-mono text-muted-foreground">
                         Loading...
                       </span>

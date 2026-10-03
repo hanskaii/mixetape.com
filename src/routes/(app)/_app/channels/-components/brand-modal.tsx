@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { SpinnerGap } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { saveBrand } from "#/modules/social/social.fn";
+import { Spinner } from "#/components/ui/spinner";
 
 type Channel = { id: string; provider: string; name: string; avatar: string | null };
 type Brand = { id: string; name: string; accountIds: string[] };
@@ -99,7 +99,7 @@ export function BrandModal({
             Cancel
           </Button>
           <Button type="submit" disabled={busy || !name.trim()}>
-            {busy && <SpinnerGap className="animate-spin" />} {brand ? "Save" : "Create"}
+            {busy && <Spinner />} {brand ? "Save" : "Create"}
           </Button>
         </div>
       </form>

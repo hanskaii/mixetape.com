@@ -1,11 +1,12 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Check, Copy, SpinnerGap } from "@phosphor-icons/react";
+import { Check, Copy } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
 import { colors } from "../ui/tokens.stylex";
 import { addWebhook } from "#/modules/webhooks/webhooks.fn";
+import { Spinner } from "#/components/ui/spinner";
 
 export interface CreateWebhookModalProps {
   /** Event → what it means (WEBHOOK_EVENTS). */
@@ -165,7 +166,7 @@ export function CreateWebhookModal({ events, onClose, onCreated }: CreateWebhook
             Cancel
           </Button>
           <Button type="submit" disabled={busy || !url || chosen.length === 0}>
-            {busy && <SpinnerGap className="animate-spin" />} Add webhook
+            {busy && <Spinner />} Add webhook
           </Button>
         </div>
       </form>

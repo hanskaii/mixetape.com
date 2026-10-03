@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
+import { Check, Copy, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";
@@ -10,6 +10,7 @@ import {
 } from "#/modules/social/social.fn";
 import type { ChannelChoice } from "#/modules/social/social.service";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
+import { Spinner } from "#/components/ui/spinner";
 
 export interface ConnectChannelModalProps {
   open?: boolean;
@@ -202,7 +203,7 @@ export function ConnectChannelModal({
               Cancel
             </Button>
             <Button onClick={add} disabled={!picked.length || adding}>
-              {adding && <SpinnerGap className="animate-spin" />}
+              {adding && <Spinner />}
               {picked.length > 1 ? `Add ${picked.length} channels` : "Add channel"}
             </Button>
           </div>
@@ -235,7 +236,7 @@ export function ConnectChannelModal({
             </>
           ) : (
             <>
-              <SpinnerGap className="size-4 shrink-0 animate-spin text-editorial" />
+              <Spinner className="size-4 shrink-0 text-editorial" />
               <span className="text-muted-foreground">
                 {!state
                   ? "Preparing the sign-in link…"

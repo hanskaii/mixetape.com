@@ -7,7 +7,6 @@ import {
   CaretDown,
   ChatCircleDots,
   Globe,
-  SpinnerGap,
   SquaresFour,
   X,
 } from "@phosphor-icons/react";
@@ -33,6 +32,7 @@ import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-
 import { useConfirmModal } from "#/components/providers/modal-providers";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { cancelScheduledPost, getQueueData, retryFailedPost } from "#/modules/social/social.fn";
+import { Spinner } from "#/components/ui/spinner";
 
 export type PublishData = Awaited<ReturnType<typeof getQueueData>>;
 type Post = PublishData["posts"][number];
@@ -250,8 +250,20 @@ export function PublishView({ accounts, posts }: PublishData) {
             <p className="truncate text-xs text-muted-foreground">
               {account?.name ?? "Channel unavailable"}
               {postFormat(post) ? ` · ${postFormat(post)}` : ""}
-              {post.error ? ` · ${post.error}` : ""}
             </p>
+            {/* The whole reason, under the post: failed in red; a scheduled post that hit a
+                hiccup says it will try again; anything else (e.g. not public yet) plainly. */}
+            {post.error && (
+              <p
+                className={
+                  post.status === "failed"
+                    ? "mt-1 text-xs break-words text-destructive"
+                    : "mt-1 text-xs break-words text-muted-foreground"
+                }
+              >
+                {post.status === "scheduled" ? `Trying again: ${post.error}` : post.error}
+              </p>
+            )}
           </div>
           <Badge variant={status.variant}>{status.label}</Badge>
           {post.platformUrl && post.status !== "cancelled" && (
@@ -282,11 +294,7 @@ export function PublishView({ accounts, posts }: PublishData) {
               disabled={retrying === post.id}
               onClick={() => retry(post)}
             >
-              {retrying === post.id ? (
-                <SpinnerGap className="animate-spin" />
-              ) : (
-                <ArrowCounterClockwise />
-              )}
+              {retrying === post.id ? <Spinner /> : <ArrowCounterClockwise />}
             </Button>
           )}
         </div>
