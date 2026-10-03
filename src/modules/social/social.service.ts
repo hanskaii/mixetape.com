@@ -76,7 +76,7 @@ const APPS: Partial<Record<string, AppSecrets>> = {
 
 const isLocal = () => /^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(siteUrl());
 
-async function platformApp(provider: string): Promise<AppCredentials | null> {
+export async function platformApp(provider: string): Promise<AppCredentials | null> {
   const names = APPS[provider];
   if (!names) return null;
   const [clientId, clientSecret] = await Promise.all([
@@ -366,6 +366,7 @@ async function saveAccounts(
       refreshToken: refreshToken ?? existing?.refreshToken ?? null,
       accessTokenExpiresAt: expiresAt,
       scopes,
+      grantedBy: account.grantedBy ?? existing?.grantedBy ?? null,
       status: "active",
       revokedAt: null,
       updatedAt: new Date(),

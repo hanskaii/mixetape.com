@@ -106,6 +106,8 @@ export const instagramConnect: ConnectCapability = {
         {
           // The professional account's id, which the publishing endpoints take.
           platformAccountId: String(me.user_id ?? short.user_id),
+          // The app-scoped user id the token was issued for; Meta's callbacks name it.
+          ...(short.user_id !== undefined && { grantedBy: String(short.user_id) }),
           name: me.name || me.username || "Instagram",
           handle: me.username ? `@${me.username}` : undefined,
           avatar: me.profile_picture_url,

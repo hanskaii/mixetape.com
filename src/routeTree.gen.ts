@@ -16,6 +16,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as appAppRouteRouteImport } from './routes/(app)/_app/route'
 import { Route as publicIndexRouteImport } from './routes/(public)/index'
+import { Route as publicDataDeletionRouteImport } from './routes/(public)/data-deletion'
 import { Route as publicPricingRouteImport } from './routes/(public)/pricing'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
 import { Route as publicTermsRouteImport } from './routes/(public)/terms'
@@ -36,6 +37,8 @@ import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
+import { Route as ApiConnectProviderDataDeletionRouteImport } from './routes/api/connect/$provider.data-deletion'
+import { Route as ApiConnectProviderDeauthorizeRouteImport } from './routes/api/connect/$provider.deauthorize'
 import { Route as ApiConnectBlueskyClientMetadataDotjsonRouteImport } from './routes/api/connect/bluesky.client-metadata[.]json'
 import { Route as ApiStorageFileSplatRouteImport } from './routes/api/storage/file/$'
 
@@ -70,6 +73,11 @@ const appAppRouteRoute = appAppRouteRouteImport.update({
 const publicIndexRoute = publicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicDataDeletionRoute = publicDataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
   getParentRoute: () => publicRouteRoute,
 } as any)
 const publicPricingRoute = publicPricingRouteImport.update({
@@ -173,6 +181,18 @@ const ApiConnectProviderCallbackRoute =
     path: '/callback',
     getParentRoute: () => ApiConnectProviderRoute,
   } as any)
+const ApiConnectProviderDataDeletionRoute =
+  ApiConnectProviderDataDeletionRouteImport.update({
+    id: '/data-deletion',
+    path: '/data-deletion',
+    getParentRoute: () => ApiConnectProviderRoute,
+  } as any)
+const ApiConnectProviderDeauthorizeRoute =
+  ApiConnectProviderDeauthorizeRouteImport.update({
+    id: '/deauthorize',
+    path: '/deauthorize',
+    getParentRoute: () => ApiConnectProviderRoute,
+  } as any)
 const ApiConnectBlueskyClientMetadataDotjsonRoute =
   ApiConnectBlueskyClientMetadataDotjsonRouteImport.update({
     id: '/api/connect/bluesky/client-metadata.json',
@@ -190,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/data-deletion': typeof publicDataDeletionRoute
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
@@ -206,6 +227,8 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
+  '/api/connect/$provider/deauthorize': typeof ApiConnectProviderDeauthorizeRoute
   '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
@@ -219,6 +242,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/data-deletion': typeof publicDataDeletionRoute
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
   '/terms': typeof publicTermsRoute
@@ -235,6 +259,8 @@ export interface FileRoutesByTo {
   '/settings/account': typeof appAppSettingsAccountRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
+  '/api/connect/$provider/deauthorize': typeof ApiConnectProviderDeauthorizeRoute
   '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
@@ -251,6 +277,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/(app)/_app': typeof appAppRouteRouteWithChildren
+  '/(public)/data-deletion': typeof publicDataDeletionRoute
   '/(public)/pricing': typeof publicPricingRoute
   '/(public)/privacy': typeof publicPrivacyRoute
   '/(public)/terms': typeof publicTermsRoute
@@ -267,6 +294,8 @@ export interface FileRoutesById {
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
   '/(app)/_app/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
+  '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
+  '/api/connect/$provider/deauthorize': typeof ApiConnectProviderDeauthorizeRoute
   '/api/connect/bluesky/client-metadata.json': typeof ApiConnectBlueskyClientMetadataDotjsonRoute
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
@@ -282,6 +311,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/data-deletion'
     | '/pricing'
     | '/privacy'
     | '/terms'
@@ -298,6 +328,8 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/$provider/data-deletion'
+    | '/api/connect/$provider/deauthorize'
     | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/api-keys/'
@@ -311,6 +343,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/data-deletion'
     | '/pricing'
     | '/privacy'
     | '/terms'
@@ -327,6 +360,8 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/$provider/data-deletion'
+    | '/api/connect/$provider/deauthorize'
     | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/api-keys'
@@ -342,6 +377,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/(app)/_app'
+    | '/(public)/data-deletion'
     | '/(public)/pricing'
     | '/(public)/privacy'
     | '/(public)/terms'
@@ -358,6 +394,8 @@ export interface FileRouteTypes {
     | '/(app)/_app/settings/account'
     | '/(app)/_app/settings/profile'
     | '/api/connect/$provider/callback'
+    | '/api/connect/$provider/data-deletion'
+    | '/api/connect/$provider/deauthorize'
     | '/api/connect/bluesky/client-metadata.json'
     | '/api/storage/file/$'
     | '/(app)/_app/api-keys/'
@@ -433,6 +471,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof publicIndexRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/data-deletion': {
+      id: '/(public)/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof publicDataDeletionRouteImport
       parentRoute: typeof publicRouteRoute
     }
     '/(public)/pricing': {
@@ -575,6 +620,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConnectProviderCallbackRouteImport
       parentRoute: typeof ApiConnectProviderRoute
     }
+    '/api/connect/$provider/data-deletion': {
+      id: '/api/connect/$provider/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/api/connect/$provider/data-deletion'
+      preLoaderRoute: typeof ApiConnectProviderDataDeletionRouteImport
+      parentRoute: typeof ApiConnectProviderRoute
+    }
+    '/api/connect/$provider/deauthorize': {
+      id: '/api/connect/$provider/deauthorize'
+      path: '/deauthorize'
+      fullPath: '/api/connect/$provider/deauthorize'
+      preLoaderRoute: typeof ApiConnectProviderDeauthorizeRouteImport
+      parentRoute: typeof ApiConnectProviderRoute
+    }
     '/api/connect/bluesky/client-metadata.json': {
       id: '/api/connect/bluesky/client-metadata.json'
       path: '/api/connect/bluesky/client-metadata.json'
@@ -593,6 +652,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface publicRouteRouteChildren {
+  publicDataDeletionRoute: typeof publicDataDeletionRoute
   publicPricingRoute: typeof publicPricingRoute
   publicPrivacyRoute: typeof publicPrivacyRoute
   publicTermsRoute: typeof publicTermsRoute
@@ -603,6 +663,7 @@ interface publicRouteRouteChildren {
 }
 
 const publicRouteRouteChildren: publicRouteRouteChildren = {
+  publicDataDeletionRoute: publicDataDeletionRoute,
   publicPricingRoute: publicPricingRoute,
   publicPrivacyRoute: publicPrivacyRoute,
   publicTermsRoute: publicTermsRoute,
@@ -642,10 +703,14 @@ const appAppRouteRouteWithChildren = appAppRouteRoute._addFileChildren(
 
 interface ApiConnectProviderRouteChildren {
   ApiConnectProviderCallbackRoute: typeof ApiConnectProviderCallbackRoute
+  ApiConnectProviderDataDeletionRoute: typeof ApiConnectProviderDataDeletionRoute
+  ApiConnectProviderDeauthorizeRoute: typeof ApiConnectProviderDeauthorizeRoute
 }
 
 const ApiConnectProviderRouteChildren: ApiConnectProviderRouteChildren = {
   ApiConnectProviderCallbackRoute: ApiConnectProviderCallbackRoute,
+  ApiConnectProviderDataDeletionRoute: ApiConnectProviderDataDeletionRoute,
+  ApiConnectProviderDeauthorizeRoute: ApiConnectProviderDeauthorizeRoute,
 }
 
 const ApiConnectProviderRouteWithChildren =

@@ -46,6 +46,12 @@ export type AppCredentials = { clientId: string; clientSecret: string };
 /** An account the consent gave access to — a YouTube channel, a Page, a profile. */
 export type ConnectedAccount = {
   platformAccountId: string;
+  /**
+   * The platform's id for the person who gave access, when it is not the account's own — a
+   * Facebook user for a Page, Instagram's app-scoped user id. Meta's deauthorize and
+   * data-deletion callbacks name that person.
+   */
+  grantedBy?: string;
   name: string;
   handle?: string;
   avatar?: string;

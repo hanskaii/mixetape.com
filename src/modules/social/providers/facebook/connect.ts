@@ -1,4 +1,5 @@
 import type { ConnectCapability, ConnectedAccount } from "../types";
+import { graph } from "../meta/graph";
 import { metaAuthorizeUrl, metaLogin, pageGrant, refreshPageToken } from "../meta/login";
 
 /**
@@ -30,10 +31,13 @@ export const facebookConnect: ConnectCapability = {
       SCOPES,
       "id,name,username,access_token,tasks,picture{url}",
     );
+    // The person who gave access: Meta's deauthorize and data-deletion callbacks name them.
+    const me = await graph<{ id: string }>(user.accessToken, "me", { params: { fields: "id" } });
     const accounts: ConnectedAccount[] = pages
       .filter((page) => page.access_token && (page.tasks ?? []).includes("CREATE_CONTENT"))
       .map((page) => ({
         platformAccountId: page.id,
+        grantedBy: me.id,
         name: page.name,
         handle: page.username ? `@${page.username}` : undefined,
         avatar: page.picture?.data?.url,

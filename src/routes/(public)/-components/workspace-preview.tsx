@@ -17,6 +17,7 @@ const account = (id: string, name: string, handle: string): PublishData["account
   userId: "sample",
   provider: "youtube",
   platformAccountId: `UC-${id}`,
+  grantedBy: null,
   name,
   handle,
   avatar: null,

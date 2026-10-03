@@ -108,6 +108,8 @@ describe("instagram", () => {
     expect(accounts).toEqual([
       {
         platformAccountId: "17841400000000001",
+        // The token's app-scoped user, which Meta's deauthorize/data-deletion callbacks name.
+        grantedBy: "901",
         name: "Hans",
         handle: "@hans",
         avatar: undefined,

@@ -140,7 +140,12 @@ function Privacy() {
           stored tokens. Deleting a post removes it from the queue (posts already published stay on
           the platform itself, governed by that platform's own policies). To close your account and
           delete its data — profile, channels and their tokens, posts, files and API keys — write to
-          us at the email below.
+          us at the email below. How to delete your data, including from Facebook, Instagram or
+          Threads:{" "}
+          <a href="/data-deletion" className="text-foreground underline">
+            Delete your data
+          </a>
+          .
         </p>
       </section>
 

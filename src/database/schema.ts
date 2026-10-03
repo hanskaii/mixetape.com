@@ -113,6 +113,9 @@ export const socialAccounts = sqliteTable(
       .references(() => user.id, { onDelete: "cascade" }),
     provider: text("provider").notNull(),
     platformAccountId: text("platform_account_id").notNull(), // YouTube channel id
+    // The platform's id for who gave access, when not the account's own (a Facebook Page's
+    // user); Meta's deauthorize and data-deletion callbacks name that person.
+    grantedBy: text("granted_by"),
     name: text("name").notNull(),
     handle: text("handle"),
     avatar: text("avatar"),
