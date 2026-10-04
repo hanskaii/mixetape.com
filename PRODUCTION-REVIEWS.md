@@ -16,7 +16,7 @@ Status per 4 Oktober 2026.
 
 | Platform | Status sekarang | Yang dibutuhkan untuk production | Kuota / batas yang perlu diperhatikan |
 |---|---|---|---|
-| YouTube | Consent screen **In production**, user cap 13/100; justifikasi scope sudah diisi | Verifikasi OAuth Google (scope sensitif) + audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
+| YouTube | Consent screen **In production**, branding & scope sudah diisi; tinggal video + submit | Verifikasi OAuth Google (scope sensitif) + audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
 | Facebook Pages | Development mode; App Settings + callback sudah diisi | Meta App Review (Advanced Access) + Business Verification | Rate limit per Page, cukup |
 | Instagram | Development mode (hanya Instagram Tester) | Meta App Review + Business Verification | 100 post/24 jam per akun IG |
 | Threads | Development mode (hanya Threads Tester) | Meta App Review per permission + app di-publish | 250 post/24 jam per profil |
@@ -47,18 +47,24 @@ Status per 4 Oktober 2026.
 
 ### 1. Verifikasi OAuth app (wajib agar user lain bisa connect)
 
-**Sudah dikerjakan (4 Okt 2026):** Audience **In production** (user cap **13/100**, seumur
-project); Branding: privacy/terms diperbaiki ke `/privacy` dan `/terms` (sebelumnya 404);
-Data Access: justifikasi `youtube.force-ssl` tersimpan. Verification Center: *data access
-verified*, **branding belum tampil** (perlu submit ulang setelah masalah di bawah beres).
+**Sudah dikerjakan (4 Okt 2026):**
+- Audience **In production**.
+- Branding: privacy/terms diperbaiki ke `/privacy` dan `/terms` (sebelumnya 404).
+- Data Access: justifikasi `youtube.force-ssl` tersimpan.
+- Entri `spectro.hanssn.workers.dev` dihapus dari client spectro (spectro login selalu lewat
+  `spectro.mixetape.com`), dan authorized domain kini hanya `mixetape.com` (sudah
+  terverifikasi di Search Console).
 
-> ⚠️ **Masalah project bersama.** Project Google `mixetape` (50575334904) punya tiga OAuth
-> client: **youtube**, **google login**, dan **spectro.mixetape.com**. Client spectro memakai
-> redirect `spectro.hanssn.workers.dev`, sehingga authorized domain `hanssn.workers.dev`
-> harus tetap ada, padahal domain itu tidak bisa kamu verifikasi (milik Cloudflare). Google
-> juga meminta video demo mencakup **semua** client di project. Saran: pindahkan spectro ke
-> project Google sendiri (atau pakai `spectro.mixetape.com` saja), hapus `hanssn.workers.dev`,
-> lalu submit verifikasi.
+Sisa: rekam video demo, lalu **submit di Verification Center**.
+
+> **User cap 13/100:** batas 100 user ini hanya untuk app yang **belum terverifikasi** dan
+> meminta scope sensitif. Hitungannya tidak pernah direset (user yang disconnect tetap
+> terhitung), tapi begitu verifikasi lolos batas itu tidak berlaku lagi. Jadi submit
+> sebelum mendekati 100.
+>
+> Project ini juga memuat client **google login** dan **spectro.mixetape.com**; keduanya
+> hanya `openid/email/profile`. Di video demo cukup tunjukkan tombol login Google di
+> mixetape dan spectro.
 
 Tanpa verifikasi, user lain melihat layar "Google hasn't verified this app", dan app dengan
 scope sensitif dibatasi **100 user**. Kalau consent screen masih berstatus **Testing**,
@@ -273,7 +279,7 @@ kemungkinan hanya untuk akun business.
 
 1. **Mulai Business Verification Meta sekarang** (paling lama). ~~Halaman `/data-deletion` + callback~~ sudah.
 2. **TikTok:** rekam demo (sandbox) → submit app → kembalikan kredensial production → ajukan audit Content Posting.
-3. **YouTube:** ~~consent screen *In production*~~ → putuskan soal client spectro → rekam demo → submit verifikasi OAuth → isi form audit dan kuota.
+3. **YouTube:** ~~consent screen *In production*~~ → ~~bereskan domain spectro~~ → rekam demo → submit verifikasi OAuth → isi form audit dan kuota.
 4. **Meta:** setelah business verified dan data deletion siap, submit App Review untuk Facebook, Instagram, dan Threads sekaligus (video per permission) → app Live.
 5. **Pinterest:** ~~tunggu Trial~~ → ~~isi secret~~ → ~~deploy mode Sandbox + uji Pin gambar~~ → rekam demo → minta Standard → matikan Sandbox + connect ulang.
 

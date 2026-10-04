@@ -39,19 +39,10 @@ dengan akun uji. Jangan pakai akun pribadi.
 **Sudah diisi oleh Claude (4 Okt 2026), di Google Auth Platform project `mixetape`:**
 - Branding: link privacy diperbaiki ke `/privacy` dan terms ke `/terms` (sebelumnya `/privacy-policy` dan `/tos`, keduanya 404).
 - Data Access: justifikasi scope `youtube.force-ssl` (848/1000 karakter).
-- Status: **In production**, user cap **13/100**. Batas ini seumur project dan tidak bisa direset; setelah 100 user, user baru tidak bisa connect sampai app diverifikasi.
+- Status: **In production**, user cap **13/100**. Batas ini hanya berlaku selama app belum terverifikasi; hitungannya tidak direset, jadi submit sebelum mendekati 100.
+- Client spectro: redirect/origin `spectro.hanssn.workers.dev` dihapus; authorized domain sekarang hanya `mixetape.com`.
 
-**⚠️ Keputusan untuk kamu sebelum submit:**
-1. Project ini juga dipakai **spectro.mixetape.com** (OAuth client sendiri, dengan redirect di
-   `spectro.hanssn.workers.dev`). Google mensyaratkan video demo mencakup **semua OAuth client**
-   di project, dan authorized domain `hanssn.workers.dev` tidak bisa kamu verifikasi di Search
-   Console (milik Cloudflare). Pilihan:
-   - **(Disarankan)** pindahkan spectro ke project Google Cloud sendiri, lalu hapus
-     `hanssn.workers.dev` dari Authorized domains; atau
-   - hapus redirect/origin `spectro.hanssn.workers.dev` dari client spectro (pakai
-     `spectro.mixetape.com` saja), lalu hapus domainnya, dan tampilkan login spectro di video.
-2. **Branding status:** Google menulis "branding is not being shown to users. Resolve the issues
-   … and verify again". Setelah poin 1, buka Verification Center → submit ulang branding.
+**Yang tersisa:** rekam video di bawah, lalu Verification Center → submit (tempel link video).
 
 **Video demo (YouTube, unlisted), naskah:**
 1. Buka `https://mixetape.com`, klik Sign in, login (tampilkan URL di address bar).
@@ -65,8 +56,8 @@ dengan akun uji. Jangan pakai akun pribadi.
    dengan thumbnail, playlist dan caption terpasang.
 6. Komentar: tampilkan daftar komentar video di mixetape dan balas satu komentar.
 7. Analytics: tampilkan views/watch time video dan channel (scope `yt-analytics.readonly`).
-8. Tampilkan juga login Google di mixetape (client "google") dan, kalau spectro masih di
-   project ini, login spectro.
+8. Tampilkan juga tombol login Google di mixetape.com (client "google") dan di
+   spectro.mixetape.com (client spectro); keduanya hanya openid/email/profile.
 
 ---
 
