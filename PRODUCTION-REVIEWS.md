@@ -16,7 +16,7 @@ Status per 4 Oktober 2026.
 
 | Platform | Status sekarang | Yang dibutuhkan untuk production | Kuota / batas yang perlu diperhatikan |
 |---|---|---|---|
-| YouTube | Consent screen **In production**, branding & scope sudah diisi; tinggal video + submit | Verifikasi OAuth Google (scope sensitif) + audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
+| YouTube | **OAuth terverifikasi** (branding + scope) | Audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
 | Facebook Pages | Development mode; App Settings + callback sudah diisi | Meta App Review (Advanced Access) + Business Verification | Rate limit per Page, cukup |
 | Instagram | Development mode (hanya Instagram Tester) | Meta App Review + Business Verification | 100 post/24 jam per akun IG |
 | Threads | Development mode (hanya Threads Tester) | Meta App Review per permission + app di-publish | 250 post/24 jam per profil |
@@ -59,10 +59,12 @@ Status per 4 Oktober 2026.
   dari penolakan branding sebelumnya (privacy kurang, home page, nama app). Setelah
   re-verification, **branding terverifikasi dan sudah dipublish** (logo + nama mixetape tampil
   di consent screen).
-- Scope `youtube.force-ssl` masih **"Approval required"**: user cap 100 tetap berlaku untuk
-  scope ini sampai video demo disubmit dan disetujui.
+- **Verification Center: branding dan data access keduanya terverifikasi.** Dicek di layar
+  consent asli (YouTube, 4 Okt 2026): tanpa layar "app belum diverifikasi", logo dan nama
+  mixetape tampil. User cap 100 tidak berlaku untuk scope yang sudah disetujui. (Label
+  "Approval required" di halaman Data Access hanya label umum bagian scope sensitif.)
 
-Sisa: rekam video demo, lalu **submit di Verification Center**.
+**Verifikasi OAuth Google selesai.** Yang tersisa untuk YouTube hanya kuota (bagian 2).
 
 > **User cap 13/100:** batas 100 user ini hanya untuk app yang **belum terverifikasi** dan
 > meminta scope sensitif. Hitungannya tidak pernah direset (user yang disconnect tetap
@@ -286,7 +288,7 @@ kemungkinan hanya untuk akun business.
 
 1. **Mulai Business Verification Meta sekarang** (paling lama). ~~Halaman `/data-deletion` + callback~~ sudah.
 2. **TikTok:** rekam demo (sandbox) → submit app → kembalikan kredensial production → ajukan audit Content Posting.
-3. **YouTube:** ~~consent screen *In production*~~ → ~~bereskan domain spectro~~ → rekam demo → submit verifikasi OAuth → isi form audit dan kuota.
+3. **YouTube:** ~~verifikasi OAuth~~ selesai → isi form audit dan kuota.
 4. **Meta:** setelah business verified dan data deletion siap, submit App Review untuk Facebook, Instagram, dan Threads sekaligus (video per permission) → app Live.
 5. **Pinterest:** ~~tunggu Trial~~ → ~~isi secret~~ → ~~deploy mode Sandbox + uji Pin gambar~~ → rekam demo → minta Standard → matikan Sandbox + connect ulang.
 

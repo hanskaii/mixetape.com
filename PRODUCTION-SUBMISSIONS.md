@@ -42,7 +42,7 @@ dengan akun uji. Jangan pakai akun pribadi.
 - Status: **In production**, user cap **13/100**. Batas ini hanya berlaku selama app belum terverifikasi; hitungannya tidak direset, jadi submit sebelum mendekati 100.
 - Client spectro: redirect/origin `spectro.hanssn.workers.dev` dihapus; authorized domain sekarang hanya `mixetape.com`.
 
-**Yang tersisa:** rekam video di bawah, lalu Verification Center → submit (tempel link video).
+**Status: selesai.** Branding dan data access terverifikasi (4 Okt 2026); naskah di bawah hanya untuk arsip atau jika Google meminta ulang.
 
 **Video demo (YouTube, unlisted), naskah:**
 1. Buka `https://mixetape.com`, klik Sign in, login (tampilkan URL di address bar).
