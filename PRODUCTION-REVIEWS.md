@@ -8,13 +8,16 @@ Status per 4 Oktober 2026.
 > (YouTube, Facebook, Instagram, Threads, TikTok, Pinterest) masih dalam mode
 > uji/development dan butuh review. Pinterest sudah Trial: connect jalan, Pin lewat API Sandbox. Hampir semua minta **video demo** alur lengkap di
 > mixetape.com.
+>
+> Teks siap-tempel untuk setiap form dan naskah video demonya ada di
+> [PRODUCTION-SUBMISSIONS.md](PRODUCTION-SUBMISSIONS.md).
 
 ## Ringkasan
 
 | Platform | Status sekarang | Yang dibutuhkan untuk production | Kuota / batas yang perlu diperhatikan |
 |---|---|---|---|
-| YouTube | Jalan untuk channel kamu sendiri | Verifikasi OAuth Google (scope sensitif) + audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
-| Facebook Pages | Development mode | Meta App Review (Advanced Access) + Business Verification | Rate limit per Page, cukup |
+| YouTube | Consent screen **In production**, user cap 13/100; justifikasi scope sudah diisi | Verifikasi OAuth Google (scope sensitif) + audit YouTube API untuk kuota lebih | 100 upload/hari **per project**, dibagi semua user |
+| Facebook Pages | Development mode; App Settings + callback sudah diisi | Meta App Review (Advanced Access) + Business Verification | Rate limit per Page, cukup |
 | Instagram | Development mode (hanya Instagram Tester) | Meta App Review + Business Verification | 100 post/24 jam per akun IG |
 | Threads | Development mode (hanya Threads Tester) | Meta App Review per permission + app di-publish | 250 post/24 jam per profil |
 | TikTok | App draft, belum tersimpan | Audit Content Posting API | Sebelum audit: hanya privat, maks 5 user/24 jam |
@@ -43,6 +46,19 @@ Status per 4 Oktober 2026.
 - `https://www.googleapis.com/auth/yt-analytics.readonly`: analytics.
 
 ### 1. Verifikasi OAuth app (wajib agar user lain bisa connect)
+
+**Sudah dikerjakan (4 Okt 2026):** Audience **In production** (user cap **13/100**, seumur
+project); Branding: privacy/terms diperbaiki ke `/privacy` dan `/terms` (sebelumnya 404);
+Data Access: justifikasi `youtube.force-ssl` tersimpan. Verification Center: *data access
+verified*, **branding belum tampil** (perlu submit ulang setelah masalah di bawah beres).
+
+> ⚠️ **Masalah project bersama.** Project Google `mixetape` (50575334904) punya tiga OAuth
+> client: **youtube**, **google login**, dan **spectro.mixetape.com**. Client spectro memakai
+> redirect `spectro.hanssn.workers.dev`, sehingga authorized domain `hanssn.workers.dev`
+> harus tetap ada, padahal domain itu tidak bisa kamu verifikasi (milik Cloudflare). Google
+> juga meminta video demo mencakup **semua** client di project. Saran: pindahkan spectro ke
+> project Google sendiri (atau pakai `spectro.mixetape.com` saja), hapus `hanssn.workers.dev`,
+> lalu submit verifikasi.
 
 Tanpa verifikasi, user lain melihat layar "Google hasn't verified this app", dan app dengan
 scope sensitif dibatasi **100 user**. Kalau consent screen masih berstatus **Testing**,
@@ -98,6 +114,9 @@ hanya akun dengan role di app (admin/tester) yang bisa connect.
 > lebih dari yang dipakai, dan tunjukkan setiap permission dipakai di video.
 
 ### URL callback Meta
+
+**Sudah diisi semua (4 Okt 2026)**, termasuk App Settings → Basic (domain, terms, ikon,
+kategori). Sisa dari kamu: Business Verification, akun demo, screencast, Submit.
 
 Isi di dashboard app Meta "mixetape". Semua sudah live dan memverifikasi `signed_request`
 dengan secret app masing-masing.
@@ -252,9 +271,9 @@ kemungkinan hanya untuk akun business.
 
 ## Urutan kerja yang disarankan
 
-1. **Mulai Business Verification Meta sekarang** (paling lama), dan minta aku buatkan halaman `/data-deletion`.
+1. **Mulai Business Verification Meta sekarang** (paling lama). ~~Halaman `/data-deletion` + callback~~ sudah.
 2. **TikTok:** rekam demo (sandbox) → submit app → kembalikan kredensial production → ajukan audit Content Posting.
-3. **YouTube:** pastikan consent screen *In production* (hindari token kedaluwarsa 7 hari) → submit verifikasi OAuth → isi form audit dan kuota.
+3. **YouTube:** ~~consent screen *In production*~~ → putuskan soal client spectro → rekam demo → submit verifikasi OAuth → isi form audit dan kuota.
 4. **Meta:** setelah business verified dan data deletion siap, submit App Review untuk Facebook, Instagram, dan Threads sekaligus (video per permission) → app Live.
 5. **Pinterest:** ~~tunggu Trial~~ → ~~isi secret~~ → ~~deploy mode Sandbox + uji Pin gambar~~ → rekam demo → minta Standard → matikan Sandbox + connect ulang.
 
