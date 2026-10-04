@@ -23,7 +23,7 @@ function Privacy() {
     <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated October 2, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated October 4, 2026</p>
       </div>
 
       <section className="space-y-2">
@@ -111,6 +111,30 @@ function Privacy() {
           revoked, the channel's stored tokens are deleted as soon as {siteConfig.name} learns of
           it, and the channel and its posts in {siteConfig.name} are deleted within 7 days unless
           you connect it again.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-base font-semibold">Google user data</h2>
+        <p>
+          Signing in with Google gives {siteConfig.name} your name, email address and profile
+          picture, used only to create and show your account. Connecting a YouTube channel gives it
+          the access described above: managing that channel's videos, playlists, captions and
+          comments, and reading its analytics, only for the posts you schedule and the figures you
+          ask to see.
+        </p>
+        <p>
+          {siteConfig.name}'s use and transfer to any other app of information received from Google
+          APIs will adhere to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            className="text-foreground underline"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements. Google user data is not sold, not used for
+          advertising, not read by people except with your consent or where the law requires it, and
+          not used to train AI or machine-learning models.
         </p>
       </section>
 
