@@ -56,8 +56,11 @@ Status per 4 Oktober 2026.
   terverifikasi di Search Console).
 - Logo diganti ke logo mixetape, nama app `mixetape.com` → `mixetape` (sesuai home page), dan
   `/privacy` ditambah bagian "Google user data" + pernyataan Limited Use. Ini menjawab tiga isu
-  dari penolakan branding sebelumnya (privacy kurang, home page, nama app). Branding
-  re-verification: Branding → View issues → "I have fixed the issues" → Proceed.
+  dari penolakan branding sebelumnya (privacy kurang, home page, nama app). Setelah
+  re-verification, **branding terverifikasi dan sudah dipublish** (logo + nama mixetape tampil
+  di consent screen).
+- Scope `youtube.force-ssl` masih **"Approval required"**: user cap 100 tetap berlaku untuk
+  scope ini sampai video demo disubmit dan disetujui.
 
 Sisa: rekam video demo, lalu **submit di Verification Center**.
 
