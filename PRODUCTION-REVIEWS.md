@@ -54,6 +54,10 @@ Status per 4 Oktober 2026.
 - Entri `spectro.hanssn.workers.dev` dihapus dari client spectro (spectro login selalu lewat
   `spectro.mixetape.com`), dan authorized domain kini hanya `mixetape.com` (sudah
   terverifikasi di Search Console).
+- Logo diganti ke logo mixetape, nama app `mixetape.com` → `mixetape` (sesuai home page), dan
+  `/privacy` ditambah bagian "Google user data" + pernyataan Limited Use. Ini menjawab tiga isu
+  dari penolakan branding sebelumnya (privacy kurang, home page, nama app). Branding
+  re-verification: Branding → View issues → "I have fixed the issues" → Proceed.
 
 Sisa: rekam video demo, lalu **submit di Verification Center**.
 
