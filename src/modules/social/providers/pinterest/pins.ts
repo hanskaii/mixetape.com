@@ -9,7 +9,7 @@ import {
   type PostWithMedia,
   type StatusCapability,
 } from "../types";
-import { PinterestApiError, pinterest } from "./api";
+import { PinterestApiError, pinterest, sandbox } from "./api";
 import type { PinterestPinMeta } from "./metadata";
 
 /**
@@ -91,6 +91,10 @@ async function uploadVideo(url: string, token: string): Promise<string> {
 export async function createPin(post: PostWithMedia, token: string, metadata: Metadata) {
   const meta = metadata as PinterestPinMeta;
   const [first] = post.media;
+  if (sandbox() && post.media.some((item) => item.kind !== "image"))
+    throw new PermanentPublishError(
+      "Pinterest's API Sandbox (Trial access) takes image Pins only; video Pins need Standard access",
+    );
   try {
     const media_source =
       post.media.length > 1

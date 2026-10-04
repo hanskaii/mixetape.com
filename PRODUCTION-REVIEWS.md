@@ -2,11 +2,11 @@
 
 Dokumen kerja: apa yang harus disetujui tiap platform supaya mixetape bisa dipakai **siapa
 saja** (SaaS), bukan hanya akun kamu sendiri; cara submit; dan kuota yang perlu dinaikkan.
-Status per 3 Oktober 2026.
+Status per 4 Oktober 2026.
 
 > Ringkasnya: **Bluesky dan Mastodon sudah siap production.** Lima platform lain
 > (YouTube, Facebook, Instagram, Threads, TikTok, Pinterest) masih dalam mode
-> uji/development dan butuh review. Hampir semua minta **video demo** alur lengkap di
+> uji/development dan butuh review. Pinterest sudah Trial: connect jalan, Pin lewat API Sandbox. Hampir semua minta **video demo** alur lengkap di
 > mixetape.com.
 
 ## Ringkasan
@@ -18,7 +18,7 @@ Status per 3 Oktober 2026.
 | Instagram | Development mode (hanya Instagram Tester) | Meta App Review + Business Verification | 100 post/24 jam per akun IG |
 | Threads | Development mode (hanya Threads Tester) | Meta App Review per permission + app di-publish | 250 post/24 jam per profil |
 | TikTok | App draft, belum tersimpan | Audit Content Posting API | Sebelum audit: hanya privat, maks 5 user/24 jam |
-| Pinterest | Trial access **masih pending** | Disetujui Trial, lalu upgrade ke Standard | Trial: 1.000 request/hari, Pin hanya terlihat oleh pembuat |
+| Pinterest | **Trial access**, connect jalan; Pin hanya lewat API Sandbox | Upgrade ke Standard (video demo) | Trial: 1.000 request/hari, Pin hanya terlihat oleh pembuat, tanpa video Pin |
 | Bluesky | **Production** | Tidak ada review | Batas tulis per akun (lihat bawah) |
 | Mastodon | **Production** | Tidak ada review | 300 request/5 menit, 30 upload media/30 menit |
 | Login Google | Jalan | Verifikasi brand jika consent screen menampilkan logo/nama | — |
@@ -192,12 +192,39 @@ Batas:
 
 ## Pinterest
 
-App **"mixetape"** (App ID `1618233`). Tier **Trial access: pending** (menunggu Pinterest).
+App **"mixetape"** (App ID `1618233`). Tier **Trial access** (disetujui; App secret sudah diisi ke
+`mixetape-pinterest-app-secret`).
 
-1. Tunggu Trial disetujui. Setelah itu **App secret key** bisa dilihat: isi ke secret `mixetape-pinterest-app-secret` (sekarang masih `placeholder`, jadi Connect Pinterest belum jalan).
-2. Uji di Trial. Semua Pin dan board yang dibuat dengan Trial **hanya terlihat oleh pembuatnya** (sandbox), batas **1.000 request/hari per app**.
-3. **Upgrade ke Standard** (halaman app → minta upgrade). Syaratnya: app sudah Trial, patuh Developer Guidelines, dan **video demo** alur OAuth + membuat Pin lewat API di mixetape.com.
-4. Standard: Pin publik dan rate limit per user per menit.
+**Hasil uji 4 Oktober 2026:**
+- Connect berhasil: akun **@hanskaii** tersambung, board terbaca.
+- Membuat Pin di production **ditolak** Pinterest (403): *"Apps with Trial access may not create
+  Pins in production … use API Sandbox"*. Ini berlaku untuk Pin gambar maupun video.
+- Karena itu mixetape sekarang punya var `PINTEREST_SANDBOX` (`wrangler.jsonc`, nilai `"true"`):
+  semua panggilan Pinterest, termasuk OAuth, diarahkan ke `api-sandbox.pinterest.com`.
+  Sudah di-deploy (versi `225eafcc`).
+- Setelah connect ulang dan membuat board Sandbox "mixetape test", **Pin gambar terbit**
+  (Pin `840625086750271539`), termasuk Pin dari URL frame video
+  (`media.mixetape.com/cdn-cgi/media/mode=frame…`, Pin `840625086750271541`).
+
+**Batasan Sandbox (Trial):**
+- Token, board, dan Pin Sandbox **terpisah dari production**. Token production tidak berlaku di
+  Sandbox dan sebaliknya, jadi akun Pinterest harus **connect ulang** setelah deploy.
+- Board production tidak muncul. Buat board baru lewat mixetape (`create_collection`) sebelum
+  menjadwalkan Pin.
+- **Tidak bisa membuat video Pin.** mixetape menolak post video Pinterest dengan pesan yang jelas
+  selama mode Sandbox aktif. Pin gambar dan carousel jalan.
+- Pin dan board hanya terlihat oleh pemilik akun (di profil Pinterest sendiri). Batas 1.000
+  request/hari per app.
+
+**Langkah ke production:**
+1. ~~Deploy, connect ulang Pinterest, buat board Sandbox, terbitkan Pin gambar uji.~~ Selesai 4 Okt.
+2. Rekam **video demo**: login mixetape.com → Channels → Connect Pinterest → izinkan → jadwalkan
+   Pin → Pin muncul di Pinterest (Sandbox cukup untuk demo).
+3. Halaman app di developers.pinterest.com → minta **upgrade ke Standard**. Syarat: patuh
+   Developer Guidelines + video demo di atas.
+4. Setelah Standard disetujui: hapus `PINTEREST_SANDBOX` dari `wrangler.jsonc`, deploy, lalu
+   **connect ulang** akun Pinterest (token Sandbox tidak berlaku di production). Pin jadi publik,
+   video Pin jalan, rate limit per user per menit.
 
 Akun personal dan business sama-sama bisa connect di mixetape; analytics Pinterest
 kemungkinan hanya untuk akun business.
@@ -229,7 +256,7 @@ kemungkinan hanya untuk akun business.
 2. **TikTok:** rekam demo (sandbox) → submit app → kembalikan kredensial production → ajukan audit Content Posting.
 3. **YouTube:** pastikan consent screen *In production* (hindari token kedaluwarsa 7 hari) → submit verifikasi OAuth → isi form audit dan kuota.
 4. **Meta:** setelah business verified dan data deletion siap, submit App Review untuk Facebook, Instagram, dan Threads sekaligus (video per permission) → app Live.
-5. **Pinterest:** tunggu Trial → isi secret → rekam demo → minta Standard.
+5. **Pinterest:** ~~tunggu Trial~~ → ~~isi secret~~ → ~~deploy mode Sandbox + uji Pin gambar~~ → rekam demo → minta Standard → matikan Sandbox + connect ulang.
 
 Video demo bisa dibuat sekali dengan alur yang mirip lalu dipotong per platform. Aku bisa
 menjalankan alurnya di browser sementara kamu merekam, seperti rencana TikTok sebelumnya.
@@ -239,7 +266,7 @@ menjalankan alurnya di browser sementara kamu merekam, seperti rencana TikTok se
 - YouTube: [Quota and Compliance Audits](https://developers.google.com/youtube/v3/guides/quota_and_compliance_audits) · [Audit and Quota Extension Form](https://support.google.com/youtube/contact/yt_api_form) · [OAuth 2.0 for Web Server Applications](https://developers.google.com/youtube/v3/guides/auth/server-side-web-apps)
 - Meta: [Instagram Platform overview](https://developers.facebook.com/docs/instagram-platform/overview/) · [Advanced Access & App Review (ringkasan)](https://singhamandeep.com/what-is-meta-advanced-access/) · [Threads API App Review](https://singhamandeep.com/threads-api-app-review-permissions/)
 - TikTok: [Content Posting API: audit & limits (ringkasan)](https://www.outstand.so/blog/tiktok-content-posting-api)
-- Pinterest: [Access tiers](https://developers.pinterest.com/docs/key-concepts/access-tiers/)
+- Pinterest: [Access tiers](https://developers.pinterest.com/docs/key-concepts/access-tiers/) · [API Sandbox](https://developers.pinterest.com/docs/developer-tools/sandbox/)
 - Mastodon: [Rate limits](https://docs.joinmastodon.org/api/rate-limits/)
 - Bluesky: [Rate limits (diskusi atproto)](https://github.com/bluesky-social/atproto/discussions/2366)
 

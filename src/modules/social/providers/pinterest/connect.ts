@@ -1,5 +1,5 @@
 import type { ConnectCapability, TokenGrant } from "../types";
-import { PINTEREST, pinterest } from "./api";
+import { pinterest, pinterestBase } from "./api";
 
 /**
  * Pinterest OAuth with continuous refresh: the access token lasts 30 days, the refresh
@@ -21,7 +21,7 @@ async function token(
   app: { clientId: string; clientSecret: string },
   params: Record<string, string>,
 ): Promise<TokenGrant> {
-  const res = await fetch(`${PINTEREST}/oauth/token`, {
+  const res = await fetch(`${pinterestBase()}/oauth/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${btoa(`${app.clientId}:${app.clientSecret}`)}`,

@@ -100,5 +100,12 @@ export function checkFormat(
 
 /** A file's kind from its name or URL, for media mixetape has not read (an https URL). */
 export function kindFromUrl(url: string): MediaKind {
+  // A Cloudflare transformation names its output in the path: a video frame, or format=jpg.
+  if (
+    /\/cdn-cgi\/(image|media)\/[^/]*\b(mode=(frame|spritesheet)|format=(jpe?g|png|webp|avif))\b/i.test(
+      url,
+    )
+  )
+    return "image";
   return /\.(jpe?g|png|webp|gif|heic|bmp|tiff?)(\?|#|$)/i.test(url) ? "image" : "video";
 }

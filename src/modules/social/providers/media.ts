@@ -21,7 +21,10 @@ function bucketKey(url: string): string | null {
       return decodeURIComponent(parsed.pathname.slice(STORAGE_PATH.length));
     }
     const media = env.MEDIA_PUBLIC_URL ? new URL(env.MEDIA_PUBLIC_URL) : null;
-    if (media && parsed.host === media.host) return decodeURIComponent(parsed.pathname.slice(1));
+    // /cdn-cgi/ paths are Cloudflare transformations of a stored file (a frame, a resized
+    // image), not stored files themselves: fetch those over HTTP.
+    if (media && parsed.host === media.host && !parsed.pathname.startsWith("/cdn-cgi/"))
+      return decodeURIComponent(parsed.pathname.slice(1));
   } catch {
     // not a URL at all; falls through to the HTTP error below
   }

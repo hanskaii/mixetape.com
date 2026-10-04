@@ -188,5 +188,8 @@
     "R2_BUCKET_NAME": "mixetape-media",
     // The bucket's custom domain: every stored file is public at MEDIA_PUBLIC_URL/<key>.
     "MEDIA_PUBLIC_URL": "https://media.mixetape.com",
+    // Pinterest app on Trial access: Pins only in the API Sandbox (providers/pinterest/api.ts).
+    // Remove once Standard access is granted, then reconnect Pinterest accounts.
+    "PINTEREST_SANDBOX": "true",
   },
 }

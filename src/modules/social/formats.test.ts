@@ -100,5 +100,14 @@ describe("whether files fit a platform", () => {
   it("tells images from videos by URL when mixetape never read the file", () => {
     expect(kindFromUrl("https://cdn.example.com/cover.JPG?x=1")).toBe("image");
     expect(kindFromUrl("r2://media/u/1-episode.mp4")).toBe("video");
+    // A frame cut from a stored video is an image, though its path ends in .mp4.
+    expect(
+      kindFromUrl("https://media.mixetape.com/cdn-cgi/media/mode=frame,time=3s/media/u/1-a.mp4"),
+    ).toBe("image");
+    expect(
+      kindFromUrl(
+        "https://media.mixetape.com/cdn-cgi/media/mode=video,duration=5s/media/u/1-a.mp4",
+      ),
+    ).toBe("video");
   });
 });
