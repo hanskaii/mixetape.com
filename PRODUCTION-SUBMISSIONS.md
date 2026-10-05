@@ -78,6 +78,14 @@ Form: https://support.google.com/youtube/contact/yt_api_form
 | Privacy policy / ToS | https://mixetape.com/privacy · https://mixetape.com/terms |
 | Demo credentials | akun demo reviewer (lihat bagian 0) |
 
+**Diisi oleh Claude (5 Okt 2026), belum disubmit:** semua section; permintaan kuota
+**100.000 unit/hari** + **500 `videos.insert`/hari** (perkiraan 6 bulan: ±200 channel aktif,
+500 upload/hari); 14 endpoint dicentang (videos.insert/list/update, thumbnails.set,
+playlists.list/insert, playlistItems.insert, captions.list/insert, commentThreads.list/insert,
+comments.insert/setModerationStatus, channels.list); bukti: PDF privacy, PDF terms, screenshot
+homepage, dan PDF 10 halaman alur OAuth + upload + pencabutan akses
+(`../yt-audit-evidence/`).
+
 **Perkiraan unit per post YouTube:** 1 `videos.insert` + 50 (thumbnail) + 50 (playlist) +
 2 (`videos.list`) ≈ 100 unit di luar bucket upload. 300 post/hari ≈ 30.000 unit/hari.
 
