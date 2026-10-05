@@ -7,6 +7,23 @@ import { LandingCta } from "./landing-cta";
 // Operator is priced per account: the base covers OPERATOR_MIN, each one after is $1.
 const OPERATOR_MIN = 100;
 const OPERATOR_STEP = 10;
+// A year costs ten months: two are free.
+const MONTHS_PAID_YEARLY = 10;
+const MARKETER_MONTHLY = 39;
+
+type Billing = "monthly" | "yearly";
+
+// What a month comes to: whole dollars monthly, cents when a year is spread over twelve.
+function perMonth(monthly: number, billing: Billing) {
+  const value = billing === "monthly" ? monthly : (monthly * MONTHS_PAID_YEARLY) / 12;
+  return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
+}
+
+function billedAs(monthly: number, billing: Billing) {
+  return billing === "monthly"
+    ? "billed monthly"
+    : `billed yearly ($${(monthly * MONTHS_PAID_YEARLY).toLocaleString("en-US")})`;
+}
 
 // Every line here works today.
 const MARKETER_FEATURES = [
@@ -28,7 +45,7 @@ const MARKETER_FEATURES = [
 ];
 
 const OPERATOR_FEATURES = [
-  "100 social accounts, $1 for each one after",
+  "100 social accounts or more, priced per account",
   "Everything in Marketer",
   "Unlimited brands, one per client",
   "Priority email support",
@@ -37,6 +54,38 @@ const OPERATOR_FEATURES = [
 const LG = "@media (min-width: 1024px)";
 
 const styles = stylex.create({
+  wrap: { display: "flex", flexDirection: "column", gap: "1.25rem" },
+  tabs: {
+    alignSelf: { default: "stretch", "@media (min-width: 640px)": "flex-start" },
+    backgroundColor: colors.muted,
+    borderRadius: "999px",
+    display: "flex",
+    gap: "0.25rem",
+    padding: "0.25rem",
+  },
+  tab: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderRadius: "999px",
+    borderWidth: 0,
+    color: colors.mutedForeground,
+    cursor: "pointer",
+    display: "inline-flex",
+    flexGrow: { default: 1, "@media (min-width: 640px)": 0 },
+    fontFamily: "inherit",
+    fontSize: "0.9375rem",
+    fontWeight: 600,
+    gap: "0.5rem",
+    justifyContent: "center",
+    paddingBlock: "0.5rem",
+    paddingInline: "1.25rem",
+  },
+  tabOn: {
+    backgroundColor: colors.card,
+    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)",
+    color: colors.foreground,
+  },
+  save: { color: colors.editorial, fontSize: "0.75rem", fontWeight: 600 },
   grid: {
     display: "grid",
     gap: "1rem",
@@ -196,76 +245,100 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
   const accounts = toAccounts(draft);
   const step = (by: number) =>
     setDraft((prev) => String(Math.max(OPERATOR_MIN, toAccounts(prev) + by)));
+  const [billing, setBilling] = useState<Billing>("monthly");
 
   return (
-    <ul {...stylex.props(styles.grid)}>
-      <li {...stylex.props(styles.plan, styles.featured)}>
-        <div {...stylex.props(styles.head)}>
-          <h3 {...stylex.props(styles.name)}>Marketer</h3>
-          <span {...stylex.props(styles.tag)}>Most popular</span>
-        </div>
-        <p {...stylex.props(styles.pitch)}>For one person marketing a business</p>
-        <div {...stylex.props(styles.priceBlock)}>
-          <p {...stylex.props(styles.price)}>
-            <span {...stylex.props(styles.amount)}>$39</span>
-            <span {...stylex.props(styles.period)}>/month</span>
-          </p>
-          <p {...stylex.props(styles.billing)}>15 accounts, billed monthly</p>
-        </div>
-        <Trial signedIn={signedIn} />
-        <Features items={MARKETER_FEATURES} />
-      </li>
+    <div {...stylex.props(styles.wrap)}>
+      <div role="group" aria-label="Billing period" {...stylex.props(styles.tabs)}>
+        {(["monthly", "yearly"] as const).map((period) => (
+          <button
+            key={period}
+            type="button"
+            aria-pressed={billing === period}
+            onClick={() => setBilling(period)}
+            {...stylex.props(styles.tab, billing === period && styles.tabOn)}
+          >
+            {period === "monthly" ? "Monthly" : "Yearly"}
+            {period === "yearly" && <span {...stylex.props(styles.save)}>2 months free</span>}
+          </button>
+        ))}
+      </div>
+      <ul {...stylex.props(styles.grid)}>
+        <li {...stylex.props(styles.plan, styles.featured)}>
+          <div {...stylex.props(styles.head)}>
+            <h3 {...stylex.props(styles.name)}>Marketer</h3>
+            <span {...stylex.props(styles.tag)}>Most popular</span>
+          </div>
+          <p {...stylex.props(styles.pitch)}>For one person marketing a business</p>
+          <div {...stylex.props(styles.priceBlock)}>
+            <p {...stylex.props(styles.price)}>
+              <span {...stylex.props(styles.amount)}>{perMonth(MARKETER_MONTHLY, billing)}</span>
+              <span {...stylex.props(styles.period)}>/month</span>
+            </p>
+            <p {...stylex.props(styles.billing)}>
+              15 accounts, {billedAs(MARKETER_MONTHLY, billing)}
+            </p>
+          </div>
+          <Trial signedIn={signedIn} />
+          <Features items={MARKETER_FEATURES} />
+        </li>
 
-      <li {...stylex.props(styles.plan)}>
-        <div {...stylex.props(styles.head)}>
-          <h3 {...stylex.props(styles.name)}>Operator</h3>
-        </div>
-        <p {...stylex.props(styles.pitch)}>For those with an army of accounts</p>
-        <div {...stylex.props(styles.priceBlock)}>
-          <p {...stylex.props(styles.price)}>
-            <span {...stylex.props(styles.amount)}>${accounts}</span>
-            <span {...stylex.props(styles.period)}>/month</span>
-          </p>
-          <p {...stylex.props(styles.billing)}>{accounts} accounts, billed monthly</p>
-        </div>
-        <div {...stylex.props(styles.stepper)}>
-          <div>
-            <p {...stylex.props(styles.stepperLabel)}>Accounts</p>
-            <p {...stylex.props(styles.stepperHint)}>{OPERATOR_MIN} minimum, $1 each after</p>
+        <li {...stylex.props(styles.plan)}>
+          <div {...stylex.props(styles.head)}>
+            <h3 {...stylex.props(styles.name)}>Operator</h3>
           </div>
-          <div {...stylex.props(styles.control)}>
-            <button
-              type="button"
-              aria-label="Fewer accounts"
-              disabled={accounts <= OPERATOR_MIN}
-              onClick={() => step(-OPERATOR_STEP)}
-              {...stylex.props(styles.stepButton)}
-            >
-              <Minus size={14} weight="bold" />
-            </button>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={OPERATOR_MIN}
-              aria-label="Accounts"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onBlur={() => setDraft(String(accounts))}
-              {...stylex.props(styles.count)}
-            />
-            <button
-              type="button"
-              aria-label="More accounts"
-              onClick={() => step(OPERATOR_STEP)}
-              {...stylex.props(styles.stepButton)}
-            >
-              <Plus size={14} weight="bold" />
-            </button>
+          <p {...stylex.props(styles.pitch)}>For those with an army of accounts</p>
+          <div {...stylex.props(styles.priceBlock)}>
+            <p {...stylex.props(styles.price)}>
+              <span {...stylex.props(styles.amount)}>{perMonth(accounts, billing)}</span>
+              <span {...stylex.props(styles.period)}>/month</span>
+            </p>
+            <p {...stylex.props(styles.billing)}>
+              {accounts} accounts, {billedAs(accounts, billing)}
+            </p>
           </div>
-        </div>
-        <Trial signedIn={signedIn} />
-        <Features items={OPERATOR_FEATURES} />
-      </li>
-    </ul>
+          <div {...stylex.props(styles.stepper)}>
+            <div>
+              <p {...stylex.props(styles.stepperLabel)}>Accounts</p>
+              <p {...stylex.props(styles.stepperHint)}>
+                {" "}
+                {OPERATOR_MIN} minimum, {billing === "monthly" ? "$1" : "$10 a year"} each after
+              </p>
+            </div>
+            <div {...stylex.props(styles.control)}>
+              <button
+                type="button"
+                aria-label="Fewer accounts"
+                disabled={accounts <= OPERATOR_MIN}
+                onClick={() => step(-OPERATOR_STEP)}
+                {...stylex.props(styles.stepButton)}
+              >
+                <Minus size={14} weight="bold" />
+              </button>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={OPERATOR_MIN}
+                aria-label="Accounts"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={() => setDraft(String(accounts))}
+                {...stylex.props(styles.count)}
+              />
+              <button
+                type="button"
+                aria-label="More accounts"
+                onClick={() => step(OPERATOR_STEP)}
+                {...stylex.props(styles.stepButton)}
+              >
+                <Plus size={14} weight="bold" />
+              </button>
+            </div>
+          </div>
+          <Trial signedIn={signedIn} />
+          <Features items={OPERATOR_FEATURES} />
+        </li>
+      </ul>
+    </div>
   );
 }
