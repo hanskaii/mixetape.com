@@ -26,7 +26,9 @@ export type SecretName =
   | "TIKTOK_CLIENT_SECRET"
   | "PINTEREST_APP_ID"
   | "PINTEREST_APP_SECRET"
-  | "BLUESKY_PRIVATE_KEY";
+  | "BLUESKY_PRIVATE_KEY"
+  | "DODO_PAYMENTS_API_KEY"
+  | "DODO_PAYMENTS_WEBHOOK_KEY";
 
 function sources(name: SecretName): {
   store: SecretsStoreSecret | undefined;
@@ -75,6 +77,10 @@ function sources(name: SecretName): {
       return { store: env.SS_PINTEREST_APP_SECRET, local: env.PINTEREST_APP_SECRET };
     case "BLUESKY_PRIVATE_KEY":
       return { store: env.SS_BLUESKY_PRIVATE_KEY, local: env.BLUESKY_PRIVATE_KEY };
+    case "DODO_PAYMENTS_API_KEY":
+      return { store: env.SS_DODO_PAYMENTS_API_KEY, local: env.DODO_PAYMENTS_API_KEY };
+    case "DODO_PAYMENTS_WEBHOOK_KEY":
+      return { store: env.SS_DODO_PAYMENTS_WEBHOOK_KEY, local: env.DODO_PAYMENTS_WEBHOOK_KEY };
   }
 }
 

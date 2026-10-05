@@ -1,12 +1,15 @@
 import { createAuthClient } from "better-auth/react";
 import { emailOTPClient, twoFactorClient } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { dodopaymentsClient } from "@dodopayments/better-auth/client";
 
 export const authClient = createAuthClient({
   plugins: [
     emailOTPClient(),
     // On the OAuth pages, carries the signed authorization request with sign-in and consent.
     oauthProviderClient(),
+    // Checkout and the customer portal (billing/billing.service).
+    dodopaymentsClient(),
     twoFactorClient({
       onTwoFactorRedirect() {
         window.location.href = "/";

@@ -25,6 +25,10 @@ export const user = sqliteTable("user", {
   image: text("image"),
   bio: text("bio"),
   twoFactorEnabled: integer("two_factor_enabled", { mode: "boolean" }).default(false),
+  // The person's customer in Dodo Payments; the Better Auth Dodo plugin fills it in.
+  dodoCustomerId: text("dodo_customer_id"),
+  // Publishes without a plan (the operator's own account); set by hand, never by the app.
+  billingExempt: integer("billing_exempt", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -527,6 +531,36 @@ export const webhooks = sqliteTable(
   (table) => [index("webhooks_user_idx").on(table.userId)],
 );
 
+// ── billing ──────────────────────────────────────────────────────────────────
+//
+// A Dodo Payments subscription, as its webhooks last described it (billing/billing.service).
+
+export const subscriptions = sqliteTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey(), // Dodo's subscription_id
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    productId: text("product_id").notNull(),
+    plan: text("plan").notNull(), // 'marketer' | 'operator'
+    period: text("period").notNull(), // 'monthly' | 'yearly'
+    status: text("status").notNull(), // Dodo's: 'active' | 'on_hold' | 'cancelled' | …
+    accounts: integer("accounts").notNull(), // social accounts the plan covers
+    cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    nextBillingAt: integer("next_billing_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("subscriptions_user_idx").on(table.userId)],
+);
+
 export type User = typeof user.$inferSelect;
 export type InsertUser = typeof user.$inferInsert;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
@@ -536,3 +570,4 @@ export type MediaFile = typeof mediaFiles.$inferSelect;
 export type MediaGroup = typeof mediaGroups.$inferSelect;
 export type Brand = typeof brands.$inferSelect;
 export type Webhook = typeof webhooks.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;

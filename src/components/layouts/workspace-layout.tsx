@@ -9,6 +9,7 @@ import {
   PlugsConnected,
   Robot,
   ShieldCheck,
+  CreditCard,
   Books,
 } from "@phosphor-icons/react";
 import {
@@ -48,6 +49,7 @@ const WORKSPACE = [
 const ACCOUNT = [
   { to: "/settings/profile", label: "Profile", icon: Gear },
   { to: "/settings/account", label: "Security", icon: ShieldCheck },
+  { to: "/settings/billing", label: "Billing", icon: CreditCard },
 ] as const;
 
 const PAGES = [...WORKSPACE, ...ACCOUNT];

@@ -35,6 +35,7 @@ import { Route as appAppLibraryIndexRouteImport } from './routes/(app)/_app/libr
 import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
 import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
+import { Route as appAppSettingsBillingRouteImport } from './routes/(app)/_app/settings/billing'
 import { Route as appAppSettingsProfileRouteImport } from './routes/(app)/_app/settings/profile'
 import { Route as ApiConnectProviderCallbackRouteImport } from './routes/api/connect/$provider.callback'
 import { Route as ApiConnectProviderDataDeletionRouteImport } from './routes/api/connect/$provider.data-deletion'
@@ -170,6 +171,11 @@ const appAppSettingsAccountRoute = appAppSettingsAccountRouteImport.update({
   path: '/settings/account',
   getParentRoute: () => appAppRouteRoute,
 } as any)
+const appAppSettingsBillingRoute = appAppSettingsBillingRouteImport.update({
+  id: '/settings/billing',
+  path: '/settings/billing',
+  getParentRoute: () => appAppRouteRoute,
+} as any)
 const appAppSettingsProfileRoute = appAppSettingsProfileRouteImport.update({
   id: '/settings/profile',
   path: '/settings/profile',
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/settings/account': typeof appAppSettingsAccountRoute
+  '/settings/billing': typeof appAppSettingsBillingRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/settings/account': typeof appAppSettingsAccountRoute
+  '/settings/billing': typeof appAppSettingsBillingRoute
   '/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/(app)/_app/settings/account': typeof appAppSettingsAccountRoute
+  '/(app)/_app/settings/billing': typeof appAppSettingsBillingRoute
   '/(app)/_app/settings/profile': typeof appAppSettingsProfileRoute
   '/api/connect/$provider/callback': typeof ApiConnectProviderCallbackRoute
   '/api/connect/$provider/data-deletion': typeof ApiConnectProviderDataDeletionRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/settings/account'
+    | '/settings/billing'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/connect/$provider/data-deletion'
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/settings/account'
+    | '/settings/billing'
     | '/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/connect/$provider/data-deletion'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/(app)/_app/settings/account'
+    | '/(app)/_app/settings/billing'
     | '/(app)/_app/settings/profile'
     | '/api/connect/$provider/callback'
     | '/api/connect/$provider/data-deletion'
@@ -606,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appAppSettingsAccountRouteImport
       parentRoute: typeof appAppRouteRoute
     }
+    '/(app)/_app/settings/billing': {
+      id: '/(app)/_app/settings/billing'
+      path: '/settings/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof appAppSettingsBillingRouteImport
+      parentRoute: typeof appAppRouteRoute
+    }
     '/(app)/_app/settings/profile': {
       id: '/(app)/_app/settings/profile'
       path: '/settings/profile'
@@ -679,6 +698,7 @@ const publicRouteRouteWithChildren = publicRouteRoute._addFileChildren(
 
 interface appAppRouteRouteChildren {
   appAppSettingsAccountRoute: typeof appAppSettingsAccountRoute
+  appAppSettingsBillingRoute: typeof appAppSettingsBillingRoute
   appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
   appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
@@ -689,6 +709,7 @@ interface appAppRouteRouteChildren {
 
 const appAppRouteRouteChildren: appAppRouteRouteChildren = {
   appAppSettingsAccountRoute: appAppSettingsAccountRoute,
+  appAppSettingsBillingRoute: appAppSettingsBillingRoute,
   appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
   appAppChannelsIndexRoute: appAppChannelsIndexRoute,

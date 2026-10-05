@@ -2,16 +2,38 @@ import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { Check, Minus, Plus } from "@phosphor-icons/react";
 import { colors } from "../../../components/ui/tokens.stylex";
+import { authClient } from "#/modules/auth/auth-client";
+import { checkoutRequest } from "#/modules/billing/billing.fn";
+import {
+  MONTHS_PAID_YEARLY,
+  PLANS,
+  TRIAL_DAYS,
+  type Period as Billing,
+  type PlanId,
+} from "#/modules/billing/plans";
 import { LandingCta } from "./landing-cta";
 
 // Operator is priced per account: the base covers OPERATOR_MIN, each one after is $1.
-const OPERATOR_MIN = 100;
+const OPERATOR_MIN = PLANS.operator.accounts;
 const OPERATOR_STEP = 10;
-// A year costs ten months: two are free.
-const MONTHS_PAID_YEARLY = 10;
-const MARKETER_MONTHLY = 39;
+const MARKETER_MONTHLY = PLANS.marketer.monthly;
 
-type Billing = "monthly" | "yearly";
+/**
+ * Into Dodo's checkout for the plan (billing.fn picks the product and the trial), or the
+ * customer portal for someone who already has a plan.
+ */
+async function startCheckout(plan: PlanId, period: Billing, accounts: number) {
+  const result = await checkoutRequest({ data: { plan, period, accounts } });
+  if (result.manage) {
+    const { data, error } = await authClient.dodopayments.customer.portal();
+    if (error || !data?.url) throw new Error(error?.message || "Could not open billing");
+    window.location.href = data.url;
+    return;
+  }
+  const { data, error } = await authClient.dodopayments.checkoutSession(result.request);
+  if (error || !data?.url) throw new Error(error?.message || "Checkout could not start");
+  window.location.href = data.url;
+}
 
 // What a month comes to: whole dollars monthly, cents when a year is spread over twelve.
 function perMonth(monthly: number, billing: Billing) {
@@ -224,13 +246,25 @@ function Features({ items }: { items: string[] }) {
   );
 }
 
-function Trial({ signedIn }: { signedIn: boolean }) {
+function Trial({
+  signedIn,
+  plan,
+  period,
+  accounts,
+}: {
+  signedIn: boolean;
+  plan: PlanId;
+  period: Billing;
+  accounts: number;
+}) {
+  const label = `Start ${TRIAL_DAYS} day free trial`;
   return (
     <div {...stylex.props(styles.action)}>
       <LandingCta
         signedIn={signedIn}
-        signedInLabel="Open the workspace"
-        signedOutLabel="Start 7 day free trial"
+        signedInLabel={label}
+        signedOutLabel={label}
+        action={() => startCheckout(plan, period, accounts)}
       />
       <p {...stylex.props(styles.due)}>$0.00 due today, cancel anytime</p>
     </div>
@@ -279,7 +313,12 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               15 accounts, {billedAs(MARKETER_MONTHLY, billing)}
             </p>
           </div>
-          <Trial signedIn={signedIn} />
+          <Trial
+            signedIn={signedIn}
+            plan="marketer"
+            period={billing}
+            accounts={PLANS.marketer.accounts}
+          />
           <Features items={MARKETER_FEATURES} />
         </li>
 
@@ -335,7 +374,7 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               </button>
             </div>
           </div>
-          <Trial signedIn={signedIn} />
+          <Trial signedIn={signedIn} plan="operator" period={billing} accounts={accounts} />
           <Features items={OPERATOR_FEATURES} />
         </li>
       </ul>

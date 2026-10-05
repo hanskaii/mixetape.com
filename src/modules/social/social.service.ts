@@ -28,6 +28,7 @@ import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
 import { releasePostFiles } from "#/modules/storage/files.service";
 import { emitEvent, type WebhookEventType } from "#/modules/webhooks/webhooks.service";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
@@ -705,6 +706,8 @@ async function stopWorkflow(instanceId: string | null) {
 }
 
 export async function createPost(userId: string, input: CreatePostInput) {
+  // Every way of scheduling (workspace, MCP, REST, library groups) comes through here.
+  await requirePlan(userId);
   const account = await db.query.socialAccounts.findFirst({
     where: and(eq(socialAccounts.id, input.accountId), eq(socialAccounts.userId, userId)),
   });

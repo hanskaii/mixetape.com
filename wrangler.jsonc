@@ -176,6 +176,16 @@
       "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
       "secret_name": "mixetape-bluesky-private-key",
     },
+    {
+      "binding": "SS_DODO_PAYMENTS_API_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-dodo-payments-api-key",
+    },
+    {
+      "binding": "SS_DODO_PAYMENTS_WEBHOOK_KEY",
+      "store_id": "40a8cda5c5604b1f8c73604e3f5ca575",
+      "secret_name": "mixetape-dodo-payments-webhook-key",
+    },
   ],
   "vars": {
     "APP_ENV": "production",
@@ -191,5 +201,9 @@
     // Pinterest app on Trial access: Pins only in the API Sandbox (providers/pinterest/api.ts).
     // Remove once Standard access is granted, then reconnect Pinterest accounts.
     "PINTEREST_SANDBOX": "true",
+    // Dodo Payments: test_mode until checkout goes live, and the products scripts/dodo-catalog.mjs
+    // made in that mode (billing/plans.ts). Test and live modes have different product ids.
+    "DODO_MODE": "test_mode",
+    "DODO_CATALOG": "{}",
   },
 }

@@ -29,6 +29,8 @@ export const ERROR_CODES = {
   platform_error: "The platform refused or failed the call; the message says why",
   rate_limited: "Too many requests; wait Retry-After seconds",
   platform_unavailable: "mixetape cannot connect that platform yet",
+  plan_required: "Scheduling posts needs a plan; start the free trial at /pricing",
+  plan_limit_reached: "More channels are connected than the plan covers",
   internal_error: "Something failed on mixetape's side",
 } as const;
 
@@ -37,6 +39,7 @@ export type ErrorCode = keyof typeof ERROR_CODES;
 const BY_STATUS: Record<number, ErrorCode> = {
   400: "invalid_request",
   401: "unauthorized",
+  402: "plan_required",
   403: "forbidden",
   404: "not_found",
   405: "method_not_allowed",

@@ -5,6 +5,8 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { emailOTP, jwt, twoFactor } from "better-auth/plugins";
 import { cimd } from "@better-auth/cimd";
 import { mcp } from "@better-auth/mcp";
+import { checkout, dodopayments, portal, webhooks } from "@dodopayments/better-auth";
+import type DodoPayments from "dodopayments";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
@@ -13,11 +15,17 @@ import { siteConfig } from "#/config/site";
 import { requiredSecret, secret } from "#/modules/secrets/secrets.service";
 import { ALL_SCOPES } from "#/modules/api/api-keys.service";
 import { fetchClientMetadataResource } from "#/modules/oauth/client-metadata";
+import {
+  checkoutProducts,
+  dodoClient,
+  recordSubscription,
+} from "#/modules/billing/billing.service";
 
 type Credentials = {
   secret: string;
   github?: { clientId: string; clientSecret: string };
   google?: { clientId: string; clientSecret: string };
+  dodo?: { client: DodoPayments; webhookKey: string };
 };
 
 /** Where the auth server lives; the MCP server is `${AUTH_ORIGIN}/mcp`. */
@@ -51,6 +59,42 @@ function nativeWhenLocal(body: unknown) {
     }
   });
   return local ? { ...body, application_type: "native" } : null;
+}
+
+/**
+ * Billing (billing/billing.service): a Dodo customer per person, checkout for the plans in
+ * DODO_CATALOG, the customer portal, and subscription webhooks at
+ * /api/auth/dodopayments/webhooks. Present only once the API key and webhook secret are set.
+ */
+function billing(dodo: NonNullable<Credentials["dodo"]>) {
+  const record = (payload: { type: string; data: unknown }) => recordSubscription(payload);
+  return dodopayments({
+    client: dodo.client,
+    // Off: the plugin's sign-up hook fails the sign-up when Dodo cannot be reached. Checkout
+    // and the portal find or create the customer by email when they are first used.
+    createCustomerOnSignUp: false,
+    use: [
+      checkout({
+        products: async () => checkoutProducts(),
+        successUrl: "/settings/billing?checkout=done",
+        authenticatedUsersOnly: true,
+      }),
+      portal(),
+      webhooks({
+        webhookKey: dodo.webhookKey,
+        onSubscriptionActive: record,
+        onSubscriptionRenewed: record,
+        onSubscriptionUpdated: record,
+        onSubscriptionPlanChanged: record,
+        onSubscriptionOnHold: record,
+        onSubscriptionPaused: record,
+        onSubscriptionUnpaused: record,
+        onSubscriptionCancelled: record,
+        onSubscriptionFailed: record,
+        onSubscriptionExpired: record,
+      }),
+    ],
+  });
 }
 
 function createAuth(credentials: Credentials) {
@@ -179,11 +223,13 @@ function createAuth(credentials: Credentials) {
         allowUnauthenticatedClientRegistration: true,
       }),
       cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
+      ...(credentials.dodo ? [billing(credentials.dodo)] : []),
       tanstackStartCookies(),
     ],
   });
 }
 
+// The type includes the billing plugin's endpoints, whether or not it is configured.
 export type Auth = ReturnType<typeof createAuth>;
 
 async function pair(id: "GITHUB" | "GOOGLE") {
@@ -192,6 +238,14 @@ async function pair(id: "GITHUB" | "GOOGLE") {
     secret(`${id}_CLIENT_SECRET`),
   ]);
   return clientId && clientSecret ? { clientId, clientSecret } : undefined;
+}
+
+async function dodoCredentials(): Promise<Credentials["dodo"]> {
+  const [client, webhookKey] = await Promise.all([
+    dodoClient(),
+    secret("DODO_PAYMENTS_WEBHOOK_KEY"),
+  ]);
+  return client && webhookKey ? { client, webhookKey } : undefined;
 }
 
 let instance: Promise<Auth> | undefined;
@@ -206,6 +260,7 @@ export function getAuth(): Promise<Auth> {
       secret: await requiredSecret("BETTER_AUTH_SECRET"),
       github: await pair("GITHUB"),
       google: await pair("GOOGLE"),
+      dodo: await dodoCredentials(),
     }))();
   return instance;
 }
