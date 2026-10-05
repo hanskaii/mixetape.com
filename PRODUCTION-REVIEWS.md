@@ -288,7 +288,7 @@ kemungkinan hanya untuk akun business.
 
 1. **Mulai Business Verification Meta sekarang** (paling lama). ~~Halaman `/data-deletion` + callback~~ sudah.
 2. **TikTok:** rekam demo (sandbox) → submit app → kembalikan kredensial production → ajukan audit Content Posting.
-3. **YouTube:** ~~verifikasi OAuth~~ selesai → isi form audit dan kuota.
+3. **YouTube:** ~~verifikasi OAuth~~ selesai → ~~form audit dan kuota disubmit (5 Okt 2026)~~ → tunggu balasan Google.
 4. **Meta:** setelah business verified dan data deletion siap, submit App Review untuk Facebook, Instagram, dan Threads sekaligus (video per permission) → app Live.
 5. **Pinterest:** ~~tunggu Trial~~ → ~~isi secret~~ → ~~deploy mode Sandbox + uji Pin gambar~~ → rekam demo → minta Standard → matikan Sandbox + connect ulang.
 

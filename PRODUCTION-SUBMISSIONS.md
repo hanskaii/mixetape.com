@@ -78,7 +78,7 @@ Form: https://support.google.com/youtube/contact/yt_api_form
 | Privacy policy / ToS | https://mixetape.com/privacy · https://mixetape.com/terms |
 | Demo credentials | akun demo reviewer (lihat bagian 0) |
 
-**Diisi oleh Claude (5 Okt 2026), belum disubmit:** semua section; permintaan kuota
+**Disubmit 5 Okt 2026** (email konfirmasi "Thank you for your submission" dari YouTube API Quota sudah masuk; tunggu balasan review). Isinya: semua section; permintaan kuota
 **100.000 unit/hari** + **500 `videos.insert`/hari** (perkiraan 6 bulan: ±200 channel aktif,
 500 upload/hari); 14 endpoint dicentang (videos.insert/list/update, thumbnails.set,
 playlists.list/insert, playlistItems.insert, captions.list/insert, commentThreads.list/insert,
