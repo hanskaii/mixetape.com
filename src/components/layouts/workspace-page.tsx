@@ -22,13 +22,14 @@ const styles = stylex.create({
     paddingInline: { default: "1rem", "@media (min-width: 768px)": "1.75rem" },
     width: "100%",
   },
+  // Title on the left, actions on the right, on a phone too.
   header: {
-    alignItems: { default: "flex-start", "@media (min-width: 640px)": "flex-end" },
+    alignItems: { default: "center", "@media (min-width: 640px)": "flex-end" },
     display: "flex",
-    flexDirection: { default: "column", "@media (min-width: 640px)": "row" },
     gap: "0.75rem",
     justifyContent: "space-between",
   },
+  heading: { minWidth: 0 },
   title: {
     color: colors.foreground,
     fontSize: "1.375rem",
@@ -172,7 +173,7 @@ export function PageHeader({
   const Title = useContext(PageTitleLevel);
   return (
     <header {...stylex.props(styles.header)}>
-      <div>
+      <div {...stylex.props(styles.heading)}>
         <Title {...stylex.props(styles.title)}>{title}</Title>
         {description && <p {...stylex.props(styles.description)}>{description}</p>}
       </div>
