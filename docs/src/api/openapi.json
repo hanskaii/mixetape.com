@@ -4,7 +4,7 @@
     "title": "mixetape API",
     "version": "1.0.0",
     "summary": "Schedule and manage posts on connected social accounts.",
-    "description": "The REST API for scripts and integrations: accounts, posts, comments, library groups and files as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools."
+    "description": "The REST API for scripts and integrations: accounts, posts, comments, media and groups as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools."
   },
   "servers": [
     {
@@ -39,11 +39,11 @@
     },
     {
       "name": "Groups",
-      "description": "Library groups: files that go out together, with their drafted words."
+      "description": "Groups in Media & Storage: files that go out together, with their drafted words."
     },
     {
-      "name": "Files",
-      "description": "mixetape storage: uploads, imports and the files' index; files published without a group."
+      "name": "Media",
+      "description": "Media & Storage: uploads, imports and the files' index; files published without a group."
     },
     {
       "name": "Webhooks",
@@ -66,7 +66,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "responses": {
           "200": {
@@ -93,7 +95,9 @@
                               "instagram",
                               "threads",
                               "tiktok",
-                              "pinterest"
+                              "pinterest",
+                              "bluesky",
+                              "mastodon"
                             ]
                           },
                           "platformAccountId": {
@@ -187,7 +191,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -734,7 +740,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -751,8 +759,14 @@
                       "instagram",
                       "threads",
                       "tiktok",
-                      "pinterest"
+                      "pinterest",
+                      "bluesky",
+                      "mastodon"
                     ]
+                  },
+                  "account": {
+                    "type": "string",
+                    "description": "Who is connecting, where the platform needs it: the Mastodon account (@you@mastodon.social — its server is what counts), or a Bluesky handle (optional)"
                   }
                 },
                 "required": [
@@ -825,7 +839,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -936,7 +952,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -1027,7 +1045,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "responses": {
           "200": {
@@ -1102,7 +1122,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -1201,7 +1223,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -1309,7 +1333,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -1379,7 +1405,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -1424,6 +1452,7 @@
                   "uploaded",
                   "published",
                   "failed",
+                  "paused",
                   "cancelled"
                 ]
               },
@@ -1435,10 +1464,10 @@
           {
             "name": "groupId",
             "in": "query",
-            "description": "Only posts published from this library group",
+            "description": "Only posts published from this group",
             "schema": {
               "type": "string",
-              "description": "Only posts published from this library group"
+              "description": "Only posts published from this group"
             }
           },
           {
@@ -1555,7 +1584,7 @@
                               "string",
                               "null"
                             ],
-                            "description": "The library group it came from"
+                            "description": "The group it came from"
                           },
                           "caption": {
                             "type": [
@@ -1590,6 +1619,7 @@
                               "uploaded",
                               "published",
                               "failed",
+                              "paused",
                               "cancelled"
                             ],
                             "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -1688,7 +1718,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -2072,6 +2104,91 @@
                           }
                         },
                         "title": "Pinterest"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "description": "The post text, ≤ 300 characters; defaults to the post caption"
+                          },
+                          "langs": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "maxItems": 3,
+                            "description": "The text's languages, e.g. [\"en\"]"
+                          },
+                          "altTexts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Image and video descriptions, one per file, in order"
+                          },
+                          "contentWarning": {
+                            "type": "string",
+                            "enum": [
+                              "sexual",
+                              "nudity",
+                              "porn",
+                              "graphic-media"
+                            ],
+                            "description": "Labels the media for adult or graphic content"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own reply once the post is up — a thread"
+                          }
+                        },
+                        "title": "Bluesky"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "description": "The post text; defaults to the post caption"
+                          },
+                          "visibility": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ],
+                            "description": "public (default), unlisted (not in public timelines) or private (followers only)"
+                          },
+                          "spoilerText": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "A content warning shown before the post"
+                          },
+                          "sensitive": {
+                            "type": "boolean",
+                            "description": "Hide the media behind a warning"
+                          },
+                          "language": {
+                            "type": "string",
+                            "description": "ISO 639-1 code of the text, e.g. \"en\""
+                          },
+                          "altTexts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 1500
+                            },
+                            "description": "Image and video descriptions, one per file, in order"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own reply once the post is up — a thread"
+                          }
+                        },
+                        "title": "Mastodon"
                       }
                     ]
                   }
@@ -2135,7 +2252,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -2170,6 +2287,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -2270,7 +2388,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -2335,7 +2455,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -2370,6 +2490,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -2462,7 +2583,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -2842,6 +2965,91 @@
                           }
                         },
                         "title": "Pinterest"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "description": "The post text, ≤ 300 characters; defaults to the post caption"
+                          },
+                          "langs": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "maxItems": 3,
+                            "description": "The text's languages, e.g. [\"en\"]"
+                          },
+                          "altTexts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Image and video descriptions, one per file, in order"
+                          },
+                          "contentWarning": {
+                            "type": "string",
+                            "enum": [
+                              "sexual",
+                              "nudity",
+                              "porn",
+                              "graphic-media"
+                            ],
+                            "description": "Labels the media for adult or graphic content"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own reply once the post is up — a thread"
+                          }
+                        },
+                        "title": "Bluesky"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "description": "The post text; defaults to the post caption"
+                          },
+                          "visibility": {
+                            "type": "string",
+                            "enum": [
+                              "public",
+                              "unlisted",
+                              "private"
+                            ],
+                            "description": "public (default), unlisted (not in public timelines) or private (followers only)"
+                          },
+                          "spoilerText": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "A content warning shown before the post"
+                          },
+                          "sensitive": {
+                            "type": "boolean",
+                            "description": "Hide the media behind a warning"
+                          },
+                          "language": {
+                            "type": "string",
+                            "description": "ISO 639-1 code of the text, e.g. \"en\""
+                          },
+                          "altTexts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 1500
+                            },
+                            "description": "Image and video descriptions, one per file, in order"
+                          },
+                          "firstComment": {
+                            "type": "string",
+                            "description": "Posted as the account's own reply once the post is up — a thread"
+                          }
+                        },
+                        "title": "Mastodon"
                       }
                     ]
                   }
@@ -2902,7 +3110,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -2937,6 +3145,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -3036,7 +3245,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -3101,7 +3312,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -3136,6 +3347,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -3233,7 +3445,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -3298,7 +3512,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -3333,6 +3547,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -3430,7 +3645,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -3495,7 +3712,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -3530,6 +3747,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -3627,7 +3845,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -3692,7 +3912,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -3727,6 +3947,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -4054,6 +4275,18 @@
                         "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
                         "properties": {},
                         "title": "Pinterest"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                        "properties": {},
+                        "title": "Bluesky"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                        "properties": {},
+                        "title": "Mastodon"
                       }
                     ]
                   }
@@ -4117,7 +4350,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -4152,6 +4385,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -4331,7 +4565,7 @@
                             "string",
                             "null"
                           ],
-                          "description": "The library group it came from"
+                          "description": "The group it came from"
                         },
                         "caption": {
                           "type": [
@@ -4366,6 +4600,7 @@
                             "uploaded",
                             "published",
                             "failed",
+                            "paused",
                             "cancelled"
                           ],
                           "description": "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error"
@@ -4783,7 +5018,9 @@
           "youtube",
           "facebook",
           "instagram",
-          "threads"
+          "threads",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -4952,7 +5189,9 @@
           "youtube",
           "facebook",
           "instagram",
-          "threads"
+          "threads",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -5107,7 +5346,9 @@
           "youtube",
           "facebook",
           "instagram",
-          "threads"
+          "threads",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -5271,7 +5512,9 @@
           "youtube",
           "facebook",
           "instagram",
-          "threads"
+          "threads",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -5576,18 +5819,20 @@
       "get": {
         "operationId": "listGroups",
         "summary": "List groups",
-        "description": "Newest first, with their files — narrowed by words in the title, caption or description. Pass nextCursor back as cursor for the next page.\n\nNeeds the **library** permission.",
+        "description": "Newest first, with their files — narrowed by words in the title, caption or description. Pass nextCursor back as cursor for the next page.\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -5850,18 +6095,20 @@
       "post": {
         "operationId": "createGroup",
         "summary": "Create a group",
-        "description": "Files that go out together (a carousel), with the title, caption and metadata drafted for them. Empty is fine: upload or import into it with groupId.\n\nNeeds the **library** permission.",
+        "description": "Files that go out together (a carousel), with the title, caption and metadata drafted for them. Empty is fine: upload or import into it with groupId.\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -6125,18 +6372,20 @@
       "get": {
         "operationId": "getGroup",
         "summary": "Get a group",
-        "description": "Its files in order, its drafted words, and the posts published from it.\n\nNeeds the **library** permission.",
+        "description": "Its files in order, its drafted words, and the posts published from it.\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -6371,18 +6620,20 @@
       "patch": {
         "operationId": "updateGroup",
         "summary": "Change a group",
-        "description": "The given fields only (null clears one). fileIds replaces its files and their order; metadata is merged.\n\nNeeds the **library** permission.",
+        "description": "The given fields only (null clears one). fileIds replaces its files and their order; metadata is merged.\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -6655,18 +6906,20 @@
       "delete": {
         "operationId": "deleteGroup",
         "summary": "Delete a group",
-        "description": "Its files stay in storage, in no group — unless deleteFiles, which deletes them too (except any a post not yet sent still needs, listed as kept).\n\nNeeds the **library** permission.",
+        "description": "Its files stay in storage, in no group — unless deleteFiles, which deletes them too (except any a post not yet sent still needs, listed as kept).\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -6740,18 +6993,20 @@
       "get": {
         "operationId": "planGroup",
         "summary": "Plan publishing a group",
-        "description": "For each account of the given brands and accounts: whether the group can go there and as what (Short, Reel, Carousel, Album, Pin…), what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.\n\nNeeds the **library** permission.",
+        "description": "For each account of the given brands and accounts: whether the group can go there and as what (Short, Reel, Carousel, Album, Pin…), what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.\n\nNeeds the **groups** permission.",
         "tags": [
           "Groups"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -6928,7 +7183,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -7092,22 +7349,24 @@
         }
       }
     },
-    "/api/v1/files/plan": {
+    "/api/v1/media/plan": {
       "post": {
-        "operationId": "planFiles",
+        "operationId": "planMedia",
         "summary": "Plan publishing files",
-        "description": "Like planning a group, for files that are not in one: for each account of the given brands and accounts, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.\n\nNeeds the **library** permission.",
+        "description": "Like planning a group, for files that are not in one: for each account of the given brands and accounts, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.\n\nNeeds the **groups** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "library",
+        "x-permission": "groups",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -7282,13 +7541,13 @@
         }
       }
     },
-    "/api/v1/files/publish": {
+    "/api/v1/media/publish": {
       "post": {
-        "operationId": "publishFiles",
+        "operationId": "publishMedia",
         "summary": "Publish files",
         "description": "Like publishing a group, for files that are not in one: one post per account that can take them, all at scheduledAt; the others are skipped with their reasons. Once every post is out (or cancelled), the files are deleted from storage.\n\nNeeds the **publish** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
         "x-permission": "publish",
         "x-platforms": [
@@ -7297,7 +7556,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -7478,22 +7739,24 @@
         }
       }
     },
-    "/api/v1/files": {
+    "/api/v1/media": {
       "get": {
-        "operationId": "listFiles",
+        "operationId": "listMedia",
         "summary": "List files",
-        "description": "Newest first, each with its kind, size, width, height, orientation and duration, read from the file itself. Pass nextCursor back as cursor for the next page.\n\nNeeds the **storage** permission.",
+        "description": "Newest first, each with its kind, size, width, height, orientation and duration, read from the file itself. Pass nextCursor back as cursor for the next page.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -7702,22 +7965,24 @@
         }
       }
     },
-    "/api/v1/files/uploads": {
+    "/api/v1/media/uploads": {
       "post": {
         "operationId": "createUpload",
         "summary": "Start an upload",
-        "description": "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then complete it with POST /files/uploads/{fileId}/complete. With groupId, the file lands in that library group.\n\nNeeds the **storage** permission.",
+        "description": "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then complete it with POST /media/uploads/{fileId}/complete. With groupId, the file lands in that group.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -7739,7 +8004,7 @@
                   },
                   "groupId": {
                     "type": "string",
-                    "description": "Put the file in this library group, after its other files"
+                    "description": "Put the file in this group, after its other files"
                   }
                 },
                 "required": [
@@ -7822,22 +8087,24 @@
         }
       }
     },
-    "/api/v1/files/uploads/{id}/complete": {
+    "/api/v1/media/uploads/{id}/complete": {
       "post": {
         "operationId": "completeUpload",
         "summary": "Complete an upload",
-        "description": "Once the PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Safe to call again.\n\nNeeds the **storage** permission.",
+        "description": "Once the PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Safe to call again.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -7984,22 +8251,24 @@
         }
       }
     },
-    "/api/v1/files/imports": {
+    "/api/v1/media/imports": {
       "post": {
-        "operationId": "importFile",
+        "operationId": "importMedia",
         "summary": "Import a file from a URL",
-        "description": "mixetape fetches a file from a public https URL (up to 5 GB, with a Content-Length) — e.g. a render whose link expires — and reads what it is. Nothing is sent from your machine.\n\nNeeds the **storage** permission.",
+        "description": "mixetape fetches a file from a public https URL (up to 5 GB, with a Content-Length) — e.g. a render whose link expires — and reads what it is. Nothing is sent from your machine.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -8030,7 +8299,7 @@
                   },
                   "groupId": {
                     "type": "string",
-                    "description": "Put the file in this library group, after its other files"
+                    "description": "Put the file in this group, after its other files"
                   }
                 },
                 "required": [
@@ -8180,22 +8449,24 @@
         }
       }
     },
-    "/api/v1/files/{id}": {
+    "/api/v1/media/{id}": {
       "get": {
-        "operationId": "getFile",
+        "operationId": "getMedia",
         "summary": "Get a file",
-        "description": "One file in storage, with what was read from it.\n\nNeeds the **storage** permission.",
+        "description": "One file in storage, with what was read from it.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -8339,20 +8610,22 @@
         }
       },
       "delete": {
-        "operationId": "deleteFile",
+        "operationId": "deleteMedia",
         "summary": "Delete a file",
-        "description": "Deletes it from storage; it leaves its group. Refused while a post not yet sent uses it.\n\nNeeds the **storage** permission.",
+        "description": "Deletes it from storage; it leaves its group. Refused while a post not yet sent uses it.\n\nNeeds the **media** permission.",
         "tags": [
-          "Files"
+          "Media"
         ],
-        "x-permission": "storage",
+        "x-permission": "media",
         "x-platforms": [
           "youtube",
           "facebook",
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -8424,7 +8697,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "responses": {
           "200": {
@@ -8543,7 +8818,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "requestBody": {
           "required": true,
@@ -8709,7 +8986,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -8839,7 +9118,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -9010,7 +9291,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -9079,7 +9362,9 @@
           "instagram",
           "threads",
           "tiktok",
-          "pinterest"
+          "pinterest",
+          "bluesky",
+          "mastodon"
         ],
         "parameters": [
           {
@@ -9150,16 +9435,16 @@
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "An API key from the workspace (API keys page), starting with `mxt_`. Each endpoint needs one of its permissions: read, publish, manage, comments, analytics, storage, channels, library, webhooks.",
+        "description": "An API key from the workspace (API keys page), starting with `mxt_`. Each endpoint needs one of its permissions: read, publish, manage, comments, analytics, media, channels, groups, webhooks.",
         "x-permissions": {
           "read": "See channels, posts, their status, playlists and captions",
           "publish": "Schedule, change, cancel and retry posts, and set thumbnails",
           "manage": "Edit videos already on the platform, manage playlists and upload captions",
           "comments": "Read, post, reply to and moderate comments",
           "analytics": "Read post and channel analytics",
-          "storage": "Upload, import, list and delete files in mixetape's storage",
+          "media": "Upload, import, list and delete files in Media & Storage",
           "channels": "Start connecting channels (you still approve each one on the platform)",
-          "library": "Make, change and read groups in the library (files that go out together, with drafted words)",
+          "groups": "Make, change and read groups in Media & Storage (files that go out together, with drafted words)",
           "webhooks": "Add, change and remove webhooks that are told when posts and channels change"
         }
       }
@@ -9307,9 +9592,13 @@
                   "platform_error",
                   "rate_limited",
                   "platform_unavailable",
+                  "plan_required",
+                  "channel_locked",
+                  "channel_limit_reached",
+                  "daily_limit_reached",
                   "internal_error"
                 ],
-                "description": "A stable code to branch on:\n\n- `invalid_request`: The request is malformed, e.g. the body is not a JSON object\n- `invalid_field`: A field has the wrong type or value (see field)\n- `missing_field`: A required field is missing (see field)\n- `unknown_field`: A field this endpoint does not take, often a typo (see field)\n- `unauthorized`: No valid API key\n- `missing_permission`: The API key lacks the permission this needs\n- `forbidden`: Not allowed for this caller\n- `not_found`: Not found, or not yours\n- `method_not_allowed`: The path exists but not with this method\n- `invalid_post_state`: The post's status does not allow this, e.g. cancelling a published post\n- `account_needs_reconnect`: The channel must be connected again before it can post\n- `file_not_ready`: The file's upload is not finished\n- `media_not_supported`: The platform cannot take these files as one post\n- `not_supported_by_platform`: The platform has no such feature\n- `nothing_to_publish`: The selection or group has no files\n- `already_exists`: Something with that name already exists\n- `conflict`: Not possible in the current state\n- `idempotency_key_reused`: The Idempotency-Key was used before with a different request\n- `idempotency_in_progress`: A request with this Idempotency-Key is still running\n- `source_unreachable`: The file at the given URL could not be fetched; check it is public\n- `platform_error`: The platform refused or failed the call; the message says why\n- `rate_limited`: Too many requests; wait Retry-After seconds\n- `platform_unavailable`: mixetape cannot connect that platform yet\n- `internal_error`: Something failed on mixetape's side"
+                "description": "A stable code to branch on:\n\n- `invalid_request`: The request is malformed, e.g. the body is not a JSON object\n- `invalid_field`: A field has the wrong type or value (see field)\n- `missing_field`: A required field is missing (see field)\n- `unknown_field`: A field this endpoint does not take, often a typo (see field)\n- `unauthorized`: No valid API key\n- `missing_permission`: The API key lacks the permission this needs\n- `forbidden`: Not allowed for this caller\n- `not_found`: Not found, or not yours\n- `method_not_allowed`: The path exists but not with this method\n- `invalid_post_state`: The post's status does not allow this, e.g. cancelling a published post\n- `account_needs_reconnect`: The channel must be connected again before it can post\n- `file_not_ready`: The file's upload is not finished\n- `media_not_supported`: The platform cannot take these files as one post\n- `not_supported_by_platform`: The platform has no such feature\n- `nothing_to_publish`: The selection or group has no files\n- `already_exists`: Something with that name already exists\n- `conflict`: Not possible in the current state\n- `idempotency_key_reused`: The Idempotency-Key was used before with a different request\n- `idempotency_in_progress`: A request with this Idempotency-Key is still running\n- `source_unreachable`: The file at the given URL could not be fetched; check it is public\n- `platform_error`: The platform refused or failed the call; the message says why\n- `rate_limited`: Too many requests; wait Retry-After seconds\n- `platform_unavailable`: mixetape cannot connect that platform yet\n- `plan_required`: The account has no active plan; choose one at /subscribe\n- `channel_locked`: The channel is locked: the plan covers fewer channels than are connected\n- `channel_limit_reached`: Connecting this would go past the channels the plan covers\n- `daily_limit_reached`: The channel already has the most posts allowed on that day\n- `internal_error`: Something failed on mixetape's side"
               },
               "message": {
                 "type": "string",

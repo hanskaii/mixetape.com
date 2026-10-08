@@ -10,7 +10,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -30,7 +32,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -59,6 +63,7 @@
                 "uploaded",
                 "published",
                 "failed",
+                "paused",
                 "cancelled"
               ]
             },
@@ -66,7 +71,7 @@
           },
           "groupId": {
             "type": "string",
-            "description": "Only posts published from this library group"
+            "description": "Only posts published from this group"
           },
           "search": {
             "type": "string",
@@ -113,7 +118,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -141,7 +148,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -209,7 +218,7 @@
     },
     {
       "name": "create_post",
-      "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_file). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted.",
+      "description": "Schedule a video on a connected account (see list_accounts for each account's platform). The post waits in mixetape (editable, cancellable) until shortly before scheduledAt. YouTube and Facebook get it leadMinutes early, unpublished, and publish it themselves at scheduledAt; Instagram and Threads get it prepared leadMinutes early and mixetape publishes it at scheduledAt; TikTok and Pinterest cannot hold a post, so mixetape posts it at scheduledAt. Each platform takes its own metadata (Facebook format reel for a Reel, Pinterest boardId is required, TikTok privacyLevel). Thumbnail, playlists and captions are applied right after upload where the platform supports them; firstComment is posted once it is public. mediaUrl: a public https URL, or an r2:// URL from mixetape storage (create_upload / import_media). For several files in one post — a carousel on Instagram, Threads or Pinterest, a photo album on Facebook — pass media (a list of URLs, in order) instead of mediaUrl; list_accounts shows what each platform takes (formats). Files in mixetape storage are checked against it before the post is accepted.",
       "permission": "publish",
       "platforms": [
         "youtube",
@@ -217,7 +226,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -586,6 +597,91 @@
                   }
                 },
                 "title": "Pinterest"
+              },
+              {
+                "type": "object",
+                "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The post text, ≤ 300 characters; defaults to the post caption"
+                  },
+                  "langs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "description": "The text's languages, e.g. [\"en\"]"
+                  },
+                  "altTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Image and video descriptions, one per file, in order"
+                  },
+                  "contentWarning": {
+                    "type": "string",
+                    "enum": [
+                      "sexual",
+                      "nudity",
+                      "porn",
+                      "graphic-media"
+                    ],
+                    "description": "Labels the media for adult or graphic content"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own reply once the post is up — a thread"
+                  }
+                },
+                "title": "Bluesky"
+              },
+              {
+                "type": "object",
+                "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The post text; defaults to the post caption"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ],
+                    "description": "public (default), unlisted (not in public timelines) or private (followers only)"
+                  },
+                  "spoilerText": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "A content warning shown before the post"
+                  },
+                  "sensitive": {
+                    "type": "boolean",
+                    "description": "Hide the media behind a warning"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "ISO 639-1 code of the text, e.g. \"en\""
+                  },
+                  "altTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1500
+                    },
+                    "description": "Image and video descriptions, one per file, in order"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own reply once the post is up — a thread"
+                  }
+                },
+                "title": "Mastodon"
               }
             ]
           },
@@ -609,7 +705,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -978,6 +1076,91 @@
                   }
                 },
                 "title": "Pinterest"
+              },
+              {
+                "type": "object",
+                "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The post text, ≤ 300 characters; defaults to the post caption"
+                  },
+                  "langs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "description": "The text's languages, e.g. [\"en\"]"
+                  },
+                  "altTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Image and video descriptions, one per file, in order"
+                  },
+                  "contentWarning": {
+                    "type": "string",
+                    "enum": [
+                      "sexual",
+                      "nudity",
+                      "porn",
+                      "graphic-media"
+                    ],
+                    "description": "Labels the media for adult or graphic content"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own reply once the post is up — a thread"
+                  }
+                },
+                "title": "Bluesky"
+              },
+              {
+                "type": "object",
+                "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The post text; defaults to the post caption"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "unlisted",
+                      "private"
+                    ],
+                    "description": "public (default), unlisted (not in public timelines) or private (followers only)"
+                  },
+                  "spoilerText": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "A content warning shown before the post"
+                  },
+                  "sensitive": {
+                    "type": "boolean",
+                    "description": "Hide the media behind a warning"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "ISO 639-1 code of the text, e.g. \"en\""
+                  },
+                  "altTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1500
+                    },
+                    "description": "Image and video descriptions, one per file, in order"
+                  },
+                  "firstComment": {
+                    "type": "string",
+                    "description": "Posted as the account's own reply once the post is up — a thread"
+                  }
+                },
+                "title": "Mastodon"
               }
             ]
           }
@@ -997,7 +1180,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1025,7 +1210,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1247,6 +1434,18 @@
                 "description": "Pinterest Pin fields. Video (mp4/mov) or image media. The Pin posts at the scheduled time (Pinterest cannot hold a post).",
                 "properties": {},
                 "title": "Pinterest"
+              },
+              {
+                "type": "object",
+                "description": "Bluesky post fields — a video (up to 3 min), an image, or up to 4 images, with text of up to 300 characters. Links, #hashtags and @handles in the text become links. Set a field to null to clear it when updating.",
+                "properties": {},
+                "title": "Bluesky"
+              },
+              {
+                "type": "object",
+                "description": "Mastodon post fields — a video, an image, or up to 4 images, with text. The text limit is the server's own (500 characters on most; links count as 23). Set a field to null to clear it when updating.",
+                "properties": {},
+                "title": "Mastodon"
               }
             ]
           }
@@ -1374,7 +1573,9 @@
         "youtube",
         "facebook",
         "instagram",
-        "threads"
+        "threads",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1417,7 +1618,9 @@
         "youtube",
         "facebook",
         "instagram",
-        "threads"
+        "threads",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1444,7 +1647,9 @@
         "youtube",
         "facebook",
         "instagram",
-        "threads"
+        "threads",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1475,7 +1680,9 @@
         "youtube",
         "facebook",
         "instagram",
-        "threads"
+        "threads",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1520,7 +1727,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1548,7 +1757,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1561,9 +1772,15 @@
               "instagram",
               "threads",
               "tiktok",
-              "pinterest"
+              "pinterest",
+              "bluesky",
+              "mastodon"
             ],
             "description": "The platform to connect; one mixetape has no app for yet is refused"
+          },
+          "account": {
+            "type": "string",
+            "description": "Who is connecting, where the platform needs it: the Mastodon account (@you@mastodon.social — its server is what counts), or a Bluesky handle (optional)"
           }
         },
         "required": [
@@ -1581,7 +1798,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1609,7 +1828,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1642,7 +1863,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1662,7 +1885,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1693,7 +1918,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1728,7 +1955,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1822,15 +2051,17 @@
     },
     {
       "name": "create_group",
-      "description": "Make a group in the library: files that go out together (a carousel), with the title, caption and metadata you drafted, so the user can publish it from the workspace in a few clicks. Empty is fine — then upload into it with create_upload or import_file (groupId). Answers the group with its files (kind, size, orientation, duration).",
-      "permission": "library",
+      "description": "Make a group in the library: files that go out together (a carousel), with the title, caption and metadata you drafted, so the user can publish it from the workspace in a few clicks. Empty is fine — then upload into it with create_upload or import_media (groupId). Answers the group with its files (kind, size, orientation, duration).",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1864,14 +2095,16 @@
     {
       "name": "update_group",
       "description": "Change a group: the given fields only (null clears one); fileIds, when given, replaces its files and their order (the ones left out stay in storage); metadata is merged.",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1912,14 +2145,16 @@
     {
       "name": "get_group",
       "description": "One group: its files in order, its drafted words, and the posts published from it.",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1940,14 +2175,16 @@
     {
       "name": "list_groups",
       "description": "List the library's groups, newest first, with their files — narrowed by words in the title, caption or description. Returns { groups, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -1975,14 +2212,16 @@
     {
       "name": "delete_group",
       "description": "Delete a group. Its files stay in storage, in no group — unless deleteFiles, which deletes them too (except any a post not yet sent still needs).",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2007,14 +2246,16 @@
     {
       "name": "plan_group",
       "description": "Before publishing a group: for each channel of the given brands and channels, whether its files can go there and as what (label: Short, Video, Reel, Photo, Carousel, Album, Pin…), problems that stop it (a platform that takes no images, too many files, a missing YouTube title or Pinterest boardId, a channel to reconnect), warnings (a horizontal video for Reels), and the caption and metadata the post would carry. Publishes nothing.",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2056,7 +2297,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2100,16 +2343,18 @@
       }
     },
     {
-      "name": "plan_files",
+      "name": "plan_media",
       "description": "Like plan_group, for files that are not in a group: for each channel of the given brands and channels, whether these files can go there as one post and as what, what stops it, what is not ideal, and the caption and metadata the post would carry. Publishes nothing.",
-      "permission": "library",
+      "permission": "groups",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2161,8 +2406,8 @@
       }
     },
     {
-      "name": "publish_files",
-      "description": "Like publish_group, for files that are not in a group: one post per channel that can take them (see plan_files), all at scheduledAt; the others are skipped with their reasons. Answers { scheduled: [{ accountId, postId }], skipped, failed }. Once every post is out (or cancelled), the files are deleted from storage.",
+      "name": "publish_media",
+      "description": "Like publish_group, for files that are not in a group: one post per channel that can take them (see plan_media), all at scheduledAt; the others are skipped with their reasons. Answers { scheduled: [{ accountId, postId }], skipped, failed }. Once every post is out (or cancelled), the files are deleted from storage.",
       "permission": "publish",
       "platforms": [
         "youtube",
@@ -2170,7 +2415,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2234,15 +2481,17 @@
     },
     {
       "name": "create_upload",
-      "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that library group. Storage is temporary: the file is deleted once its post is published or cancelled, or 24 hours after upload (expiresAt) if no post uses it by then — schedule it within a day. For a file already on the web use import_file.",
-      "permission": "storage",
+      "description": "Upload a local file (up to 5 GB) to mixetape storage, in two steps. 1) This returns fileId and uploadUrl, a presigned URL valid for 6 hours: send the whole file in one PUT with exactly the returned Content-Type header — the returned curl command does it (replace <file>); no API key is needed for the PUT. 2) Then call finish_upload with the fileId: mixetape checks the file and reads what it is. After that, url (r2://…) works as mediaUrl in create_post; with groupId the file lands in that group. Storage is temporary: the file is deleted once its post is published or cancelled, or 24 hours after upload (expiresAt) if no post uses it by then — schedule it within a day. For a file already on the web use import_media.",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2260,7 +2509,7 @@
           },
           "groupId": {
             "type": "string",
-            "description": "Put the file in this library group, after its other files"
+            "description": "Put the file in this group, after its other files"
           }
         },
         "required": [
@@ -2271,14 +2520,16 @@
     {
       "name": "finish_upload",
       "description": "Finish an upload once its PUT is done: mixetape finds the file and reads its kind, width, height, orientation and duration. Answers the file. Safe to call again.",
-      "permission": "storage",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2294,16 +2545,18 @@
       }
     },
     {
-      "name": "import_file",
+      "name": "import_media",
       "description": "Copy a file from a public https URL (up to 5 GB, with a Content-Length) into mixetape storage — e.g. a video from a render service whose link expires. mixetape fetches it and reads what it is; nothing is sent from your machine. Answers the file, ready to use.",
-      "permission": "storage",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2318,7 +2571,7 @@
           },
           "groupId": {
             "type": "string",
-            "description": "Put the file in this library group, after its other files"
+            "description": "Put the file in this group, after its other files"
           },
           "idempotencyKey": {
             "type": "string",
@@ -2331,16 +2584,18 @@
       }
     },
     {
-      "name": "list_files",
+      "name": "list_media",
       "description": "List the files in your mixetape storage, newest first — each with url (r2://…), kind, size, width, height, orientation (vertical/horizontal/square) and duration. Narrow by kind or words in the file name. Returns { files, nextCursor }; pass nextCursor back as cursor for the next page (null on the last).",
-      "permission": "storage",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2386,16 +2641,18 @@
       }
     },
     {
-      "name": "get_file",
+      "name": "get_media",
       "description": "One file in storage: its url, kind, size, width, height, orientation, duration.",
-      "permission": "storage",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2414,16 +2671,18 @@
       }
     },
     {
-      "name": "delete_file",
+      "name": "delete_media",
       "description": "Delete a file from mixetape storage (it leaves its group). Refused while a post that has not gone out yet points at it.",
-      "permission": "storage",
+      "permission": "media",
       "platforms": [
         "youtube",
         "facebook",
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2451,7 +2710,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2471,7 +2732,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2517,7 +2780,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2571,7 +2836,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
@@ -2599,7 +2866,9 @@
         "instagram",
         "threads",
         "tiktok",
-        "pinterest"
+        "pinterest",
+        "bluesky",
+        "mastodon"
       ],
       "inputSchema": {
         "type": "object",
