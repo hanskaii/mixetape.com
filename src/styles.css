@@ -170,6 +170,25 @@ body {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Thin scrollbars in the theme's own grey, on a clear track. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+  }
+  /* Browsers without scrollbar-color (older Safari) take the same look this way. */
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-clip: padding-box;
+      background-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+      border: 2px solid transparent;
+      border-radius: 9999px;
+    }
   }
   body {
     background-color: var(--background);

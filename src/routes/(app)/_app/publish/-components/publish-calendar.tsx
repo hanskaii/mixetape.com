@@ -426,39 +426,47 @@ function TimeGrid({ days, today, byDay, accountById, timeZone, compact }: GridPr
   // Open on the working day, or earlier when a post is: once per set of days.
   const startKey = days[0];
   useEffect(() => {
-    const row = scroller.current?.querySelector<HTMLElement>(`[data-hour="${firstHour}"]`);
-    if (scroller.current && row) scroller.current.scrollTop = row.offsetTop;
+    const box = scroller.current;
+    const row = box?.querySelector<HTMLElement>(`[data-hour="${firstHour}"]`);
+    const head = box?.querySelector<HTMLElement>("[data-days]");
+    if (box && row) box.scrollTop = row.offsetTop - (head?.offsetHeight ?? 0);
   }, [startKey, firstHour]);
 
   const columns = { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` };
   return (
     <div className={FRAME}>
-      <div className="grid border-b border-border" style={columns}>
-        {days.map((day) => (
-          <div
-            key={day}
-            className={cn(
-              "border-r border-border py-2 text-center text-xs last:border-r-0 sm:text-sm",
-              day === today
-                ? "border-b-2 border-b-foreground font-semibold text-foreground"
-                : "font-medium text-muted-foreground",
-            )}
-          >
-            {compact ? (
-              <span className="flex flex-col leading-tight">
-                {weekdayName(day, "short")}
-                <span className="tabular-nums">{dayOfMonth(day)}</span>
-              </span>
-            ) : (
-              <>
-                {weekdayName(day, "long")}{" "}
-                <span className="ml-1 tabular-nums">{dayOfMonth(day)}</span>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* The day row scrolls with the hours (sticky), so a scrollbar narrows both alike and
+          the columns stay lined up. */}
       <div ref={scroller} className="relative max-h-[70vh] overflow-y-auto">
+        <div
+          data-days
+          className="sticky top-0 z-10 grid border-b border-border bg-card"
+          style={columns}
+        >
+          {days.map((day) => (
+            <div
+              key={day}
+              className={cn(
+                "border-r border-border py-2 text-center text-xs last:border-r-0 sm:text-sm",
+                day === today
+                  ? "font-semibold text-foreground shadow-[inset_0_-2px_0_var(--foreground)]"
+                  : "font-medium text-muted-foreground",
+              )}
+            >
+              {compact ? (
+                <span className="flex flex-col leading-tight">
+                  {weekdayName(day, "short")}
+                  <span className="tabular-nums">{dayOfMonth(day)}</span>
+                </span>
+              ) : (
+                <>
+                  {weekdayName(day, "long")}{" "}
+                  <span className="ml-1 tabular-nums">{dayOfMonth(day)}</span>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
         {HOURS.map((hour) => (
           <div
             key={hour}
