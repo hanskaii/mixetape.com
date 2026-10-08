@@ -1,5 +1,5 @@
-// Makes mixetape's plans in Dodo Payments: Marketer and Operator, monthly and yearly, each
-// with a 7-day trial, plus the extra-account add-on Operator sells past its hundred
+// Makes mixetape's plans in Dodo Payments: Creator and Studio, monthly and yearly, each
+// with a 7-day trial, plus the extra-account add-on Studio sells past its hundred
 // accounts. Run it once per mode with that mode's API key:
 //
 //   DODO_PAYMENTS_API_KEY=… node scripts/dodo-catalog.mjs              (test mode)
@@ -38,7 +38,7 @@ async function addon(name, dollars) {
     price: dollars * 100,
     currency: "USD",
     tax_category: "saas",
-    description: "One more social account on the Operator plan.",
+    description: "One more social account on the Studio plan.",
   });
   return created.id;
 }
@@ -73,27 +73,27 @@ const extraMonthly = await addon("Extra account (monthly)", 1);
 const extraYearly = await addon("Extra account (yearly)", YEAR_MONTHS);
 
 const catalog = {
-  marketer_monthly: await plan(
-    "Marketer (monthly)",
+  creator_monthly: await plan(
+    "Creator (monthly)",
     "15 social accounts, billed monthly.",
     39,
     "Month",
   ),
-  marketer_yearly: await plan(
-    "Marketer (yearly)",
+  creator_yearly: await plan(
+    "Creator (yearly)",
     "15 social accounts, billed yearly.",
     39 * YEAR_MONTHS,
     "Year",
   ),
-  operator_monthly: await plan(
-    "Operator (monthly)",
+  studio_monthly: await plan(
+    "Studio (monthly)",
     "100 social accounts, billed monthly; more at $1 each.",
     100,
     "Month",
     [extraMonthly],
   ),
-  operator_yearly: await plan(
-    "Operator (yearly)",
+  studio_yearly: await plan(
+    "Studio (yearly)",
     "100 social accounts, billed yearly; more at $10 each.",
     100 * YEAR_MONTHS,
     "Year",

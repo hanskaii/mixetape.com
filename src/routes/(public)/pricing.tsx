@@ -12,7 +12,7 @@ export const Route = createFileRoute("/(public)/pricing")({
       path: "/pricing",
       title: `Pricing | ${siteConfig.name}`,
       description:
-        "mixetape plans: Marketer at $39 a month for 15 accounts, Operator from $100 a month for 100 accounts and $1 each after. 7-day free trial, eight platforms, MCP and REST.",
+        "mixetape plans: Creator at $39 a month for 15 accounts, Studio from $100 a month for 100 accounts and $1 each after. 7-day free trial, eight platforms, MCP and REST.",
     }),
   component: PricingPage,
 });

@@ -13,10 +13,10 @@ import {
 } from "#/modules/billing/plans";
 import { LandingCta } from "./landing-cta";
 
-// Operator is priced per account: the base covers OPERATOR_MIN, each one after is $1.
-const OPERATOR_MIN = PLANS.operator.accounts;
-const OPERATOR_STEP = 10;
-const MARKETER_MONTHLY = PLANS.marketer.monthly;
+// Studio is priced per account: the base covers STUDIO_MIN, each one after is $1.
+const STUDIO_MIN = PLANS.studio.accounts;
+const STUDIO_STEP = 10;
+const CREATOR_MONTHLY = PLANS.creator.monthly;
 
 /**
  * Into Dodo's checkout for the plan (billing.fn picks the product and the trial), or the
@@ -48,7 +48,7 @@ function billedAs(monthly: number, billing: Billing) {
 }
 
 // Every line here works today.
-const MARKETER_FEATURES = [
+const CREATOR_FEATURES = [
   "15 social accounts",
   "YouTube, TikTok, Instagram, Facebook Pages, Threads, Pinterest, Bluesky and Mastodon",
   "Unlimited scheduled posts",
@@ -66,9 +66,9 @@ const MARKETER_FEATURES = [
   "Up to 5 brands",
 ];
 
-const OPERATOR_FEATURES = [
+const STUDIO_FEATURES = [
   "100 social accounts or more, priced per account",
-  "Everything in Marketer",
+  "Everything in Creator",
   "Unlimited brands, one per client",
   "Priority email support",
 ];
@@ -230,8 +230,7 @@ const styles = stylex.create({
   check: { color: colors.editorial, flexShrink: 0, marginBlockStart: "0.2rem" },
 });
 
-const toAccounts = (value: string) =>
-  Math.max(OPERATOR_MIN, Math.round(Number(value)) || OPERATOR_MIN);
+const toAccounts = (value: string) => Math.max(STUDIO_MIN, Math.round(Number(value)) || STUDIO_MIN);
 
 function Features({ items }: { items: string[] }) {
   return (
@@ -275,10 +274,10 @@ function Trial({
 export function Plans({ signedIn }: { signedIn: boolean }) {
   // What is typed stays as typed until the field loses focus; the price never drops below
   // the minimum meanwhile.
-  const [draft, setDraft] = useState(String(OPERATOR_MIN));
+  const [draft, setDraft] = useState(String(STUDIO_MIN));
   const accounts = toAccounts(draft);
   const step = (by: number) =>
-    setDraft((prev) => String(Math.max(OPERATOR_MIN, toAccounts(prev) + by)));
+    setDraft((prev) => String(Math.max(STUDIO_MIN, toAccounts(prev) + by)));
   const [billing, setBilling] = useState<Billing>("monthly");
 
   return (
@@ -300,31 +299,31 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
       <ul {...stylex.props(styles.grid)}>
         <li {...stylex.props(styles.plan, styles.featured)}>
           <div {...stylex.props(styles.head)}>
-            <h3 {...stylex.props(styles.name)}>Marketer</h3>
+            <h3 {...stylex.props(styles.name)}>Creator</h3>
             <span {...stylex.props(styles.tag)}>Most popular</span>
           </div>
           <p {...stylex.props(styles.pitch)}>For one person marketing a business</p>
           <div {...stylex.props(styles.priceBlock)}>
             <p {...stylex.props(styles.price)}>
-              <span {...stylex.props(styles.amount)}>{perMonth(MARKETER_MONTHLY, billing)}</span>
+              <span {...stylex.props(styles.amount)}>{perMonth(CREATOR_MONTHLY, billing)}</span>
               <span {...stylex.props(styles.period)}>/month</span>
             </p>
             <p {...stylex.props(styles.billing)}>
-              15 accounts, {billedAs(MARKETER_MONTHLY, billing)}
+              15 accounts, {billedAs(CREATOR_MONTHLY, billing)}
             </p>
           </div>
           <Trial
             signedIn={signedIn}
-            plan="marketer"
+            plan="creator"
             period={billing}
-            accounts={PLANS.marketer.accounts}
+            accounts={PLANS.creator.accounts}
           />
-          <Features items={MARKETER_FEATURES} />
+          <Features items={CREATOR_FEATURES} />
         </li>
 
         <li {...stylex.props(styles.plan)}>
           <div {...stylex.props(styles.head)}>
-            <h3 {...stylex.props(styles.name)}>Operator</h3>
+            <h3 {...stylex.props(styles.name)}>Studio</h3>
           </div>
           <p {...stylex.props(styles.pitch)}>For those with an army of accounts</p>
           <div {...stylex.props(styles.priceBlock)}>
@@ -341,15 +340,15 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               <p {...stylex.props(styles.stepperLabel)}>Accounts</p>
               <p {...stylex.props(styles.stepperHint)}>
                 {" "}
-                {OPERATOR_MIN} minimum, {billing === "monthly" ? "$1" : "$10 a year"} each after
+                {STUDIO_MIN} minimum, {billing === "monthly" ? "$1" : "$10 a year"} each after
               </p>
             </div>
             <div {...stylex.props(styles.control)}>
               <button
                 type="button"
                 aria-label="Fewer accounts"
-                disabled={accounts <= OPERATOR_MIN}
-                onClick={() => step(-OPERATOR_STEP)}
+                disabled={accounts <= STUDIO_MIN}
+                onClick={() => step(-STUDIO_STEP)}
                 {...stylex.props(styles.stepButton)}
               >
                 <Minus size={14} weight="bold" />
@@ -357,7 +356,7 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               <input
                 type="number"
                 inputMode="numeric"
-                min={OPERATOR_MIN}
+                min={STUDIO_MIN}
                 aria-label="Accounts"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -367,15 +366,15 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               <button
                 type="button"
                 aria-label="More accounts"
-                onClick={() => step(OPERATOR_STEP)}
+                onClick={() => step(STUDIO_STEP)}
                 {...stylex.props(styles.stepButton)}
               >
                 <Plus size={14} weight="bold" />
               </button>
             </div>
           </div>
-          <Trial signedIn={signedIn} plan="operator" period={billing} accounts={accounts} />
-          <Features items={OPERATOR_FEATURES} />
+          <Trial signedIn={signedIn} plan="studio" period={billing} accounts={accounts} />
+          <Features items={STUDIO_FEATURES} />
         </li>
       </ul>
     </div>

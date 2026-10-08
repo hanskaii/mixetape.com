@@ -15,7 +15,7 @@ import { PLANS, TRIAL_DAYS, slugOf, type Period, type PlanId } from "./plans";
  */
 
 /**
- * The Dodo products for each plan and period, and the add-on that sells Operator accounts
+ * The Dodo products for each plan and period, and the add-on that sells Studio accounts
  * past the hundred. Ids come from scripts/dodo-catalog.mjs, set as the DODO_CATALOG var.
  */
 type Catalog = Partial<Record<`${PlanId}_${Period}` | `extra_account_${Period}`, string>>;
@@ -31,7 +31,7 @@ export function catalog(): Catalog {
 const PERIODS: Period[] = ["monthly", "yearly"];
 const PLAN_IDS = Object.keys(PLANS) as PlanId[];
 
-/** The checkout slugs the plugin resolves to products: marketer-monthly, … */
+/** The checkout slugs the plugin resolves to products: creator-monthly, … */
 export function checkoutProducts() {
   const ids = catalog();
   return PLAN_IDS.flatMap((plan) =>
@@ -42,10 +42,10 @@ export function checkoutProducts() {
   );
 }
 
-/** The ids the checkout page needs to put Operator's extra accounts in the cart. */
-export function operatorCheckout(period: Period) {
+/** The ids the checkout page needs to put Studio's extra accounts in the cart. */
+export function studioCheckout(period: Period) {
   const ids = catalog();
-  const productId = ids[`operator_${period}`];
+  const productId = ids[`studio_${period}`];
   const addonId = ids[`extra_account_${period}`];
   return productId && addonId ? { productId, addonId } : null;
 }
@@ -139,7 +139,7 @@ export async function recordSubscription(payload: { type: string; data: unknown 
     plan: product.plan,
     period: product.period,
     status: data.status,
-    accounts: PLANS[product.plan].accounts + (product.plan === "operator" ? extra : 0),
+    accounts: PLANS[product.plan].accounts + (product.plan === "studio" ? extra : 0),
     cancelAtPeriodEnd: Boolean(data.cancel_at_next_billing_date),
     nextBillingAt: data.next_billing_date ? new Date(data.next_billing_date) : null,
     updatedAt: new Date(),

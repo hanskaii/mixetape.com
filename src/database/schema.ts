@@ -543,7 +543,7 @@ export const subscriptions = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
-    plan: text("plan").notNull(), // 'marketer' | 'operator'
+    plan: text("plan").notNull(), // 'creator' | 'studio'
     period: text("period").notNull(), // 'monthly' | 'yearly'
     status: text("status").notNull(), // Dodo's: 'active' | 'on_hold' | 'cancelled' | …
     accounts: integer("accounts").notNull(), // social accounts the plan covers

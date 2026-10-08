@@ -33,10 +33,10 @@ beforeEach(() => {
   // The stub's env takes any binding; the generated Env type pins this var to its default.
   Object.assign(env, {
     DODO_CATALOG: JSON.stringify({
-      marketer_monthly: "pdt_mm",
-      marketer_yearly: "pdt_my",
-      operator_monthly: "pdt_om",
-      operator_yearly: "pdt_oy",
+      creator_monthly: "pdt_mm",
+      creator_yearly: "pdt_my",
+      studio_monthly: "pdt_om",
+      studio_yearly: "pdt_oy",
       extra_account_monthly: "adn_m",
       extra_account_yearly: "adn_y",
     }),
@@ -50,16 +50,16 @@ beforeEach(() => {
 describe("catalog", () => {
   it("maps every plan and period to a checkout slug", () => {
     expect(checkoutProducts()).toEqual([
-      { slug: "marketer-monthly", productId: "pdt_mm" },
-      { slug: "marketer-yearly", productId: "pdt_my" },
-      { slug: "operator-monthly", productId: "pdt_om" },
-      { slug: "operator-yearly", productId: "pdt_oy" },
+      { slug: "creator-monthly", productId: "pdt_mm" },
+      { slug: "creator-yearly", productId: "pdt_my" },
+      { slug: "studio-monthly", productId: "pdt_om" },
+      { slug: "studio-yearly", productId: "pdt_oy" },
     ]);
   });
 });
 
 describe("subscription webhooks", () => {
-  it("records Operator's extra accounts from the add-on of the same period", async () => {
+  it("records Studio's extra accounts from the add-on of the same period", async () => {
     state.users = [{ id: "u1" }];
     await recordSubscription({
       type: "subscription.active",
@@ -76,7 +76,7 @@ describe("subscription webhooks", () => {
       expect.objectContaining({
         id: "sub_1",
         userId: "u1",
-        plan: "operator",
+        plan: "studio",
         period: "yearly",
         status: "active",
         accounts: 125,
@@ -96,7 +96,7 @@ describe("subscription webhooks", () => {
 });
 
 describe("publishing needs a plan", () => {
-  const marketer = { plan: "marketer", period: "monthly", accounts: 15, status: "active" };
+  const creator = { plan: "creator", period: "monthly", accounts: 15, status: "active" };
 
   it("lets an exempt account publish without one", async () => {
     state.users = [{ billingExempt: true }];
@@ -113,7 +113,7 @@ describe("publishing needs a plan", () => {
 
   it("refuses when more channels are connected than the plan covers", async () => {
     state.users = [{ billingExempt: false }];
-    state.subscription = marketer;
+    state.subscription = creator;
     state.connected = 16;
     const error = await requirePlan("u1").catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ServiceError);
@@ -122,7 +122,7 @@ describe("publishing needs a plan", () => {
 
   it("allows a plan that covers every channel", async () => {
     state.users = [{ billingExempt: false }];
-    state.subscription = marketer;
+    state.subscription = creator;
     state.connected = 15;
     await expect(requirePlan("u1")).resolves.toBeUndefined();
   });
