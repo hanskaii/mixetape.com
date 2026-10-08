@@ -34,7 +34,7 @@ const INCLUDED = [
     text: "Each post stays editable, movable and cancellable until it goes out, and reports back when it does.",
   },
   {
-    title: "Library and storage",
+    title: "Media and storage",
     text: "Upload or import media, group it with its words, and publish it to several channels at once.",
   },
 ];

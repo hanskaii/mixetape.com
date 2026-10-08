@@ -7,7 +7,7 @@ const LINKS: Record<string, string> = {
   "/introduction": "ph:book-open",
   "/quickstart": "ph:rocket-launch",
   "/concepts/api-keys": "ph:key",
-  "/concepts/library": "ph:folders",
+  "/concepts/groups": "ph:folders",
   "/concepts/media": "ph:image",
   "/concepts/posts-and-timing": "ph:calendar-dots",
   "/concepts/webhooks": "ph:webhooks-logo",

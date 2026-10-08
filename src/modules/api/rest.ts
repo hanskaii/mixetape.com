@@ -60,7 +60,7 @@ type Match = { endpoint: Endpoint; params: Record<string, string> } | { allowed:
 
 /**
  * The endpoint for a method and a path under /api/v1, or the methods that path takes. The
- * most literal path wins: /files/uploads is that resource, not the file "uploads".
+ * most literal path wins: /media/uploads is that resource, not the file "uploads".
  */
 export function match(endpoints: readonly Endpoint[], method: string, path: string): Match {
   const candidates = endpoints.filter((endpoint) => pattern(endpoint.path).test(path));

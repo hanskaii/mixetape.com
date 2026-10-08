@@ -68,7 +68,7 @@ const styles = stylex.create({
 /** Creates an API key with chosen permissions, then shows it — once — with how to use it. */
 export function CreateApiKeyModal({ scopes, baseUrl, onClose, onCreated }: CreateApiKeyModalProps) {
   const [name, setName] = useState("");
-  const [chosen, setChosen] = useState<string[]>(["read", "publish", "storage"]);
+  const [chosen, setChosen] = useState<string[]>(["read", "publish", "media"]);
   const [key, setKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);

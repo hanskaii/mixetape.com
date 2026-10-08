@@ -79,7 +79,7 @@ import { TOOLS } from "./tools";
 
 const everything = {
   userId: "user-1",
-  scopes: ["read", "publish", "manage", "comments", "analytics", "storage", "channels", "library"],
+  scopes: ["read", "publish", "manage", "comments", "analytics", "media", "channels", "groups"],
 };
 
 const request = (method: string, path: string, body?: unknown, headers?: HeadersInit) =>
@@ -94,9 +94,9 @@ const request = (method: string, path: string, body?: unknown, headers?: Headers
 
 describe("REST routing", () => {
   it("prefers a literal path to a {param}", () => {
-    const found = match(ENDPOINTS, "POST", "/files/uploads");
+    const found = match(ENDPOINTS, "POST", "/media/uploads");
     expect(found && "endpoint" in found && found.endpoint.operationId).toBe("createUpload");
-    expect(match(ENDPOINTS, "GET", "/files/uploads")).toEqual({ allowed: ["POST"] });
+    expect(match(ENDPOINTS, "GET", "/media/uploads")).toEqual({ allowed: ["POST"] });
   });
 
   it("reads path params, decoded", () => {
@@ -292,7 +292,7 @@ describe("REST endpoints", () => {
   it("plans and publishes files that are not in a group", async () => {
     vi.mocked(publishing.filesSource).mockResolvedValue({ files: [{ id: "f1" }] } as never);
     vi.mocked(publishing.planPost).mockResolvedValue({ channels: [] } as never);
-    await request("POST", "/files/plan", { fileIds: ["f1"], caption: "Hi", brandIds: ["b1"] });
+    await request("POST", "/media/plan", { fileIds: ["f1"], caption: "Hi", brandIds: ["b1"] });
     expect(publishing.filesSource).toHaveBeenCalledWith("user-1", ["f1"], {
       title: undefined,
       caption: "Hi",
@@ -305,7 +305,7 @@ describe("REST endpoints", () => {
       { brandIds: ["b1"], accountIds: undefined },
     );
     vi.mocked(publishing.publishPost).mockResolvedValue({ scheduled: [] } as never);
-    const published = await request("POST", "/files/publish", {
+    const published = await request("POST", "/media/publish", {
       fileIds: ["f1"],
       accountIds: ["a1"],
       scheduledAt: "2026-10-03T10:00:00+07:00",
@@ -341,7 +341,7 @@ describe("REST endpoints", () => {
 
   it("starts an upload and gets a file", async () => {
     vi.mocked(files.createFileUpload).mockResolvedValue({ fileId: "f1" } as never);
-    const started = await request("POST", "/files/uploads", { fileName: "a.mp4", size: 10 });
+    const started = await request("POST", "/media/uploads", { fileName: "a.mp4", size: 10 });
     expect(started.status).toBe(201);
     expect(files.createFileUpload).toHaveBeenCalledWith("user-1", {
       fileName: "a.mp4",
@@ -350,7 +350,7 @@ describe("REST endpoints", () => {
       groupId: undefined,
     });
     vi.mocked(files.getFile).mockResolvedValue({ id: "f1" } as never);
-    expect(await (await request("GET", "/files/f1")).json()).toEqual({ file: { id: "f1" } });
+    expect(await (await request("GET", "/media/f1")).json()).toEqual({ file: { id: "f1" } });
   });
 
   it("plans a group for brands and accounts from the query", async () => {
@@ -415,7 +415,7 @@ describe("the OpenAPI document", () => {
       )
       .map((operation) => operation.operationId)
       .sort();
-    expect(keyed).toEqual(["createPost", "importFile", "publishFiles", "publishGroup"]);
+    expect(keyed).toEqual(["createPost", "importMedia", "publishGroup", "publishMedia"]);
   });
 
   it("describes errors by code, rate limits and the deprecated cancel path", () => {

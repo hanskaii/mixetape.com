@@ -7,7 +7,7 @@ import { object } from "#/modules/api/input";
 
 const GROUP = {
   type: "string",
-  description: "Put the file in this library group, after its other files",
+  description: "Put the file in this group, after its other files",
 };
 
 export const UPLOAD_FIELDS = {

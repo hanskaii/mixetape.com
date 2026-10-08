@@ -7,7 +7,7 @@ const PRIVATE = [
   "/api/",
   "/oauth/",
   "/publish",
-  "/library",
+  "/media",
   "/queue",
   "/channels",
   "/api-keys",

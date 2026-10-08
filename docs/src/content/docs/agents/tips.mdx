@@ -17,7 +17,7 @@ Files in mixetape storage stay put for as long as a post needs them:
 - **From your machine:** `create_upload` gives a presigned URL; send the file in one PUT
   (up to 5 GB), call `finish_upload`, and schedule the `r2://` URL. The file never passes
   through the agent's context.
-- **From a link that will expire:** `import_file` copies it into storage right away.
+- **From a link that will expire:** `import_media` copies it into storage right away.
 
 See [Media and storage](/concepts/media).
 
@@ -57,7 +57,7 @@ post that failed on it after that.
 
 ## Make a pipeline safe to run twice
 
-Give every `create_post`, `publish_group`, `publish_files` and `import_file` an
+Give every `create_post`, `publish_group`, `publish_media` and `import_media` an
 `idempotencyKey` — any unique text, the same on a retry (over REST, the `Idempotency-Key`
 header). A call repeated with the same key, say after a timeout, answers with the first
 result instead of scheduling the same video twice. Derive the key from what the call is for —
@@ -74,7 +74,7 @@ On `rate_limited` (over 120 calls a minute), wait a minute and go on.
 ## One key per agent
 
 Give each agent or script its own [API key](/concepts/api-keys) with only the permissions it
-needs. A pipeline usually needs `read`, `publish` and `storage`; only an agent you trust to
+needs. A pipeline usually needs `read`, `publish` and `media`; only an agent you trust to
 add channels needs `channels`. Removing one key then never stops another.
 
 ## Watch for `reconnect`

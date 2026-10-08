@@ -15,10 +15,10 @@ export const API_SCOPES = {
   manage: "Edit videos already on the platform, manage playlists and upload captions",
   comments: "Read, post, reply to and moderate comments",
   analytics: "Read post and channel analytics",
-  storage: "Upload, import, list and delete files in mixetape's storage",
+  media: "Upload, import, list and delete files in Media & Storage",
   channels: "Start connecting channels (you still approve each one on the platform)",
-  library:
-    "Make, change and read groups in the library (files that go out together, with drafted words)",
+  groups:
+    "Make, change and read groups in Media & Storage (files that go out together, with drafted words)",
   webhooks: "Add, change and remove webhooks that are told when posts and channels change",
 } as const;
 

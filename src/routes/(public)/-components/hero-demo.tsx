@@ -46,7 +46,7 @@ const examples: Example[] = [
       { type: "agent", text: "Same cut, each channel's format, one time." },
       {
         type: "tool",
-        name: "publish_files",
+        name: "publish_media",
         args: '{ fileIds: ["file_30s"], accountIds: ["yt_01", "fb_01", "ig_01"], scheduledAt: "2026-10-16T17:30+07:00" }',
         result: "3 posts · scheduled Friday 17:30",
       },

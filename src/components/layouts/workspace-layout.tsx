@@ -10,7 +10,7 @@ import {
   Robot,
   ShieldCheck,
   CreditCard,
-  Books,
+  Images,
 } from "@phosphor-icons/react";
 import {
   Sidebar,
@@ -41,7 +41,7 @@ import ThemeToggle from "./theme-toggle";
 
 const WORKSPACE = [
   { to: "/publish", label: "Publish", icon: CalendarDots },
-  { to: "/library", label: "Library", icon: Books },
+  { to: "/media", label: "Media & Storage", icon: Images },
   { to: "/channels", label: "Channels", icon: PlugsConnected },
   { to: "/api-keys", label: "API keys", icon: Key },
 ] as const;

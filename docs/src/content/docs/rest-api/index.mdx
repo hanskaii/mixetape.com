@@ -24,8 +24,8 @@ The [API reference](/api) lists every endpoint with its fields; this page is the
 | Posts | `GET` `POST /posts` · `GET` `PATCH /posts/{id}` · `POST /posts/{id}/cancel` · `POST /posts/{id}/retry` |
 | Posts on the platform | `GET` `PATCH /posts/{id}/platform` · thumbnail, collections, captions under `/posts/{id}/…` |
 | Comments | `GET` `POST /posts/{id}/comments` · replies and moderation under `/comments/{commentId}` |
-| Library groups | `GET` `POST /groups` · `GET` `PATCH` `DELETE /groups/{id}` · `GET /groups/{id}/plan` · `POST /groups/{id}/publish` |
-| Files | `GET /files` · `POST /files/uploads` · `POST /files/uploads/{id}/complete` · `POST /files/imports` · `GET` `DELETE /files/{id}` · `POST /files/plan` · `POST /files/publish` |
+| Groups | `GET` `POST /groups` · `GET` `PATCH` `DELETE /groups/{id}` · `GET /groups/{id}/plan` · `POST /groups/{id}/publish` |
+| Media | `GET /media` · `POST /media/uploads` · `POST /media/uploads/{id}/complete` · `POST /media/imports` · `GET` `DELETE /media/{id}` · `POST /media/plan` · `POST /media/publish` |
 | Webhooks | `GET` `POST /webhooks` · `GET` `PATCH` `DELETE /webhooks/{id}` · `POST /webhooks/{id}/test` |
 
 ```sh
@@ -47,7 +47,7 @@ with `unknown_field` rather than dropped.
 
 ## Lists come in pages
 
-`GET /posts`, `GET /files` and `GET /groups` answer one page at a time, with a `nextCursor`.
+`GET /posts`, `GET /media` and `GET /groups` answer one page at a time, with a `nextCursor`.
 Pass it back as `cursor` — with the same filters — for the next page; it is `null` on the
 last one. Comma-separated values (`accountId=a,b`, `status=scheduled,failed`) match any of
 them.
@@ -64,7 +64,7 @@ To follow what happened since you last looked — which posts went out, which fa
 
 ## Safe retries
 
-`POST /posts`, `POST /groups/{id}/publish`, `POST /files/publish` and `POST /files/imports`
+`POST /posts`, `POST /groups/{id}/publish`, `POST /media/publish` and `POST /media/imports`
 take an `Idempotency-Key` header: any unique text for that one request. Sent again with the
 same key — after a timeout, say — the request is not run twice: the first response comes back,
 with the header `Idempotent-Replayed: true`. Keys are kept for 24 hours. The same key with a

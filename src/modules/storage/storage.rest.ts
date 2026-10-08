@@ -16,10 +16,10 @@ const ONE_FILE = object({ file: FILE }, ["file"]);
 export const storageEndpoints: Endpoint[] = [
   {
     method: "GET",
-    path: "/files",
-    operationId: "listFiles",
-    tag: "Files",
-    scope: "storage",
+    path: "/media",
+    operationId: "listMedia",
+    tag: "Media",
+    scope: "media",
     query: FILE_FILTERS,
     summary: "List files",
     description:
@@ -38,13 +38,13 @@ export const storageEndpoints: Endpoint[] = [
   },
   {
     method: "POST",
-    path: "/files/uploads",
+    path: "/media/uploads",
     operationId: "createUpload",
-    tag: "Files",
-    scope: "storage",
+    tag: "Media",
+    scope: "media",
     summary: "Start an upload",
     description:
-      "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then complete it with POST /files/uploads/{fileId}/complete. With groupId, the file lands in that library group.",
+      "Uploading a local file (up to 5 GB) takes three steps: this returns a presigned uploadUrl, valid for 6 hours; send the whole file to it in one PUT with exactly the returned headers (no API key needed); then complete it with POST /media/uploads/{fileId}/complete. With groupId, the file lands in that group.",
     body: object(UPLOAD_FIELDS, ["fileName"]),
     status: 201,
     response: { description: "Where to send the file.", schema: UPLOAD },
@@ -53,10 +53,10 @@ export const storageEndpoints: Endpoint[] = [
   },
   {
     method: "POST",
-    path: "/files/uploads/{id}/complete",
+    path: "/media/uploads/{id}/complete",
     operationId: "completeUpload",
-    tag: "Files",
-    scope: "storage",
+    tag: "Media",
+    scope: "media",
     params: FILE_ID,
     summary: "Complete an upload",
     description:
@@ -67,11 +67,11 @@ export const storageEndpoints: Endpoint[] = [
   },
   {
     method: "POST",
-    path: "/files/imports",
-    operationId: "importFile",
+    path: "/media/imports",
+    operationId: "importMedia",
     idempotent: true,
-    tag: "Files",
-    scope: "storage",
+    tag: "Media",
+    scope: "media",
     summary: "Import a file from a URL",
     description:
       "mixetape fetches a file from a public https URL (up to 5 GB, with a Content-Length) — e.g. a render whose link expires — and reads what it is. Nothing is sent from your machine.",
@@ -83,10 +83,10 @@ export const storageEndpoints: Endpoint[] = [
   },
   {
     method: "GET",
-    path: "/files/{id}",
-    operationId: "getFile",
-    tag: "Files",
-    scope: "storage",
+    path: "/media/{id}",
+    operationId: "getMedia",
+    tag: "Media",
+    scope: "media",
     params: FILE_ID,
     summary: "Get a file",
     description: "One file in storage, with what was read from it.",
@@ -96,10 +96,10 @@ export const storageEndpoints: Endpoint[] = [
   },
   {
     method: "DELETE",
-    path: "/files/{id}",
-    operationId: "deleteFile",
-    tag: "Files",
-    scope: "storage",
+    path: "/media/{id}",
+    operationId: "deleteMedia",
+    tag: "Media",
+    scope: "media",
     params: FILE_ID,
     summary: "Delete a file",
     description:

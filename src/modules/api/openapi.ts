@@ -33,10 +33,10 @@ const TAGS = [
   ["Brands", "Groups of accounts, to publish to all of them at once."],
   ["Posts", "Scheduling posts, and managing them once they are on the platform."],
   ["Comments", "Reading, posting, replying to and moderating comments."],
-  ["Groups", "Library groups: files that go out together, with their drafted words."],
+  ["Groups", "Groups in Media & Storage: files that go out together, with their drafted words."],
   [
-    "Files",
-    "mixetape storage: uploads, imports and the files' index; files published without a group.",
+    "Media",
+    "Media & Storage: uploads, imports and the files' index; files published without a group.",
   ],
   [
     "Webhooks",
@@ -132,7 +132,7 @@ export function openApiDocument(serverUrl: string) {
       version: "1.0.0",
       summary: "Schedule and manage posts on connected social accounts.",
       description:
-        "The REST API for scripts and integrations: accounts, posts, comments, library groups and files as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools.",
+        "The REST API for scripts and integrations: accounts, posts, comments, media and groups as resources. Every request carries an API key; each endpoint needs one of its permissions. Errors answer { error: { code, message, field? } }; writes that must not happen twice take an Idempotency-Key header; each user may make 120 requests a minute. AI agents use the MCP server at /mcp instead, with the same actions as tools.",
     },
     servers: [{ url: serverUrl }],
     security: [{ apiKey: [] }],

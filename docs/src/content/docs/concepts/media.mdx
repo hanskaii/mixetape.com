@@ -33,7 +33,7 @@ Uploading takes two calls around one PUT:
 3. `finish_upload` with the `fileId`. mixetape finds the file and reads what it is.
 
 Then schedule the post with the file's `url` (`r2://…`), or put the file in a
-[library](/concepts/library) item. An upload never finished is dropped after a day.
+[group](/concepts/groups) item. An upload never finished is dropped after a day.
 
 ## What mixetape knows about a file
 
@@ -43,23 +43,23 @@ filmed upright counts as upright), `orientation` (`vertical`, `horizontal` or `s
 video's `durationMs`. MP4 and MOV videos and JPEG, PNG, GIF and WebP images are understood;
 other files keep the kind their content type says.
 
-So an agent can ask `list_files` for `kind: ["video"]` and pick the vertical ones for Shorts
+So an agent can ask `list_media` for `kind: ["video"]` and pick the vertical ones for Shorts
 and Reels without downloading anything.
 
 ## Importing from a URL
 
-`import_file` copies a file from a public https URL (up to 5 GB, with a `Content-Length`) into
+`import_media` copies a file from a public https URL (up to 5 GB, with a `Content-Length`) into
 storage — for example a render service's link that expires. mixetape fetches it; nothing is
 sent from your machine.
 
 ## Housekeeping
 
-`list_files` lists your files, newest first; `get_file` answers one, by id or `r2://` URL.
-`delete_file` refuses while a post that has not gone out yet points at the file.
+`list_media` lists your files, newest first; `get_media` answers one, by id or `r2://` URL.
+`delete_media` refuses while a post that has not gone out yet points at the file.
 
 Storage is a staging area, not an archive. A file goes as soon as every post with it is
 published (or cancelled before it went out). A file no post needs goes **24 hours** after it
-was stored (`expiresAt` on every file) — one waiting in a [library](/concepts/library) group
+was stored (`expiresAt` on every file) — one waiting in a [group](/concepts/groups)
 included, and an upload never finished. A file is never deleted while a post that has not
 gone out still needs it.
 

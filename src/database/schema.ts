@@ -208,7 +208,7 @@ export const apiKeys = sqliteTable(
     scopes: text("scopes", { mode: "json" })
       .$type<string[]>()
       .notNull()
-      .default(sql`'["read","publish","manage","comments","analytics","storage"]'`),
+      .default(sql`'["read","publish","manage","comments","analytics","media"]'`),
     lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()

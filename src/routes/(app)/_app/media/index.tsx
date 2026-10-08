@@ -31,10 +31,10 @@ import { SelectionBar } from "./-components/selection-bar";
 import { setStackDragImage } from "./-lib/drag-image";
 import { useUploads } from "./-lib/use-uploads";
 
-export const Route = createFileRoute("/(app)/_app/library/")({
+export const Route = createFileRoute("/(app)/_app/media/")({
   loader: () => getLibraryData(),
-  head: () => ({ meta: [{ title: `Library | ${siteConfig.name}` }] }),
-  component: LibraryPage,
+  head: () => ({ meta: [{ title: `Media & Storage | ${siteConfig.name}` }] }),
+  component: MediaPage,
 });
 
 type Kind = "all" | "video" | "image" | "group";
@@ -59,6 +59,11 @@ const styles = stylex.create({
     minHeight: "24rem",
     paddingBlock: "0.5rem 1.5rem",
     paddingInline: { default: "1rem", "@media (min-width: 640px)": "1.5rem" },
+  },
+  // Nothing stored yet: the drop zone fills the panel, with the same room on every side.
+  bodyEmpty: {
+    alignContent: "stretch",
+    paddingBlock: { default: "1rem", "@media (min-width: 640px)": "1.5rem" },
   },
   toolbar: {
     alignItems: "center",
@@ -162,7 +167,7 @@ const styles = stylex.create({
 const fileHeight = (file: FileView, column: number) =>
   column * Math.min(Math.max(file.width && file.height ? file.height / file.width : 1, 0.56), 1.78);
 
-function LibraryPage() {
+function MediaPage() {
   const router = useRouter();
   const data = Route.useLoaderData();
   const { groups, accounts, brands, platforms, scheduled, held, retentionHours } = data;
@@ -491,7 +496,7 @@ function LibraryPage() {
     >
       <Page>
         <PageHeader
-          title="Library"
+          title="Media & Storage"
           description="Drop your videos and images here. Put what goes out together in a carousel, then publish it to every channel it fits."
           actions={
             <>
@@ -520,7 +525,7 @@ function LibraryPage() {
         )}
 
         <Panel>
-          <div {...stylex.props(styles.body)}>
+          <div {...stylex.props(styles.body, empty && styles.bodyEmpty)}>
             {empty ? (
               <button
                 type="button"
@@ -545,7 +550,7 @@ function LibraryPage() {
                     <MagnifyingGlass size={15} {...stylex.props(styles.searchIcon)} />
                     <Input
                       type="search"
-                      aria-label="Search the library"
+                      aria-label="Search media"
                       placeholder="Search by name"
                       style={styles.searchInput}
                       value={search}

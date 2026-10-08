@@ -81,7 +81,7 @@ import { handleMessage } from "./mcp";
 
 const everything: Caller = {
   userId: "user-1",
-  scopes: ["read", "publish", "manage", "comments", "analytics", "storage", "channels", "library"],
+  scopes: ["read", "publish", "manage", "comments", "analytics", "media", "channels", "groups"],
 };
 const publisher: Caller = { userId: "user-1", scopes: ["read", "publish"] };
 
@@ -151,14 +151,14 @@ describe("mixetape MCP", () => {
       "delete_group",
       "plan_group",
       "publish_group",
-      "plan_files",
-      "publish_files",
+      "plan_media",
+      "publish_media",
       "create_upload",
       "finish_upload",
-      "import_file",
-      "list_files",
-      "get_file",
-      "delete_file",
+      "import_media",
+      "list_media",
+      "get_media",
+      "delete_media",
     ]);
   });
 
@@ -317,9 +317,9 @@ describe("narrowing and paging lists", () => {
     );
   });
 
-  it("passes list_files' filters through to the index", async () => {
+  it("passes list_media' filters through to the index", async () => {
     vi.mocked(files.listFiles).mockResolvedValue({ files: [], nextCursor: null });
-    await call("list_files", { kind: ["video"], search: "episode", limit: 20, cursor: "c1" });
+    await call("list_media", { kind: ["video"], search: "episode", limit: 20, cursor: "c1" });
     expect(files.listFiles).toHaveBeenCalledWith("user-1", {
       kind: ["video"],
       search: "episode",
@@ -331,7 +331,7 @@ describe("narrowing and paging lists", () => {
   });
 });
 
-describe("the library over MCP", () => {
+describe("groups over MCP", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("files an agent's group as made by an agent", async () => {
@@ -376,7 +376,7 @@ describe("the library over MCP", () => {
     );
   });
 
-  it("keeps the library to keys with the library permission", async () => {
+  it("keeps groups to keys with the groups permission", async () => {
     expect(await toolNames(publisher)).not.toContain("create_group");
   });
 

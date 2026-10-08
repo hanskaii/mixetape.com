@@ -18,7 +18,7 @@ export const startUpload = createServerFn({ method: "POST" })
     return { fileId: upload.fileId, uploadUrl: upload.uploadUrl, headers: upload.headers };
   });
 
-/** An avatar goes to avatars/, outside the library: never listed there, never expired. */
+/** An avatar goes to avatars/, outside Media & Storage: never listed there, never expired. */
 export const startAvatarUpload = createServerFn({ method: "POST" })
   .validator((data: { fileName: string; contentType?: string; size: number }) => data)
   .handler(async ({ data }) => {

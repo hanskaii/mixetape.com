@@ -32,7 +32,7 @@ import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as appAppApiKeysIndexRouteImport } from './routes/(app)/_app/api-keys/index'
 import { Route as appAppChannelsIndexRouteImport } from './routes/(app)/_app/channels/index'
-import { Route as appAppLibraryIndexRouteImport } from './routes/(app)/_app/library/index'
+import { Route as appAppMediaIndexRouteImport } from './routes/(app)/_app/media/index'
 import { Route as appAppPublishIndexRouteImport } from './routes/(app)/_app/publish/index'
 import { Route as appAppQueueIndexRouteImport } from './routes/(app)/_app/queue/index'
 import { Route as appAppSettingsAccountRouteImport } from './routes/(app)/_app/settings/account'
@@ -157,9 +157,9 @@ const appAppChannelsIndexRoute = appAppChannelsIndexRouteImport.update({
   path: '/channels/',
   getParentRoute: () => appAppRouteRoute,
 } as any)
-const appAppLibraryIndexRoute = appAppLibraryIndexRouteImport.update({
-  id: '/library/',
-  path: '/library/',
+const appAppMediaIndexRoute = appAppMediaIndexRouteImport.update({
+  id: '/media/',
+  path: '/media/',
   getParentRoute: () => appAppRouteRoute,
 } as any)
 const appAppPublishIndexRoute = appAppPublishIndexRouteImport.update({
@@ -247,7 +247,7 @@ export interface FileRoutesByFullPath {
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys/': typeof appAppApiKeysIndexRoute
   '/channels/': typeof appAppChannelsIndexRoute
-  '/library/': typeof appAppLibraryIndexRoute
+  '/media/': typeof appAppMediaIndexRoute
   '/publish/': typeof appAppPublishIndexRoute
   '/queue/': typeof appAppQueueIndexRoute
 }
@@ -281,7 +281,7 @@ export interface FileRoutesByTo {
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/api-keys': typeof appAppApiKeysIndexRoute
   '/channels': typeof appAppChannelsIndexRoute
-  '/library': typeof appAppLibraryIndexRoute
+  '/media': typeof appAppMediaIndexRoute
   '/publish': typeof appAppPublishIndexRoute
   '/queue': typeof appAppQueueIndexRoute
 }
@@ -318,7 +318,7 @@ export interface FileRoutesById {
   '/api/storage/file/$': typeof ApiStorageFileSplatRoute
   '/(app)/_app/api-keys/': typeof appAppApiKeysIndexRoute
   '/(app)/_app/channels/': typeof appAppChannelsIndexRoute
-  '/(app)/_app/library/': typeof appAppLibraryIndexRoute
+  '/(app)/_app/media/': typeof appAppMediaIndexRoute
   '/(app)/_app/publish/': typeof appAppPublishIndexRoute
   '/(app)/_app/queue/': typeof appAppQueueIndexRoute
 }
@@ -354,7 +354,7 @@ export interface FileRouteTypes {
     | '/api/storage/file/$'
     | '/api-keys/'
     | '/channels/'
-    | '/library/'
+    | '/media/'
     | '/publish/'
     | '/queue/'
   fileRoutesByTo: FileRoutesByTo
@@ -388,7 +388,7 @@ export interface FileRouteTypes {
     | '/api/storage/file/$'
     | '/api-keys'
     | '/channels'
-    | '/library'
+    | '/media'
     | '/publish'
     | '/queue'
   id:
@@ -424,7 +424,7 @@ export interface FileRouteTypes {
     | '/api/storage/file/$'
     | '/(app)/_app/api-keys/'
     | '/(app)/_app/channels/'
-    | '/(app)/_app/library/'
+    | '/(app)/_app/media/'
     | '/(app)/_app/publish/'
     | '/(app)/_app/queue/'
   fileRoutesById: FileRoutesById
@@ -609,11 +609,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appAppChannelsIndexRouteImport
       parentRoute: typeof appAppRouteRoute
     }
-    '/(app)/_app/library/': {
-      id: '/(app)/_app/library/'
-      path: '/library'
-      fullPath: '/library/'
-      preLoaderRoute: typeof appAppLibraryIndexRouteImport
+    '/(app)/_app/media/': {
+      id: '/(app)/_app/media/'
+      path: '/media'
+      fullPath: '/media/'
+      preLoaderRoute: typeof appAppMediaIndexRouteImport
       parentRoute: typeof appAppRouteRoute
     }
     '/(app)/_app/publish/': {
@@ -723,7 +723,7 @@ interface appAppRouteRouteChildren {
   appAppSettingsProfileRoute: typeof appAppSettingsProfileRoute
   appAppApiKeysIndexRoute: typeof appAppApiKeysIndexRoute
   appAppChannelsIndexRoute: typeof appAppChannelsIndexRoute
-  appAppLibraryIndexRoute: typeof appAppLibraryIndexRoute
+  appAppMediaIndexRoute: typeof appAppMediaIndexRoute
   appAppPublishIndexRoute: typeof appAppPublishIndexRoute
   appAppQueueIndexRoute: typeof appAppQueueIndexRoute
 }
@@ -734,7 +734,7 @@ const appAppRouteRouteChildren: appAppRouteRouteChildren = {
   appAppSettingsProfileRoute: appAppSettingsProfileRoute,
   appAppApiKeysIndexRoute: appAppApiKeysIndexRoute,
   appAppChannelsIndexRoute: appAppChannelsIndexRoute,
-  appAppLibraryIndexRoute: appAppLibraryIndexRoute,
+  appAppMediaIndexRoute: appAppMediaIndexRoute,
   appAppPublishIndexRoute: appAppPublishIndexRoute,
   appAppQueueIndexRoute: appAppQueueIndexRoute,
 }
