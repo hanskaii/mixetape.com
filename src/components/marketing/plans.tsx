@@ -47,29 +47,20 @@ function billedAs(monthly: number, billing: Billing) {
     : `billed yearly ($${(monthly * MONTHS_PAID_YEARLY).toLocaleString("en-US")})`;
 }
 
-// Every line here works today.
+// Every line here works today; the short list is what makes the plan worth it.
 const CREATOR_FEATURES = [
   "15 social accounts",
-  "YouTube, TikTok, Instagram, Facebook Pages, Threads, Pinterest, Bluesky and Mastodon",
+  "8 platforms: YouTube, TikTok, Instagram, Facebook, Threads, Pinterest, Bluesky, Mastodon",
   "Unlimited scheduled posts",
-  "MCP server for Claude Code, Codex, Cursor and any agent",
-  "REST API with an OpenAPI spec",
-  "Unlimited API keys, each with its own permissions",
-  "Media library: upload or import from a link",
-  "Groups: media and words together, published to many channels at once",
-  "Carousels and threads",
-  "YouTube thumbnails, playlists, captions, tags and first comment",
-  "Read, reply to and hide comments",
-  "Post and account analytics",
-  "Webhooks when a post goes live or fails",
-  "Edit, cancel and retry from the queue",
-  "Up to 5 brands",
+  "Your AI agent posts for you, through MCP or the REST API",
+  "Videos, images and carousels, with YouTube thumbnails and playlists",
+  "Comments, analytics and webhooks in one place",
 ];
 
 const STUDIO_FEATURES = [
-  "100 social accounts or more, priced per account",
+  "100 social accounts, then $1 for each one after",
   "Everything in Creator",
-  "Unlimited brands, one per client",
+  "Brands to keep each client's channels together",
   "Priority email support",
 ];
 

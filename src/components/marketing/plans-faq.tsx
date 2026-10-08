@@ -4,7 +4,6 @@ import { Plus } from "@phosphor-icons/react";
 import { siteConfig } from "#/config/site";
 import {
   DATA_KEPT_DAYS,
-  MONTHS_PAID_YEARLY,
   PLANS,
   POSTS_PER_CHANNEL_DAY,
   TRIAL_DAYS,
@@ -13,48 +12,52 @@ import {
 } from "#/modules/billing/plans";
 import { colors } from "../ui/tokens.stylex";
 
-// Every answer describes what the code does today (billing.service, lifecycle.service,
-// social.service); change them together.
+// Every answer describes what mixetape does today (billing.service, lifecycle.service,
+// social.service, the Terms); change them together.
 const QUESTIONS = [
   {
-    q: "What counts as a social account?",
-    a: "Each channel you connect: a YouTube channel, a Facebook Page, an Instagram or TikTok account, and so on. They add up across every platform. Reconnecting a channel you already have does not count again.",
+    q: "Why mixetape instead of Buffer or Hootsuite?",
+    a: "mixetape is built for posting through AI agents, not for a team clicking through a dashboard. Claude Code, Codex, Cursor or your own script schedules the posts through MCP or the REST API, and you see, edit or cancel every one of them in the queue. No seats, no approval flows: you pay for the accounts you post to, and posts are unlimited.",
   },
   {
-    q: "How does the free trial work?",
-    a: `Your first plan starts with a ${TRIAL_DAYS}-day free trial. You add a card at checkout, nothing is charged today, and the first charge is made when the trial ends unless you cancel before. We email you ${TRIAL_REMINDER_DAYS} days before it ends. The trial is given once per account.`,
+    q: "Which platforms do you support?",
+    a: "YouTube, TikTok, Instagram, Facebook Pages, Threads, Pinterest, Bluesky and Mastodon. Want another one? Email us.",
   },
   {
-    q: "Can I use mixetape without a plan?",
-    a: "You can sign in, choose a plan and see your billing, but the workspace, the REST API and the MCP server need an active plan, trial included.",
+    q: "How many social accounts can I connect?",
+    a: `Creator includes ${PLANS.creator.accounts}, enough for one business on every platform. Studio starts at ${PLANS.studio.accounts} accounts for $${PLANS.studio.monthly} a month and adds $${PLANS.studio.extraMonthly} for each account after that.`,
   },
   {
-    q: "How is Studio priced?",
-    a: `$${PLANS.studio.monthly} a month covers ${PLANS.studio.accounts} social accounts, and each account after that is $${PLANS.studio.extraMonthly} a month. Pick the number on the plan card before checkout.`,
+    q: "What is a social account?",
+    a: "One channel you connect: a YouTube channel, an Instagram account, a Facebook Page. Connecting your Instagram account is one social account.",
   },
   {
-    q: "What do I save by paying yearly?",
-    a: `A year costs ${MONTHS_PAID_YEARLY} months, so two months are free. It is charged once a year in advance.`,
+    q: "Can I connect several accounts on the same platform?",
+    a: `Yes. The count is across every platform: on Creator all ${PLANS.creator.accounts} can be TikTok accounts, or 10 TikTok and 5 Instagram.`,
   },
   {
-    q: "Can I change plans later?",
-    a: "Yes, from Billing in your workspace. If you move to a plan that covers fewer accounts than you have connected, the most recently connected channels are locked and their posts pause; you choose which channels stay active, or disconnect the ones you no longer use.",
+    q: "How many posts can I schedule?",
+    a: `Unlimited, on every plan. One post to 4 channels counts as 4 posts. So your channels don't look like spam to the platforms, each channel can have up to ${POSTS_PER_CHANNEL_DAY} posts a day.`,
   },
   {
-    q: "Is there a limit on posts?",
-    a: `Scheduled posts are unlimited. To keep channels from looking like spam to the platforms, one channel can have at most ${POSTS_PER_CHANNEL_DAY} posts on the same day. Each platform's own limits, like YouTube's daily upload quota, still apply.`,
+    q: "What can I post?",
+    a: "Videos, images and carousels. On YouTube you also set the title, thumbnail, playlist, captions, tags and first comment. Each platform's own rules, like YouTube's daily upload limit, still apply.",
   },
   {
-    q: "Can my AI agent use it?",
-    a: "Every plan includes the MCP server for Claude Code, Codex, Cursor and other agents, and the REST API. API keys are unlimited, and each has its own permissions.",
+    q: "Is there a free plan?",
+    a: `No, but your first plan starts with a ${TRIAL_DAYS}-day free trial. You add a card, pay $0 today, and we email you ${TRIAL_REMINDER_DAYS} days before the first charge. Cancel before then and you pay nothing.`,
   },
   {
-    q: "What happens if I cancel?",
-    a: `Your plan stays active until the end of the period you paid for. After that the workspace closes and scheduled posts pause instead of going out. Your channels, posts and files are kept for ${DATA_KEPT_DAYS} days: subscribe again before then and everything is where you left it, with paused posts ready to send. After ${DATA_KEPT_DAYS} days they are deleted; we email you ${WARNING_DAYS} days before. Your sign-in and invoices stay.`,
+    q: "Can I cancel anytime?",
+    a: `Yes, from Billing, with no lock-in. Your plan keeps working until the end of the period you paid for. After that your posts pause and your channels, posts and files are kept for ${DATA_KEPT_DAYS} days, so you can come back to everything as you left it. We email you ${WARNING_DAYS} days before they are deleted.`,
   },
   {
-    q: "Who handles payment and invoices?",
-    a: "Dodo Payments, our merchant of record: it charges your card, adds any sales tax or VAT, and issues the invoices, which you find in Billing. mixetape never sees your card number. Paid periods are not refunded, but if you were charged by mistake, write to us within 14 days.",
+    q: "Can I get a refund?",
+    a: "Periods you have paid for are not refunded. If you were charged by mistake, or could not use mixetape because of a fault on our side, email us within 14 days of the charge and we will put it right.",
+  },
+  {
+    q: "Do I share my social media passwords with you?",
+    a: "No. You sign in on each platform's own page, and it gives mixetape access to post for you. That access is stored encrypted, and you can remove it any time by disconnecting the channel or from the platform's settings.",
   },
 ] as const;
 
@@ -154,10 +157,10 @@ export function PlansFaq() {
     <section {...stylex.props(styles.section)} aria-labelledby="plans-faq">
       <div>
         <h2 id="plans-faq" {...stylex.props(styles.title)}>
-          Questions
+          Frequently asked questions
         </h2>
         <p {...stylex.props(styles.note)}>
-          Something else?{" "}
+          Another question? Email us:{" "}
           <a href={`mailto:${siteConfig.contactEmail}`} {...stylex.props(styles.mail)}>
             {siteConfig.contactEmail}
           </a>
