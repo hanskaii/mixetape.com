@@ -23,6 +23,7 @@ import {
 } from "#/modules/billing/billing.service";
 import { ServiceError } from "#/modules/api/errors";
 import { notifyPlanEnded } from "#/modules/billing/lifecycle.service";
+import { requirePlan } from "#/modules/billing/billing.service";
 import { codeRequestRefusal, isQaInbox, verifyTurnstile } from "./sign-in-guard";
 
 type Credentials = {
@@ -376,4 +377,15 @@ export async function currentUserId(): Promise<string> {
     : null;
   if (!session?.user) throw new Error("Unauthorized");
   return session.user.id;
+}
+
+/**
+ * The signed-in user's id, for the workspace's server functions; throws without a plan (or
+ * exemption). Server functions are plain HTTP endpoints, so the workspace route's redirect
+ * alone would not stop someone calling them directly. Deleting your own data needs no plan.
+ */
+export async function payingUserId(): Promise<string> {
+  const userId = await currentUserId();
+  await requirePlan(userId);
+  return userId;
 }

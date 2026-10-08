@@ -353,9 +353,8 @@ export async function lockedChannelProblem(accountId: string): Promise<string | 
  * past it.
  */
 export async function requireChannelRoom(userId: string, adding: number) {
-  if (adding <= 0) return;
   const billing = await requirePlan(userId);
-  if (billing.exempt || !billing.plan) return;
+  if (adding <= 0 || billing.exempt || !billing.plan) return;
   const allowed = billing.plan.accounts;
   const room = Math.max(0, allowed - billing.connected);
   if (adding <= room) return;

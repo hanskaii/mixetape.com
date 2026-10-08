@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { currentUserId } from "#/modules/auth/auth.server";
+import { currentUserId, payingUserId } from "#/modules/auth/auth.server";
 import type { JsonValue } from "#/database/schema";
 import * as brands from "#/modules/social/brands.service";
 import { platformFields } from "#/modules/social/fields";
@@ -19,7 +19,7 @@ type Metadata = Record<string, JsonValue>;
 const PENDING = ["scheduled", "publishing", "uploaded"];
 
 export const getLibraryData = createServerFn({ method: "GET" }).handler(async () => {
-  const userId = await currentUserId();
+  const userId = await payingUserId();
   const [groupList, fileList, accounts, brandList, pending] = await Promise.all([
     groups.listGroups(userId, { limit: 200 }),
     files.listFiles(userId, { loose: true, limit: 80 }),
@@ -63,7 +63,7 @@ export const getLibraryData = createServerFn({ method: "GET" }).handler(async ()
 export const listLooseFiles = createServerFn({ method: "GET" })
   .validator((data: { search?: string; kind?: string[]; cursor?: string }) => data)
   .handler(async ({ data }) =>
-    files.listFiles(await currentUserId(), { ...data, loose: true, limit: 80 }),
+    files.listFiles(await payingUserId(), { ...data, loose: true, limit: 80 }),
   );
 
 // ── groups ──────────────────────────────────────────────────────────────────
@@ -71,18 +71,16 @@ export const listLooseFiles = createServerFn({ method: "GET" })
 export const createGroupFromFiles = createServerFn({ method: "POST" })
   .validator((data: { fileIds: string[]; title?: string }) => data)
   .handler(async ({ data }) =>
-    groups.createGroup(await currentUserId(), { fileIds: data.fileIds, title: data.title }, "user"),
+    groups.createGroup(await payingUserId(), { fileIds: data.fileIds, title: data.title }, "user"),
   );
 
 export const addFilesToGroup = createServerFn({ method: "POST" })
   .validator((data: { groupId: string; fileIds: string[] }) => data)
-  .handler(async ({ data }) =>
-    groups.addToGroup(await currentUserId(), data.groupId, data.fileIds),
-  );
+  .handler(async ({ data }) => groups.addToGroup(await payingUserId(), data.groupId, data.fileIds));
 
 export const ungroupFiles = createServerFn({ method: "POST" })
   .validator((data: { fileIds: string[] }) => data)
-  .handler(async ({ data }) => groups.ungroupFiles(await currentUserId(), data.fileIds));
+  .handler(async ({ data }) => groups.ungroupFiles(await payingUserId(), data.fileIds));
 
 export const saveGroup = createServerFn({ method: "POST" })
   .validator(
@@ -95,7 +93,7 @@ export const saveGroup = createServerFn({ method: "POST" })
     }) => data,
   )
   .handler(async ({ data: { id, ...changes } }) =>
-    groups.updateGroup(await currentUserId(), id, changes),
+    groups.updateGroup(await payingUserId(), id, changes),
   );
 
 export const removeGroup = createServerFn({ method: "POST" })
@@ -120,14 +118,14 @@ const source = (userId: string, data: Selection) =>
 export const planSelection = createServerFn({ method: "POST" })
   .validator((data: Selection) => data)
   .handler(async ({ data }) => {
-    const userId = await currentUserId();
+    const userId = await payingUserId();
     return publishing.planPost(userId, await source(userId, data), data);
   });
 
 export const publishSelection = createServerFn({ method: "POST" })
   .validator((data: Selection & { scheduledAt?: string }) => data)
   .handler(async ({ data }) => {
-    const userId = await currentUserId();
+    const userId = await payingUserId();
     const result = await publishing.publishPost(userId, await source(userId, data), data, {
       scheduledAt: data.scheduledAt,
     });

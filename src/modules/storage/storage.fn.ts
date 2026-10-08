@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { currentUserId } from "#/modules/auth/auth.server";
+import { currentUserId, payingUserId } from "#/modules/auth/auth.server";
 import * as files from "./files.service";
 import * as uploads from "./upload.service";
 
@@ -14,7 +14,7 @@ export const startUpload = createServerFn({ method: "POST" })
     (data: { fileName: string; contentType?: string; size: number; groupId?: string }) => data,
   )
   .handler(async ({ data }) => {
-    const upload = await files.createFileUpload(await currentUserId(), data);
+    const upload = await files.createFileUpload(await payingUserId(), data);
     return { fileId: upload.fileId, uploadUrl: upload.uploadUrl, headers: upload.headers };
   });
 
@@ -30,7 +30,7 @@ export const startAvatarUpload = createServerFn({ method: "POST" })
 
 export const finishFileUpload = createServerFn({ method: "POST" })
   .validator((data: { fileId: string }) => data)
-  .handler(async ({ data }) => files.finishUpload(await currentUserId(), data.fileId));
+  .handler(async ({ data }) => files.finishUpload(await payingUserId(), data.fileId));
 
 /** Deletes files; any a post not yet sent still needs are kept and named. */
 export const removeFiles = createServerFn({ method: "POST" })

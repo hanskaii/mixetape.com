@@ -167,6 +167,8 @@ export async function beginConnect(
   account?: string,
 ) {
   if (!isProvider(provider)) throw new ServiceError(`Unsupported provider: ${provider}`);
+  // No consent screen without a plan; the callback checks again before saving anything.
+  await requirePlan(userId);
   const connect = getProvider(provider).connect;
   const who = account?.trim() || undefined;
   if (connect.asks?.required && !who)
@@ -295,9 +297,10 @@ async function completeConnect(
   const known = accounts.filter((account) => connected.has(account.platformAccountId));
   const fresh = accounts.filter((account) => !connected.has(account.platformAccountId));
 
-  const refreshed = await saveAccounts(userId, provider, grant, known, at);
-  // Reconnecting never counts; adding one, or offering a choice of several, needs room.
+  // Reconnecting never counts against the plan's channels, but still needs a plan; adding
+  // one, or offering a choice of several, needs room. Checked before any token is saved.
   await requireChannelRoom(userId, Math.min(fresh.length, 1));
+  const refreshed = await saveAccounts(userId, provider, grant, known, at);
   if (fresh.length <= 1) {
     const added = await saveAccounts(userId, provider, grant, fresh, at);
     return { userId, via, result: { status: "done", channels: [...refreshed, ...added] } };

@@ -155,12 +155,14 @@ describe("publishing needs a plan", () => {
 describe("connecting channels", () => {
   const creator = { plan: "creator", period: "monthly", accounts: 15, status: "active" };
 
-  it("needs a plan, even for the first channel", async () => {
-    state.users = [{ billingExempt: false }];
-    await expect(requireChannelRoom("u1", 1)).rejects.toMatchObject({
-      status: 402,
-      code: "plan_required",
-    });
+  it("needs a plan, even for the first channel or a reconnection", async () => {
+    for (const adding of [1, 0]) {
+      state.users = [{ billingExempt: false }];
+      await expect(requireChannelRoom("u1", adding)).rejects.toMatchObject({
+        status: 402,
+        code: "plan_required",
+      });
+    }
   });
 
   it("allows up to the plan's accounts, and says how many are left past them", async () => {
