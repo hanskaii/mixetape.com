@@ -1,24 +1,14 @@
-import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowCounterClockwise,
   ArrowSquareOut,
   CalendarBlank,
-  CaretDown,
   ChatCircleDots,
-  Globe,
-  SquaresFour,
   X,
 } from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -26,47 +16,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
 import { Textarea } from "#/components/ui/textarea";
 import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
-import { useConfirmModal } from "#/components/providers/modal-providers";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
-import { cancelScheduledPost, getQueueData, retryFailedPost } from "#/modules/social/social.fn";
 import { Spinner } from "#/components/ui/spinner";
+import {
+  ACTIVE,
+  postFormat,
+  postTitle,
+  statusOf,
+  timeIn,
+  type Post,
+  type PublishData,
+} from "../-lib/posts";
+import { ChannelFilter, useChannelSelection, useViewerZone, ZoneFilter } from "./publish-filters";
+import { usePostActions } from "./use-post-actions";
 
-export type PublishData = Awaited<ReturnType<typeof getQueueData>>;
-type Post = PublishData["posts"][number];
+export type { PublishData };
 type Tab = "queue" | "sent";
 type TimelineItem =
   | { type: "day"; key: string; label: { day: string; date: string } }
   | { type: "post"; key: string; post: Post };
-
-const ACTIVE = new Set(["scheduled", "publishing", "uploaded", "failed", "paused"]);
-const STATUS: Record<
-  string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
-> = {
-  scheduled: { label: "Scheduled", variant: "outline" },
-  publishing: { label: "Publishing", variant: "secondary" },
-  uploaded: { label: "Uploaded", variant: "secondary" },
-  published: { label: "Sent", variant: "secondary" },
-  failed: { label: "Failed", variant: "destructive" },
-  // Due while the plan had ended: kept, and can be sent again once there is a plan.
-  paused: { label: "Paused", variant: "outline" },
-  cancelled: { label: "Cancelled", variant: "outline" },
-};
-
-const COMMON_ZONES = [
-  "Asia/Jakarta",
-  "Asia/Makassar",
-  "Asia/Jayapura",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-  "Europe/London",
-  "America/New_York",
-  "America/Los_Angeles",
-  "UTC",
-];
 
 function dayKey(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -97,52 +67,24 @@ function dateLabel(key: string, today: string) {
   return { day: format({ weekday: "long" }), date };
 }
 
-function zoneLabel(zone: string) {
-  return zone === "UTC" ? "UTC" : (zone.split("/").at(-1)?.replaceAll("_", " ") ?? zone);
-}
-
-/** What a post is, when it is more than a video: "Carousel · 4", "Photo". */
-function postFormat(post: Post) {
-  const media = post.media ?? [];
-  if (media.length > 1) return `Carousel · ${media.length}`;
-  return media[0]?.kind === "image" ? "Photo" : null;
-}
-
-function postTitle(post: Post) {
-  return (post.metadata as { title?: string } | null)?.title ?? post.caption ?? "Untitled post";
-}
-
 /** Timeline for agent-scheduled posts. Also rendered with sample data on the landing page. */
-export function PublishView({ accounts, posts }: PublishData) {
-  const router = useRouter();
-  const { confirm } = useConfirmModal();
+export function PublishView({
+  accounts,
+  posts,
+  viewToggle,
+}: PublishData & {
+  /** The List / Calendar switch, in the workspace; the landing preview has none. */
+  viewToggle?: ReactNode;
+}) {
   const [tab, setTab] = useState<Tab>("queue");
-  const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
-  const [timeZone, setTimeZone] = useState("Asia/Jakarta");
-  const [zoneOpen, setZoneOpen] = useState(false);
-  const [zoneSearch, setZoneSearch] = useState("");
+  const { selected, setSelected } = useChannelSelection(accounts);
+  const [timeZone, setTimeZone] = useViewerZone();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [retrying, setRetrying] = useState<string | null>(null);
-  // Rendered on the server in a fixed zone, then shown in the viewer's own once it mounts.
-  useEffect(() => {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (zone) setTimeZone(zone);
-  }, []);
-  const selected = useMemo(
-    () => selectedIds ?? accounts.map((account) => account.id),
-    [accounts, selectedIds],
-  );
+  const { cancel, retry, retrying } = usePostActions();
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   const accountById = useMemo(
     () => new Map(accounts.map((account) => [account.id, account])),
     [accounts],
-  );
-  const zones = useMemo(
-    () => [...new Set([...COMMON_ZONES, ...Intl.supportedValuesOf("timeZone")])],
-    [],
-  );
-  const filteredZones = zones.filter((zone) =>
-    `${zone} ${zoneLabel(zone)}`.toLowerCase().includes(zoneSearch.toLowerCase()),
   );
   const today = dayKey(new Date(), timeZone);
   const visiblePosts = useMemo(
@@ -190,38 +132,13 @@ export function PublishView({ accounts, posts }: PublishData) {
     }
     return { queueCount, sentCount };
   }, [posts, selectedSet]);
-  const toggleAccount = (id: string) => {
-    setSelectedIds(
-      selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id],
-    );
-  };
-  const cancel = (post: Post) =>
-    confirm({
-      title: "Cancel this post?",
-      description: "It will not be uploaded. Your agent can schedule it again.",
-      confirmText: "Cancel post",
-      variant: "destructive",
-      onConfirm: async () => {
-        await cancelScheduledPost({ data: { id: post.id } });
-        await router.invalidate();
-      },
-    });
-  const retry = async (post: Post) => {
-    setRetrying(post.id);
-    try {
-      await retryFailedPost({ data: { id: post.id } });
-      await router.invalidate();
-    } finally {
-      setRetrying(null);
-    }
-  };
 
   const postRow = (post: Post) => {
     const account = accountById.get(post.accountId);
     const date = new Date(
       tab === "sent" ? (post.publishedAt ?? post.scheduledAt) : post.scheduledAt,
     );
-    const status = STATUS[post.status] ?? { label: post.status, variant: "outline" as const };
+    const status = statusOf(post);
     return (
       <article
         key={post.id}
@@ -232,11 +149,7 @@ export function PublishView({ accounts, posts }: PublishData) {
           dateTime={date.toISOString()}
           className="text-[15px] font-medium tabular-nums text-foreground sm:pt-3.5 sm:text-right sm:text-sm"
         >
-          {new Intl.DateTimeFormat("en-US", {
-            timeZone,
-            hour: "numeric",
-            minute: "2-digit",
-          }).format(date)}
+          {timeIn(date, timeZone)}
         </time>
         <div className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted/30">
           {account && (
@@ -310,15 +223,18 @@ export function PublishView({ accounts, posts }: PublishData) {
         title="Publish"
         description="What your agents have scheduled, and what already went out."
         actions={
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Give feedback"
-            title="Give feedback"
-            onClick={() => setFeedbackOpen(true)}
-          >
-            <ChatCircleDots size={19} />
-          </Button>
+          <>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Give feedback"
+              title="Give feedback"
+              onClick={() => setFeedbackOpen(true)}
+            >
+              <ChatCircleDots size={19} />
+            </Button>
+            {viewToggle}
+          </>
         }
       />
 
@@ -357,104 +273,8 @@ export function PublishView({ accounts, posts }: PublishData) {
               ))}
             </div>
             <div className="flex items-center gap-1 pb-1">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <button
-                      type="button"
-                      className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      <SquaresFour size={17} />{" "}
-                      {selected.length === accounts.length
-                        ? "Channels"
-                        : `Channels (${selected.length})`}{" "}
-                      <CaretDown size={13} />
-                    </button>
-                  }
-                />
-                <DropdownMenuContent align="end" className="max-h-72 min-w-56">
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setSelectedIds(
-                        selected.length === accounts.length
-                          ? []
-                          : accounts.map((account) => account.id),
-                      )
-                    }
-                  >
-                    {selected.length === accounts.length ? "Clear selection" : "Select all"}
-                  </DropdownMenuItem>
-                  {accounts.map((account) => (
-                    <DropdownMenuCheckboxItem
-                      key={account.id}
-                      checked={selected.includes(account.id)}
-                      onCheckedChange={() => toggleAccount(account.id)}
-                    >
-                      <ChannelAvatar
-                        provider={account.provider}
-                        avatar={account.avatar}
-                        name={account.name}
-                        size="sm"
-                      />{" "}
-                      <span className="truncate">{account.name}</span>
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                  {accounts.length === 0 && (
-                    <p className="px-2 py-2 text-xs text-muted-foreground">No channels connected</p>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Popover open={zoneOpen} onOpenChange={setZoneOpen}>
-                <PopoverTrigger
-                  render={
-                    <button
-                      type="button"
-                      className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      <Globe size={17} /> {zoneLabel(timeZone)} <CaretDown size={13} />
-                    </button>
-                  }
-                />
-                <PopoverContent align="end" className="w-64">
-                  <label
-                    htmlFor="publish-timezone-search"
-                    className="px-1 text-xs font-medium text-muted-foreground"
-                  >
-                    Timezone
-                  </label>
-                  <input
-                    id="publish-timezone-search"
-                    type="search"
-                    value={zoneSearch}
-                    onChange={(event) => setZoneSearch(event.target.value)}
-                    placeholder="Search city or region"
-                    className="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-ring"
-                  />
-                  <div className="max-h-56 overflow-y-auto" role="listbox" aria-label="Timezone">
-                    {filteredZones.map((zone) => (
-                      <button
-                        key={zone}
-                        type="button"
-                        role="option"
-                        aria-selected={zone === timeZone}
-                        onClick={() => {
-                          setTimeZone(zone);
-                          setZoneOpen(false);
-                          setZoneSearch("");
-                        }}
-                        className={`block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted ${zone === timeZone ? "bg-muted font-semibold" : ""}`}
-                      >
-                        {zone.replaceAll("_", " ")}
-                      </button>
-                    ))}
-                    {filteredZones.length === 0 && (
-                      <p className="px-2 py-2 text-xs text-muted-foreground">
-                        No matching timezone
-                      </p>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <ChannelFilter accounts={accounts} selected={selected} onChange={setSelected} />
+              <ZoneFilter timeZone={timeZone} onChange={setTimeZone} />
             </div>
           </div>
 
