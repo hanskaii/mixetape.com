@@ -4,6 +4,7 @@ import { Plus } from "@phosphor-icons/react";
 import { siteConfig } from "#/config/site";
 import {
   DATA_KEPT_DAYS,
+  MONTHS_PAID_YEARLY,
   PLANS,
   POSTS_PER_CHANNEL_DAY,
   TRIAL_DAYS,
@@ -20,16 +21,20 @@ const QUESTIONS = [
     a: "mixetape is built for posting through AI agents, not for a team clicking through a dashboard. Claude Code, Codex, Cursor or your own script schedules the posts through MCP or the REST API, and you see, edit or cancel every one of them in the queue. No seats, no approval flows: you pay for the accounts you post to, and posts are unlimited.",
   },
   {
+    q: "Can my AI agent use it?",
+    a: "Yes, that is what it is for. Every plan includes the MCP server for Claude Code, Codex, Cursor, OpenCode and other agents, and the REST API for scripts. API keys are unlimited, and each has its own permissions, so you decide what every agent may do.",
+  },
+  {
     q: "Which platforms do you support?",
     a: "YouTube, TikTok, Instagram, Facebook Pages, Threads, Pinterest, Bluesky and Mastodon. Want another one? Email us.",
   },
   {
-    q: "How many social accounts can I connect?",
-    a: `Creator includes ${PLANS.creator.accounts}, enough for one business on every platform. Studio starts at ${PLANS.studio.accounts} accounts for $${PLANS.studio.monthly} a month and adds $${PLANS.studio.extraMonthly} for each account after that.`,
+    q: "What is a social account?",
+    a: "One channel you connect: a YouTube channel, an Instagram account, a Facebook Page. Connecting your Instagram account is one social account. Reconnecting a channel you already have does not count again.",
   },
   {
-    q: "What is a social account?",
-    a: "One channel you connect: a YouTube channel, an Instagram account, a Facebook Page. Connecting your Instagram account is one social account.",
+    q: "How many social accounts can I connect?",
+    a: `Creator includes ${PLANS.creator.accounts}, enough for one business on every platform. Studio starts at ${PLANS.studio.accounts} accounts for $${PLANS.studio.monthly} a month and adds $${PLANS.studio.extraMonthly} a month for each account after that; pick the number on the plan card.`,
   },
   {
     q: "Can I connect several accounts on the same platform?",
@@ -45,15 +50,27 @@ const QUESTIONS = [
   },
   {
     q: "Is there a free plan?",
-    a: `No, but your first plan starts with a ${TRIAL_DAYS}-day free trial. You add a card, pay $0 today, and we email you ${TRIAL_REMINDER_DAYS} days before the first charge. Cancel before then and you pay nothing.`,
+    a: `No: the workspace, the API and MCP need a plan. But your first plan starts with a ${TRIAL_DAYS}-day free trial. You add a card, pay $0 today, and we email you ${TRIAL_REMINDER_DAYS} days before the first charge. Cancel before then and you pay nothing. The trial is given once per account.`,
+  },
+  {
+    q: "What do I save by paying yearly?",
+    a: `A year costs ${MONTHS_PAID_YEARLY} months, so two months are free. It is charged once a year in advance.`,
+  },
+  {
+    q: "Can I change plans later?",
+    a: "Yes, from Billing in your workspace. If you move to a plan that covers fewer accounts than you have connected, the most recently connected channels are locked and their posts pause; you choose which channels stay active, or disconnect the ones you no longer use.",
   },
   {
     q: "Can I cancel anytime?",
-    a: `Yes, from Billing, with no lock-in. Your plan keeps working until the end of the period you paid for. After that your posts pause and your channels, posts and files are kept for ${DATA_KEPT_DAYS} days, so you can come back to everything as you left it. We email you ${WARNING_DAYS} days before they are deleted.`,
+    a: `Yes, from Billing, with no lock-in. Your plan keeps working until the end of the period you paid for. After that your posts pause and your channels, posts and files are kept for ${DATA_KEPT_DAYS} days, so you can come back to everything as you left it. We email you ${WARNING_DAYS} days before they are deleted. Your sign-in and invoices stay.`,
   },
   {
     q: "Can I get a refund?",
     a: "Periods you have paid for are not refunded. If you were charged by mistake, or could not use mixetape because of a fault on our side, email us within 14 days of the charge and we will put it right.",
+  },
+  {
+    q: "Who handles payment and invoices?",
+    a: "Dodo Payments, our merchant of record: it charges your card, adds any sales tax or VAT, and issues the invoices, which you find in Billing. mixetape never sees your card number.",
   },
   {
     q: "Do I share my social media passwords with you?",
