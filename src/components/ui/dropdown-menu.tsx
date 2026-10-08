@@ -97,6 +97,12 @@ const styles = stylex.create({
     opacity: 0,
     transform: "scale(0.95)",
   },
+  // The positioner is what stacks against the page (a sticky header, a dialog), as in
+  // popover.tsx.
+  positioner: {
+    isolation: "isolate",
+    zIndex: 200,
+  },
   radioDot: {
     fill: "currentColor",
     height: "0.5rem",
@@ -164,6 +170,7 @@ const DropdownMenuContent = ({
 }) => (
   <MenuPrimitive.Portal>
     <MenuPrimitive.Positioner
+      {...stylex.props(styles.positioner)}
       align={align}
       alignOffset={alignOffset}
       collisionPadding={collisionPadding}
@@ -372,7 +379,7 @@ const DropdownMenuSubContent = ({
   className?: string;
 }) => (
   <MenuPrimitive.Portal>
-    <MenuPrimitive.Positioner>
+    <MenuPrimitive.Positioner {...stylex.props(styles.positioner)}>
       <MenuPrimitive.Popup
         data-slot="dropdown-menu-sub-content"
         className={(state) =>
