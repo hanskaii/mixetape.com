@@ -7,6 +7,7 @@ import { colors } from "../ui/tokens.stylex";
 import { HeaderUser } from "./header-user";
 import { Rule } from "./rule";
 import ThemeToggle from "./theme-toggle";
+import { BrandMark } from "../ui/brand-mark";
 
 const SM = "@media (min-width: 640px)";
 const MD = "@media (min-width: 768px)";
@@ -37,10 +38,37 @@ const styles = stylex.create({
     color: colors.foreground,
     display: "flex",
     flexShrink: 0,
-    fontSize: "23px",
-    fontWeight: 700,
-    letterSpacing: "-0.07em",
+    gap: "0.5rem",
     textDecoration: "none",
+  },
+  // The docs header's brand: the mark in a yellow tile, the name, and a small label.
+  mark: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: "0.4rem",
+    color: colors.primaryForeground,
+    display: "flex",
+    flexShrink: 0,
+    height: "24px",
+    justifyContent: "center",
+    width: "24px",
+  },
+  markIcon: { height: "14px", width: "14px" },
+  name: { fontSize: "23px", fontWeight: 700, letterSpacing: "-0.07em", lineHeight: 1 },
+  beta: {
+    borderColor: colors.border,
+    borderRadius: "0.375rem",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: `color-mix(in oklab, ${colors.foreground} 70%, transparent)`,
+    display: { default: "none", "@media (min-width: 640px)": "inline-block" },
+    fontSize: "11px",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    lineHeight: 1,
+    paddingBlock: "0.2rem",
+    paddingInline: "0.375rem",
+    textTransform: "uppercase",
   },
   sections: { alignItems: "center", display: { default: "none", [SM]: "flex" }, gap: "0.5rem" },
   section: {
@@ -87,8 +115,12 @@ export function AppHeader() {
         aria-label="Main navigation"
         {...stylex.props(styles.nav, isLanding && styles.navLanding)}
       >
-        <Link to="/" {...stylex.props(styles.brand)}>
-          {siteConfig.name}
+        <Link to="/" aria-label={`${siteConfig.name} (beta)`} {...stylex.props(styles.brand)}>
+          <span {...stylex.props(styles.mark)}>
+            <BrandMark {...stylex.props(styles.markIcon)} />
+          </span>
+          <span {...stylex.props(styles.name)}>{siteConfig.name}</span>
+          <span {...stylex.props(styles.beta)}>Beta</span>
         </Link>
 
         {isLanding && (

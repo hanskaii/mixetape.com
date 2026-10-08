@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { CheckCircle, Robot } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { colors } from "../../../components/ui/tokens.stylex";
 import { Bubble, BubbleContent } from "../../../components/ui/bubble";
 import {
@@ -9,13 +9,6 @@ import {
   MessageContent,
   MessageHeader,
 } from "../../../components/ui/message";
-import {
-  MessageScroller,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "../../../components/ui/message-scroller";
 
 type Step =
   | { type: "agent"; text: string }
@@ -23,12 +16,12 @@ type Step =
 
 type Example = { prompt: string; steps: Step[] };
 
-// These are illustrative MCP exchanges. Tool names and input fields match mixetape's tools.
+// Illustrative MCP exchanges, kept short; tool names and input fields match mixetape's tools.
 const examples: Example[] = [
   {
-    prompt: "Are my channels connected? What posts are scheduled for tomorrow?",
+    prompt: "Are my channels connected? What's scheduled for tomorrow?",
     steps: [
-      { type: "agent", text: "I’ll check your connected channels and tomorrow’s queue." },
+      { type: "agent", text: "I'll check your channels and tomorrow's queue." },
       {
         type: "tool",
         name: "list_accounts",
@@ -38,82 +31,31 @@ const examples: Example[] = [
       {
         type: "tool",
         name: "list_posts",
-        args: '{ status: ["scheduled"], from: "2026-09-28", to: "2026-09-29" }',
+        args: '{ status: ["scheduled"], from: "2026-10-09", to: "2026-10-10" }',
         result: "2 posts · 17:30 YouTube · 18:00 Instagram",
       },
       {
         type: "agent",
-        text: "All 3 channels are connected. Two posts are queued for tomorrow: YouTube at 17:30 and Instagram at 18:00 WIB.",
+        text: "All 3 channels are connected. Two posts go out tomorrow, at 17:30 and 18:00.",
       },
     ],
   },
   {
-    prompt: "Change my YouTube video title to “The 3 A.M. Reset That Worked”.",
+    prompt: "Schedule the vertical cut on YouTube, Facebook and Instagram, Friday 17:30.",
     steps: [
-      { type: "agent", text: "I’ll find the published video, update its title, and verify it." },
+      { type: "agent", text: "Same cut, each channel's format, one time." },
       {
         type: "tool",
-        name: "list_posts",
-        args: '{ status: ["published"], limit: 10 }',
-        result: "post_241 · YouTube · The 3 A.M. Reset",
+        name: "publish_files",
+        args: '{ fileIds: ["file_30s"], accountIds: ["yt_01", "fb_01", "ig_01"], scheduledAt: "2026-10-16T17:30+07:00" }',
+        result: "3 posts · scheduled Friday 17:30",
       },
-      {
-        type: "tool",
-        name: "edit_published_post",
-        args: '{ id: "post_241", metadata: { title: "The 3 A.M. Reset That Worked" } }',
-        result: "YouTube title updated",
-      },
-      {
-        type: "tool",
-        name: "get_post",
-        args: '{ id: "post_241" }',
-        result: "Published · “The 3 A.M. Reset That Worked”",
-      },
-      { type: "agent", text: "Done. The new title is live on YouTube." },
+      { type: "agent", text: "Done. All three go out Friday at 17:30." },
     ],
   },
   {
-    prompt:
-      "Schedule the 30-second vertical cut on YouTube, Facebook Reels, and Instagram for Friday, 17:30 WIB.",
+    prompt: "Where did viewers leave the last Short?",
     steps: [
-      {
-        type: "agent",
-        text: "I’ll use the same cut with each channel’s publishing format and schedule them together.",
-      },
-      {
-        type: "tool",
-        name: "list_accounts",
-        args: "{}",
-        result: "yt_01 · fb_01 · ig_01 · connected",
-      },
-      {
-        type: "tool",
-        name: "create_post",
-        args: '{ accountId: "yt_01", mediaUrl: "r2://cuts/reset-30s.mp4", scheduledAt: "2026-10-02T17:30:00+07:00", metadata: { title: "The 3 A.M. Reset" } }',
-        result: "YouTube · scheduled 17:30 WIB",
-      },
-      {
-        type: "tool",
-        name: "create_post",
-        args: '{ accountId: "fb_01", mediaUrl: "r2://cuts/reset-30s.mp4", scheduledAt: "2026-10-02T17:30:00+07:00", metadata: { format: "reel" } }',
-        result: "Facebook Reel · scheduled 17:30 WIB",
-      },
-      {
-        type: "tool",
-        name: "create_post",
-        args: '{ accountId: "ig_01", mediaUrl: "r2://cuts/reset-30s.mp4", scheduledAt: "2026-10-02T17:30:00+07:00", caption: "A better start to the day.", metadata: { shareToFeed: true } }',
-        result: "Instagram Reel · scheduled 17:30 WIB",
-      },
-      {
-        type: "agent",
-        text: "All three are scheduled for Friday at 17:30 WIB, with YouTube metadata and Reel settings for Facebook and Instagram.",
-      },
-    ],
-  },
-  {
-    prompt: "Where did viewers leave the last Short? Use the tighter cut for Friday.",
-    steps: [
-      { type: "agent", text: "I’ll check retention before scheduling the revised cut." },
       {
         type: "tool",
         name: "get_post_analytics",
@@ -122,21 +64,16 @@ const examples: Example[] = [
       },
       {
         type: "agent",
-        text: "Most viewers left in the first three seconds. I’ll schedule the cut that opens with the payoff.",
-      },
-      {
-        type: "tool",
-        name: "create_post",
-        args: '{ accountId: "yt_01", mediaUrl: "r2://cuts/reset-hook-first.mp4", scheduledAt: "2026-10-02T17:30:00+07:00", metadata: { title: "The 3 A.M. Reset" } }',
-        result: "YouTube · scheduled Friday, 17:30 WIB",
-      },
-      {
-        type: "agent",
-        text: "The tighter cut is queued for Friday. mixetape will publish it on time.",
+        text: "Most left in the first three seconds. Open with the payoff next time.",
       },
     ],
   },
 ];
+
+// How long each step stays before the next: a tool runs, then shows its result.
+const TOOL_RUNNING_MS = 800;
+const STEP_MS = 1100;
+const EXAMPLE_PAUSE_MS = 2600;
 
 const enter = stylex.keyframes({
   from: { opacity: 0, transform: "translateY(5px)" },
@@ -144,20 +81,29 @@ const enter = stylex.keyframes({
 });
 
 const styles = stylex.create({
+  // Newest message at the bottom; older ones slide up and out of the clipped top, so the
+  // demo needs no scroll container.
   visual: {
     color: colors.foreground,
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     height: { default: "440px", "@media (min-width: 640px)": "500px" },
+    justifyContent: "flex-end",
     justifySelf: "center",
-    maxHeight: "500px",
     maxWidth: "560px",
     minWidth: 0,
     overflow: "hidden",
+    paddingBlockEnd: "1rem",
     width: "100%",
   },
-  tool: {
-    animationName: enter,
+  item: {
     animationDuration: "220ms",
+    animationName: enter,
     animationTimingFunction: "ease-out",
+    flexShrink: 0,
+  },
+  tool: {
     borderColor: colors.border,
     borderRadius: "12px",
     borderStyle: "solid",
@@ -210,34 +156,6 @@ const styles = stylex.create({
   check: { color: "#10b981", flexShrink: 0 },
 });
 
-function StreamingText({
-  text,
-  playing,
-  onComplete,
-}: {
-  text: string;
-  playing: boolean;
-  onComplete: () => void;
-}) {
-  const words = text.match(/\S+\s*/g) ?? [];
-  const [count, setCount] = useState(0);
-  const completed = useRef(false);
-
-  useEffect(() => {
-    if (!playing || count >= words.length) return;
-    const timer = window.setTimeout(() => setCount((value) => value + 1), 75);
-    return () => window.clearTimeout(timer);
-  }, [count, playing, words.length]);
-
-  useEffect(() => {
-    if (count < words.length || completed.current) return;
-    completed.current = true;
-    onComplete();
-  }, [count, onComplete, words.length]);
-
-  return <>{words.slice(0, count).join("")}</>;
-}
-
 function ToolStep({ step, done }: { step: Extract<Step, { type: "tool" }>; done: boolean }) {
   return (
     <div {...stylex.props(styles.tool)}>
@@ -270,122 +188,99 @@ function ToolStep({ step, done }: { step: Extract<Step, { type: "tool" }>; done:
   );
 }
 
+/**
+ * The hero's demo: an agent working through mixetape's tools, one step at a time. One timer
+ * drives it, and it stops while off screen, in a hidden tab, or with reduced motion (which
+ * shows the first example whole).
+ */
 export function HeroDemo() {
-  const visualRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  const [pageVisible, setPageVisible] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+  const [playing, setPlaying] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [exampleIndex, setExampleIndex] = useState(0);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [stepDone, setStepDone] = useState(false);
+  // Steps shown so far, and whether the last one (a tool) has its result.
+  const [shown, setShown] = useState(1);
+  const [toolDone, setToolDone] = useState(false);
   const example = examples[exampleIndex];
-  const active = visible && pageVisible;
-  const current = example.steps[stepIndex];
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      threshold: 0.15,
+    let onScreen = false;
+    const update = () => setPlaying(onScreen && !document.hidden);
+    const observer = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      update();
     });
-    if (visualRef.current) observer.observe(visualRef.current);
-    return () => observer.disconnect();
+    if (ref.current) observer.observe(ref.current);
+    document.addEventListener("visibilitychange", update);
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onMotion = () => setReducedMotion(motion.matches);
+    onMotion();
+    motion.addEventListener("change", onMotion);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", update);
+      motion.removeEventListener("change", onMotion);
+    };
   }, []);
 
   useEffect(() => {
-    const onVisibilityChange = () => setPageVisible(!document.hidden);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    onVisibilityChange();
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, []);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReducedMotion(query.matches);
-    onChange();
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!active || reducedMotion) return;
-    if (!stepDone && current.type === "tool") {
-      const timer = window.setTimeout(() => setStepDone(true), 850);
-      return () => window.clearTimeout(timer);
-    }
-    if (!stepDone) return;
-    const isLast = stepIndex === example.steps.length - 1;
+    if (!playing || reducedMotion) return;
+    const last = example.steps[shown - 1];
     const timer = window.setTimeout(
       () => {
-        if (isLast) {
-          setExampleIndex((index) => (index + 1) % examples.length);
-          setStepIndex(0);
-        } else {
-          setStepIndex((index) => index + 1);
-        }
-        setStepDone(false);
+        if (last.type === "tool" && !toolDone) return setToolDone(true);
+        setToolDone(false);
+        if (shown < example.steps.length) return setShown(shown + 1);
+        setExampleIndex((exampleIndex + 1) % examples.length);
+        setShown(1);
       },
-      isLast ? 2400 : 500,
+      last.type === "tool" && !toolDone
+        ? TOOL_RUNNING_MS
+        : shown < example.steps.length
+          ? STEP_MS
+          : EXAMPLE_PAUSE_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [active, current.type, example.steps.length, reducedMotion, stepDone, stepIndex]);
+  }, [playing, reducedMotion, example, exampleIndex, shown, toolDone]);
 
-  const finishAgent = useCallback(() => setStepDone(true), []);
-  const lastVisibleStep = reducedMotion ? example.steps.length - 1 : stepIndex;
+  const steps = reducedMotion ? example.steps : example.steps.slice(0, shown);
 
   return (
     <div
-      ref={visualRef}
-      {...stylex.props(styles.visual)}
+      ref={ref}
       aria-label="Automatically playing examples of an agent using mixetape tools"
+      {...stylex.props(styles.visual)}
     >
-      <MessageScrollerProvider key={exampleIndex} autoScroll defaultScrollPosition="end">
-        <MessageScroller>
-          <MessageScrollerViewport aria-label="Agent and mixetape MCP examples">
-            <MessageScrollerContent className="gap-4 pb-4">
-              <MessageScrollerItem messageId={`${exampleIndex}-request`}>
-                <Message align="end">
-                  <MessageAvatar className="size-8">U</MessageAvatar>
-                  <MessageContent>
-                    <MessageHeader>You</MessageHeader>
-                    <Bubble>
-                      <BubbleContent>{example.prompt}</BubbleContent>
-                    </Bubble>
-                  </MessageContent>
-                </Message>
-              </MessageScrollerItem>
-              {example.steps.slice(0, lastVisibleStep + 1).map((step, index) => (
-                <MessageScrollerItem key={index} messageId={`${exampleIndex}-${index}`}>
-                  {step.type === "tool" ? (
-                    <ToolStep step={step} done={reducedMotion || index < stepIndex || stepDone} />
-                  ) : (
-                    <Message>
-                      <MessageAvatar className="size-8">
-                        <Robot size={17} weight="bold" />
-                      </MessageAvatar>
-                      <MessageContent>
-                        {index === 0 && <MessageHeader>Agent</MessageHeader>}
-                        <Bubble variant="secondary">
-                          <BubbleContent>
-                            {reducedMotion || index < stepIndex ? (
-                              step.text
-                            ) : (
-                              <StreamingText
-                                key={`${exampleIndex}-${index}`}
-                                text={step.text}
-                                playing={active}
-                                onComplete={finishAgent}
-                              />
-                            )}
-                          </BubbleContent>
-                        </Bubble>
-                      </MessageContent>
-                    </Message>
-                  )}
-                </MessageScrollerItem>
-              ))}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-        </MessageScroller>
-      </MessageScrollerProvider>
+      <div key={`${exampleIndex}-prompt`} {...stylex.props(styles.item)}>
+        <Message align="end">
+          <MessageAvatar className="size-8">U</MessageAvatar>
+          <MessageContent>
+            <MessageHeader>You</MessageHeader>
+            <Bubble>
+              <BubbleContent>{example.prompt}</BubbleContent>
+            </Bubble>
+          </MessageContent>
+        </Message>
+      </div>
+      {steps.map((step, index) => (
+        <div key={`${exampleIndex}-${index}`} {...stylex.props(styles.item)}>
+          {step.type === "tool" ? (
+            <ToolStep step={step} done={reducedMotion || index < shown - 1 || toolDone} />
+          ) : (
+            <Message>
+              <MessageAvatar className="size-8">
+                <Robot size={17} weight="bold" />
+              </MessageAvatar>
+              <MessageContent>
+                {index === 0 && <MessageHeader>Agent</MessageHeader>}
+                <Bubble variant="secondary">
+                  <BubbleContent>{step.text}</BubbleContent>
+                </Bubble>
+              </MessageContent>
+            </Message>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

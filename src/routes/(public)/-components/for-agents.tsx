@@ -13,27 +13,39 @@ const PROMPT = `Set up mixetape for me. Read ${siteConfig.docsUrl}/connect-an-ag
 
 const AGENTS_GUIDE = `${siteConfig.docsUrl}/connect-an-agent/mcp`;
 
+// The landing's section pattern (how-it-works, FAQ): a rule on top, the heading on the
+// left, the words and actions on the right.
 const styles = stylex.create({
   section: {
-    display: "flex",
-    flexDirection: "column",
-    paddingBlock: { default: "3.5rem", "@media (min-width: 768px)": "5rem" },
-    scrollMarginTop: "5rem",
+    alignItems: "end",
+    borderBlockStartColor: colors.border,
+    borderBlockStartStyle: "solid",
+    borderBlockStartWidth: "1px",
+    display: "grid",
+    gap: "2.25rem",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 768px)": "0.8fr 1.2fr" },
+    paddingBlock: "5rem",
+    scrollMarginTop: "6rem",
   },
   title: {
     color: colors.foreground,
-    fontSize: "clamp(2.5rem, 5vw, 4rem)",
+    fontSize: "clamp(2.7rem, 5vw, 4.7rem)",
     fontWeight: 600,
     letterSpacing: "-0.04em",
-    lineHeight: 1.02,
+    lineHeight: 1,
     margin: 0,
+  },
+  serif: {
+    color: colors.editorial,
+    fontFamily: "var(--font-editorial)",
+    fontWeight: 400,
+    letterSpacing: "-0.025em",
   },
   lede: {
     color: colors.mutedForeground,
     fontSize: "1.0625rem",
     lineHeight: 1.6,
-    marginBlockEnd: 0,
-    marginBlockStart: "1rem",
+    margin: 0,
     maxWidth: "36rem",
   },
   actions: {
@@ -116,37 +128,43 @@ export function ForAgents() {
 
   return (
     <section id="agents" {...stylex.props(styles.section)}>
-      <h2 {...stylex.props(styles.title)}>Connect your agent</h2>
-      <p {...stylex.props(styles.lede)}>
-        Give Claude Code, Codex, Cursor, OpenCode or any MCP client a mixetape key, and it
-        schedules, reschedules and reports on your posts from the terminal or the editor. Scripts
-        get the same actions over REST.
-      </p>
-      <div {...stylex.props(styles.actions)}>
-        <button
-          type="button"
-          onClick={copyPrompt}
-          title="A setup prompt to paste into any agent"
-          {...stylex.props(styles.copy)}
-        >
-          <span aria-hidden="true" {...stylex.props(styles.stack)}>
-            {AGENT_ICONS.map((icon) => (
-              <AgentIcon key={icon} icon={icon} size={18} />
-            ))}
-          </span>
-          {copied ? (
-            <>
-              <Check weight="bold" /> Copied
-            </>
-          ) : (
-            <>
-              <Copy weight="bold" /> Copy prompt
-            </>
-          )}
-        </button>
-        <a href={AGENTS_GUIDE} {...stylex.props(styles.browse)}>
-          Browse agents <ArrowRight weight="bold" />
-        </a>
+      <h2 {...stylex.props(styles.title)}>
+        Connect your
+        <br />
+        <em {...stylex.props(styles.serif)}>agent.</em>
+      </h2>
+      <div>
+        <p {...stylex.props(styles.lede)}>
+          Give Claude Code, Codex, Cursor, OpenCode or any MCP client a mixetape key, and it
+          schedules, reschedules and reports on your posts from the terminal or the editor. Scripts
+          get the same actions over REST.
+        </p>
+        <div {...stylex.props(styles.actions)}>
+          <button
+            type="button"
+            onClick={copyPrompt}
+            title="A setup prompt to paste into any agent"
+            {...stylex.props(styles.copy)}
+          >
+            <span aria-hidden="true" {...stylex.props(styles.stack)}>
+              {AGENT_ICONS.map((icon) => (
+                <AgentIcon key={icon} icon={icon} size={18} />
+              ))}
+            </span>
+            {copied ? (
+              <>
+                <Check weight="bold" /> Copied
+              </>
+            ) : (
+              <>
+                <Copy weight="bold" /> Copy prompt
+              </>
+            )}
+          </button>
+          <a href={AGENTS_GUIDE} {...stylex.props(styles.browse)}>
+            Browse agents <ArrowRight weight="bold" />
+          </a>
+        </div>
       </div>
     </section>
   );
