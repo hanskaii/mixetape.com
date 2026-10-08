@@ -22,6 +22,7 @@ import {
   recordSubscription,
 } from "#/modules/billing/billing.service";
 import { ServiceError } from "#/modules/api/errors";
+import { codeRequestRefusal, isQaInbox, verifyTurnstile } from "./sign-in-guard";
 
 type Credentials = {
   secret: string;
@@ -61,6 +62,30 @@ function nativeWhenLocal(body: unknown) {
     }
   });
   return local ? { ...body, application_type: "native" } : null;
+}
+
+/**
+ * Before an email with a sign-in code goes out: limits per address and per network, and a
+ * Turnstile check unless someone is signed in already (changing their email in Settings) or
+ * it is one of mixetape's own test inboxes (sign-in-guard).
+ */
+async function guardedCodeRequest(ctx: Parameters<typeof getSessionFromCtx>[0]) {
+  const body = (ctx.body ?? {}) as { email?: unknown };
+  const email = String(body.email ?? "")
+    .trim()
+    .toLowerCase();
+  const ip = ctx.request?.headers.get("cf-connecting-ip") ?? "";
+  const session = await getSessionFromCtx(ctx).catch(() => null);
+  if (!session && !isQaInbox(email)) {
+    const token = ctx.request?.headers.get("x-turnstile-token");
+    if (!(await verifyTurnstile(token, ip, "sign-in")))
+      throw new APIError("FORBIDDEN", {
+        message: "The security check did not pass. Try again.",
+        code: "turnstile_failed",
+      });
+  }
+  const refusal = await codeRequestRefusal(email, ip);
+  if (refusal) throw new APIError("TOO_MANY_REQUESTS", { message: refusal, code: "rate_limited" });
 }
 
 const API_STATUS = {
@@ -171,6 +196,7 @@ function createAuth(credentials: Credentials) {
         // browser; only the checkout session below is offered, and checked.
         if (ctx.path === "/dodopayments/checkout") throw new APIError("NOT_FOUND");
         if (ctx.path === "/dodopayments/checkout-session") return guardedCheckout(ctx);
+        if (ctx.path === "/email-otp/send-verification-otp") return guardedCodeRequest(ctx);
       }),
     },
     // Sign-in requests are only taken from these pages. Locally that is any dev server,

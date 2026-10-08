@@ -7,6 +7,8 @@ export const siteConfig = {
   ogImage: "/og.png",
   url: process.env.SITE_URL || "http://localhost:3000",
   contactEmail: "hanssn@mixetape.com",
+  /** Cloudflare Turnstile on the sign-in form; public, its secret is server-side only. */
+  turnstileSitekey: "0x4AAAAAAFRQt4xo4NWZPmH7",
   /** The documentation site (its own project, in docs/). */
   docsUrl: "https://docs.mixetape.com",
   /** Bump when the favicon's pixels change, so browsers that cache it by URL fetch the new one. */

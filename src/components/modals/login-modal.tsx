@@ -7,6 +7,7 @@ import { Label } from "#/components/ui/label";
 import { authClient } from "#/modules/auth/auth-client";
 import { useRouter } from "@tanstack/react-router";
 import { Spinner } from "#/components/ui/spinner";
+import { Turnstile } from "#/components/ui/turnstile";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -69,6 +70,10 @@ export function LoginModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // The sign-in code is sent only after a Turnstile check; each token works once, so every
+  // attempt renders a fresh widget (its key).
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   const [socialLoading, setSocialLoading] = useState<"github" | "google" | null>(null);
 
@@ -87,7 +92,7 @@ export function LoginModal({
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !turnstileToken) return;
     setError("");
     setSuccess("");
     setLoading(true);
@@ -96,6 +101,7 @@ export function LoginModal({
       const res = await authClient.emailOtp.sendVerificationOtp({
         email: email.trim(),
         type: "sign-in",
+        fetchOptions: { headers: { "x-turnstile-token": turnstileToken } },
       });
       if (res.error) {
         setError(res.error.message || "Failed to send OTP code.");
@@ -107,6 +113,8 @@ export function LoginModal({
       setError(err?.message || "Error sending code.");
     } finally {
       setLoading(false);
+      setTurnstileToken(null);
+      setAttempt((n) => n + 1);
     }
   };
 
@@ -211,6 +219,13 @@ export function LoginModal({
               />
             </div>
 
+            <Turnstile
+              key={attempt}
+              sitekey={siteConfig.turnstileSitekey}
+              action="sign-in"
+              onToken={setTurnstileToken}
+            />
+
             {error && (
               <div className="p-2 text-xs rounded bg-destructive/10 text-destructive">{error}</div>
             )}
@@ -218,7 +233,7 @@ export function LoginModal({
             <Button
               type="submit"
               size="sm"
-              disabled={loading || socialLoading !== null}
+              disabled={loading || socialLoading !== null || !turnstileToken}
               className="w-full cursor-pointer"
             >
               {loading ? "Sending Code..." : "Send Verification Code"}

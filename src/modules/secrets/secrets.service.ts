@@ -28,7 +28,8 @@ export type SecretName =
   | "PINTEREST_APP_SECRET"
   | "BLUESKY_PRIVATE_KEY"
   | "DODO_PAYMENTS_API_KEY"
-  | "DODO_PAYMENTS_WEBHOOK_KEY";
+  | "DODO_PAYMENTS_WEBHOOK_KEY"
+  | "TURNSTILE_SECRET";
 
 function sources(name: SecretName): {
   store: SecretsStoreSecret | undefined;
@@ -81,6 +82,9 @@ function sources(name: SecretName): {
       return { store: env.SS_DODO_PAYMENTS_API_KEY, local: env.DODO_PAYMENTS_API_KEY };
     case "DODO_PAYMENTS_WEBHOOK_KEY":
       return { store: env.SS_DODO_PAYMENTS_WEBHOOK_KEY, local: env.DODO_PAYMENTS_WEBHOOK_KEY };
+    // A Worker secret (wrangler secret put), set when the Turnstile widget was made.
+    case "TURNSTILE_SECRET":
+      return { store: undefined, local: env.TURNSTILE_SECRET };
   }
 }
 

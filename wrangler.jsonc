@@ -203,6 +203,9 @@
     "PINTEREST_SANDBOX": "true",
     // Dodo Payments: live since 2026-10-08. The products scripts/dodo-catalog.mjs made in live
     // mode (billing/plans.ts); test and live modes have different product ids.
+    // Cloudflare Turnstile on the sign-in code form (auth/sign-in-guard.ts): the hostnames its
+    // tokens must come from. The widget's secret is the Worker secret TURNSTILE_SECRET.
+    "TURNSTILE_HOSTNAMES": "mixetape.com,www.mixetape.com",
     "DODO_MODE": "live_mode",
     "DODO_CATALOG": "{\"creator_monthly\":\"pdt_0NpI4K0BhgcCNAhuyyIWo\",\"creator_yearly\":\"pdt_0NpI4K2SDfkiRu3qvyqqx\",\"studio_monthly\":\"pdt_0NpI4K4EWC6xIxBPELsbO\",\"studio_yearly\":\"pdt_0NpI4K6PmeVrcEkEDurNd\",\"extra_account_monthly\":\"adn_0NpI4Jw56YmCAte8U8FzI\",\"extra_account_yearly\":\"adn_0NpI4JyWz9rC8flExxNyl\"}",
   },
