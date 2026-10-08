@@ -130,23 +130,32 @@ function BillingPage() {
       ) : (
         <Panel title="Plan">
           <Rows>
-            <Row
-              title="No plan yet"
-              meta={
-                billing.status
-                  ? `Your last plan is ${(STATUS[billing.status] ?? billing.status).toLowerCase()}. Scheduling posts needs an active one.`
-                  : "Everything works except scheduling posts, which needs a plan. Every plan starts with a free trial."
-              }
-            >
-              <Button size="sm" render={<Link to="/pricing" />}>
-                Choose a plan
-              </Button>
-            </Row>
+            {billing.open ? (
+              <Row
+                title={STATUS[billing.status ?? ""] ?? "Not active"}
+                meta="Scheduling is paused until the plan is active again. Pay the open invoice or resume it in the billing portal."
+              >
+                {billing.available && manage}
+              </Row>
+            ) : (
+              <Row
+                title="No plan yet"
+                meta={
+                  billing.status
+                    ? `Your last plan is ${(STATUS[billing.status] ?? billing.status).toLowerCase()}. Scheduling posts needs an active one.`
+                    : "Everything works except scheduling posts, which needs a plan. Every plan starts with a free trial."
+                }
+              >
+                <Button size="sm" render={<Link to="/pricing" />}>
+                  Choose a plan
+                </Button>
+              </Row>
+            )}
           </Rows>
         </Panel>
       )}
 
-      {!billing.exempt && !billing.plan && billing.status && billing.available && (
+      {!billing.exempt && !billing.plan && !billing.open && billing.status && billing.available && (
         <Panel title="Past invoices" actions={manage}>
           <Rows>
             <Row title="Invoices and payment methods are in the billing portal." />

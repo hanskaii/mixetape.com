@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
 import { env } from "cloudflare:workers";
 import DodoPayments from "dodopayments";
 import { db } from "#/database";
@@ -114,8 +114,15 @@ async function ownerOf(data: SubscriptionData): Promise<string | null> {
   return null;
 }
 
-/** Stores a subscription as a Dodo subscription.* webhook describes it. */
-export async function recordSubscription(payload: { type: string; data: unknown }) {
+/**
+ * Stores a subscription as a Dodo subscription.* webhook describes it. Webhooks can arrive
+ * out of order or twice: an event older than the one already stored changes nothing.
+ */
+export async function recordSubscription(payload: {
+  type: string;
+  timestamp?: string;
+  data: unknown;
+}) {
   const data = asSubscription(payload.data);
   if (!data) return;
   const product = planOfProduct(data.product_id);
@@ -133,6 +140,8 @@ export async function recordSubscription(payload: { type: string; data: unknown 
     data.addons
       ?.filter((addon) => addon.addon_id === extraAddon)
       .reduce((n, a) => n + a.quantity, 0) ?? 0;
+  const sent = payload.timestamp ? new Date(payload.timestamp) : new Date();
+  const eventAt = Number.isNaN(sent.getTime()) ? new Date() : sent;
   const values = {
     userId,
     productId: data.product_id,
@@ -142,12 +151,24 @@ export async function recordSubscription(payload: { type: string; data: unknown 
     accounts: PLANS[product.plan].accounts + (product.plan === "studio" ? extra : 0),
     cancelAtPeriodEnd: Boolean(data.cancel_at_next_billing_date),
     nextBillingAt: data.next_billing_date ? new Date(data.next_billing_date) : null,
+    eventAt,
     updatedAt: new Date(),
   };
   await db
     .insert(subscriptions)
     .values({ id: data.subscription_id, ...values })
-    .onConflictDoUpdate({ target: subscriptions.id, set: values });
+    .onConflictDoUpdate({
+      target: subscriptions.id,
+      set: values,
+      setWhere: or(isNull(subscriptions.eventAt), lte(subscriptions.eventAt, eventAt)),
+    });
+  // The portal looks the customer up by this id rather than by email.
+  const customerId = data.customer?.customer_id;
+  if (customerId)
+    await db
+      .update(user)
+      .set({ dodoCustomerId: customerId })
+      .where(and(eq(user.id, userId), isNull(user.dodoCustomerId)));
 }
 
 // ── entitlement ──────────────────────────────────────────────────────────────
@@ -155,10 +176,18 @@ export async function recordSubscription(payload: { type: string; data: unknown 
 /** Dodo statuses that still allow publishing; a trial is `active`. */
 const ENTITLED = ["active"];
 
+/**
+ * Statuses of a subscription that is not over yet: someone with one manages it in the portal
+ * (pay the failed invoice, resume, change plan) instead of buying a second one.
+ */
+const OPEN = ["active", "on_hold", "paused", "past_due", "pending"];
+
 export type Billing = {
   exempt: boolean;
   plan: { id: PlanId; name: string; period: Period; accounts: number } | null;
   status: string | null;
+  /** A subscription that is not over yet, entitled or not (on hold, paused). */
+  open: boolean;
   cancelAtPeriodEnd: boolean;
   nextBillingAt: Date | null;
   connected: number;
@@ -168,20 +197,21 @@ export type Billing = {
 
 /** The user's plan, as the workspace shows it and publishing checks it. */
 export async function billingOf(userId: string): Promise<Billing> {
-  const [person, latest, [{ connected }]] = await Promise.all([
+  const [person, latest, open, last, [{ connected }]] = await Promise.all([
     db.query.user.findFirst({ where: eq(user.id, userId), columns: { billingExempt: true } }),
     db.query.subscriptions.findFirst({
       where: and(eq(subscriptions.userId, userId), inArray(subscriptions.status, ENTITLED)),
       orderBy: desc(subscriptions.updatedAt),
     }),
-    db.select({ connected: count() }).from(socialAccounts).where(eq(socialAccounts.userId, userId)),
-  ]);
-  const last =
-    latest ??
-    (await db.query.subscriptions.findFirst({
+    db.query.subscriptions.findFirst({
+      where: and(eq(subscriptions.userId, userId), inArray(subscriptions.status, OPEN)),
+    }),
+    db.query.subscriptions.findFirst({
       where: eq(subscriptions.userId, userId),
       orderBy: desc(subscriptions.updatedAt),
-    }));
+    }),
+    db.select({ connected: count() }).from(socialAccounts).where(eq(socialAccounts.userId, userId)),
+  ]);
   const planId = latest?.plan as PlanId | undefined;
   return {
     exempt: Boolean(person?.billingExempt),
@@ -194,7 +224,8 @@ export async function billingOf(userId: string): Promise<Billing> {
             accounts: latest.accounts,
           }
         : null,
-    status: last?.status ?? null,
+    status: (latest ?? last)?.status ?? null,
+    open: Boolean(open),
     cancelAtPeriodEnd: Boolean(latest?.cancelAtPeriodEnd),
     nextBillingAt: latest?.nextBillingAt ?? null,
     connected,
@@ -204,7 +235,7 @@ export async function billingOf(userId: string): Promise<Billing> {
 
 /**
  * Throws unless the user may schedule posts: a plan whose accounts cover every connected
- * channel, or an exempt account. Posts already scheduled keep going out regardless.
+ * channel, or an exempt account. The publish workflow asks again when a post goes out.
  */
 export async function requirePlan(userId: string) {
   const billing = await billingOf(userId);
@@ -221,4 +252,94 @@ export async function requirePlan(userId: string) {
       402,
       { code: "plan_limit_reached" },
     );
+}
+
+/** Why the user may not publish now, or null when they may (for the publish workflow). */
+export async function planProblem(userId: string): Promise<string | null> {
+  try {
+    await requirePlan(userId);
+    return null;
+  } catch (error) {
+    if (error instanceof ServiceError && error.status === 402) return error.message;
+    throw error;
+  }
+}
+
+// ── checkout ─────────────────────────────────────────────────────────────────
+
+const MAX_EXTRA_ACCOUNTS = 10_000;
+
+type CheckoutBody = {
+  slug?: unknown;
+  product_cart?: unknown;
+};
+
+/**
+ * The checkout session the Dodo plugin may open for this user, whatever the browser sent:
+ * one plan product, Studio's extra-account add-on only with Studio of the same period, the
+ * trial only for someone who never had a subscription, and the user's own id as reference.
+ * Everything else in the request (discount codes, prices, other products) is dropped.
+ */
+export async function checkoutFor(userId: string, body: CheckoutBody) {
+  const billing = await billingOf(userId);
+  if (billing.open)
+    throw new ServiceError("You already have a plan. Change or resume it from Billing.", 409, {
+      code: "conflict",
+    });
+  if (!billing.available) throw new ServiceError("Checkout is not open yet.", 503);
+
+  const ids = catalog();
+  let productId: string | undefined;
+  let extra = 0;
+  if (typeof body.slug === "string") {
+    productId = checkoutProducts().find((product) => product.slug === body.slug)?.productId;
+  } else if (Array.isArray(body.product_cart) && body.product_cart.length === 1) {
+    const item = body.product_cart[0] as {
+      product_id?: unknown;
+      quantity?: unknown;
+      addons?: unknown;
+    };
+    const plan = typeof item.product_id === "string" ? planOfProduct(item.product_id) : null;
+    if (plan && (item.quantity === undefined || item.quantity === 1)) {
+      productId = item.product_id as string;
+      const addons = Array.isArray(item.addons) ? item.addons : [];
+      const allowed = plan.plan === "studio" ? ids[`extra_account_${plan.period}`] : undefined;
+      for (const addon of addons as { addon_id?: unknown; quantity?: unknown }[]) {
+        const quantity = Number(addon.quantity);
+        if (
+          addon.addon_id !== allowed ||
+          !Number.isInteger(quantity) ||
+          quantity < 1 ||
+          quantity > MAX_EXTRA_ACCOUNTS
+        )
+          throw new ServiceError("That add-on is not for sale with this plan.", 400, {
+            code: "invalid_field",
+            field: "product_cart",
+          });
+        extra += quantity;
+      }
+    }
+  }
+  if (!productId)
+    throw new ServiceError("Pick one of the plans on the pricing page.", 400, {
+      code: "invalid_field",
+      field: "product_cart",
+    });
+
+  const plan = planOfProduct(productId)!;
+  return {
+    product_cart: [
+      {
+        product_id: productId,
+        quantity: 1,
+        ...(extra && {
+          addons: [{ addon_id: ids[`extra_account_${plan.period}`]!, quantity: extra }],
+        }),
+      },
+    ],
+    referenceId: userId,
+    metadata: { userId },
+    // Someone who has had a subscription before starts paying straight away.
+    subscription_data: { trial_period_days: billing.status ? 0 : TRIAL_DAYS },
+  };
 }

@@ -891,6 +891,7 @@ export async function cancelPost(userId: string, id: string) {
 
 /** Sends a failed post again, now or at its original time if that is still ahead. */
 export async function retryPost(userId: string, id: string) {
+  await requirePlan(userId);
   const post = await getPost(userId, id);
   if (post.status !== "failed")
     throw new ServiceError("Only a failed post can be retried", 409, {

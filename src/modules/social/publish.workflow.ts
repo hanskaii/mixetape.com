@@ -11,6 +11,7 @@ import {
 } from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
 import { releasePostFiles } from "#/modules/storage/files.service";
+import { planProblem } from "#/modules/billing/billing.service";
 import { publishTiming } from "./timing";
 
 export type PublishParams = { postId: string };
@@ -23,6 +24,7 @@ export type PublishParams = { postId: string };
  *
  *   plan    — read the post; a cancelled, finished or superseded one ends here
  *   wait    — in mixetape, until `leadMinutes` before go-live (see timing.ts)
+ *   check   — the user still has a plan that covers their channels (billing.service)
  *   publish — refresh the token and upload; a platform that can hold it (YouTube) gets
  *             publishAt, and processes the high-quality versions while it waits
  *   release — at go-live, publish what a platform could only prepare (Instagram, Threads)
@@ -38,7 +40,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
       if (!loaded) return null;
       // A reschedule or retry hands the post to a newer instance; this one steps aside.
       if (loaded.post.workflowId && loaded.post.workflowId !== event.instanceId) {
-        return { status: "superseded", scheduledAt: 0, uploadAt: 0 };
+        return { status: "superseded", scheduledAt: 0, uploadAt: 0, userId: "" };
       }
       const provider = getProvider(loaded.post.provider);
       const scheduledAt = loaded.post.scheduledAt.getTime();
@@ -49,12 +51,21 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         privacy: (loaded.post.metadata as { privacyStatus?: string } | null)?.privacyStatus,
         now: Date.now(),
       });
-      return { status: loaded.post.status, scheduledAt, uploadAt };
+      return { status: loaded.post.status, scheduledAt, uploadAt, userId: loaded.post.userId };
     });
     if (!plan || plan.status !== "scheduled") return { skipped: plan?.status ?? "missing" };
 
     if (plan.uploadAt > Date.now()) {
       await step.sleepUntil("wait in mixetape", new Date(plan.uploadAt));
+    }
+
+    // Scheduled while on a plan is not enough: a post goes out only while the plan lasts.
+    const refusal = await step.do("check plan", async () => planProblem(plan.userId));
+    if (refusal) {
+      await step.do("record no plan", async () => {
+        await updatePost(postId, { status: "failed", error: refusal });
+      });
+      return { skipped: "no_plan" };
     }
 
     let result: Awaited<ReturnType<typeof publish>>;

@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { emailOTP, jwt, twoFactor } from "better-auth/plugins";
@@ -16,10 +16,12 @@ import { requiredSecret, secret } from "#/modules/secrets/secrets.service";
 import { ALL_SCOPES } from "#/modules/api/api-keys.service";
 import { fetchClientMetadataResource } from "#/modules/oauth/client-metadata";
 import {
+  checkoutFor,
   checkoutProducts,
   dodoClient,
   recordSubscription,
 } from "#/modules/billing/billing.service";
+import { ServiceError } from "#/modules/api/errors";
 
 type Credentials = {
   secret: string;
@@ -59,6 +61,29 @@ function nativeWhenLocal(body: unknown) {
     }
   });
   return local ? { ...body, application_type: "native" } : null;
+}
+
+const API_STATUS = {
+  400: "BAD_REQUEST",
+  401: "UNAUTHORIZED",
+  409: "CONFLICT",
+  503: "SERVICE_UNAVAILABLE",
+} as const;
+
+/**
+ * Replaces whatever the browser asked the Dodo plugin to check out with what this user may
+ * buy (billing.service checkoutFor). Signed out, the plugin itself refuses.
+ */
+async function guardedCheckout(ctx: Parameters<typeof getSessionFromCtx>[0]) {
+  const session = await getSessionFromCtx(ctx);
+  if (!session) return;
+  try {
+    return { context: { body: await checkoutFor(session.user.id, ctx.body ?? {}) } };
+  } catch (error) {
+    if (!(error instanceof ServiceError)) throw error;
+    const status = API_STATUS[error.status as keyof typeof API_STATUS] ?? "BAD_REQUEST";
+    throw new APIError(status, { message: error.message, code: error.code });
+  }
 }
 
 /**
@@ -123,9 +148,15 @@ function createAuth(credentials: Credentials) {
     disabledPaths: ["/token"],
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== "/oauth2/register") return;
-        const body = nativeWhenLocal(ctx.body);
-        if (body) return { context: { body } };
+        if (ctx.path === "/oauth2/register") {
+          const body = nativeWhenLocal(ctx.body);
+          if (body) return { context: { body } };
+          return;
+        }
+        // The plugin's deprecated payment-link checkout takes prices and products from the
+        // browser; only the checkout session below is offered, and checked.
+        if (ctx.path === "/dodopayments/checkout") throw new APIError("NOT_FOUND");
+        if (ctx.path === "/dodopayments/checkout-session") return guardedCheckout(ctx);
       }),
     },
     // Sign-in requests are only taken from these pages. Locally that is any dev server,

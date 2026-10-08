@@ -551,6 +551,8 @@ export const subscriptions = sqliteTable(
       .notNull()
       .default(false),
     nextBillingAt: integer("next_billing_at", { mode: "timestamp_ms" }),
+    // When Dodo sent the webhook last stored; an older one arriving late is ignored.
+    eventAt: integer("event_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
