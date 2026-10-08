@@ -8,7 +8,6 @@ import {
   CaretLeft,
   CaretRight,
   CaretUp,
-  Funnel,
   Stack,
   X,
 } from "@phosphor-icons/react";
@@ -42,6 +41,7 @@ import { postFormat, postTitle, statusOf, timeIn, type Account, type Post } from
 import {
   ChannelFilter,
   FILTER_BUTTON,
+  FilterSheet,
   useChannelSelection,
   useViewerZone,
   ZoneFilter,
@@ -237,18 +237,16 @@ export function PublishCalendar({
 
         <div className="ml-auto flex items-center gap-1">
           {phone ? (
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button size="icon-sm" variant="ghost" aria-label="Filters">
-                    <Funnel />
-                  </Button>
-                }
-              />
-              <PopoverContent align="end" className="w-56">
-                <div className="flex flex-col items-start gap-1">{filters}</div>
-              </PopoverContent>
-            </Popover>
+            <FilterSheet
+              accounts={accounts}
+              selected={selected}
+              onSelect={setSelected}
+              shown={shown}
+              shownOptions={SHOWN}
+              onShown={setShown}
+              timeZone={timeZone}
+              onZone={setTimeZone}
+            />
           ) : (
             filters
           )}
