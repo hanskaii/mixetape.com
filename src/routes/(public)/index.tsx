@@ -6,6 +6,7 @@ import { ForAgents } from "./-components/for-agents";
 import { Hero } from "./-components/hero";
 import { HowItWorks } from "./-components/how-it-works";
 import { LandingPricing } from "./-components/landing-pricing";
+import { PlansFaq } from "#/components/marketing/plans-faq";
 import { Platforms } from "./-components/platforms";
 import { WorkspacePreview } from "./-components/workspace-preview";
 
@@ -53,6 +54,7 @@ function HomePage() {
       <HowItWorks />
       <ForAgents />
       <LandingPricing signedIn={signedIn} />
+      <PlansFaq />
     </>
   );
 }

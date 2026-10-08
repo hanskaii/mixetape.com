@@ -76,7 +76,16 @@ const STUDIO_FEATURES = [
 const LG = "@media (min-width: 1024px)";
 
 const styles = stylex.create({
-  wrap: { display: "flex", flexDirection: "column", gap: "1.25rem" },
+  // The same width on every page that shows the plans: two cards, not a full-bleed spread.
+  wrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+    marginInline: "auto",
+    maxWidth: "960px",
+    width: "100%",
+  },
+  usd: { color: colors.mutedForeground, fontSize: "0.8125rem", margin: 0 },
   tabs: {
     alignSelf: { default: "stretch", "@media (min-width: 640px)": "flex-start" },
     backgroundColor: colors.muted,
@@ -391,6 +400,7 @@ export function Plans({ signedIn, trial = true }: { signedIn: boolean; trial?: b
           <Features items={STUDIO_FEATURES} />
         </li>
       </ul>
+      <p {...stylex.props(styles.usd)}>Prices in USD.</p>
     </div>
   );
 }

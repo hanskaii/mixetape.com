@@ -19,7 +19,15 @@ import { deleteFile } from "#/modules/storage/files.service";
 import { deleteGroup } from "#/modules/library/groups.service";
 import { deleteWebhook } from "#/modules/webhooks/webhooks.service";
 import { ENDED } from "./billing.service";
-import { MONTHS_PAID_YEARLY, PLANS, type Period, type PlanId } from "./plans";
+import {
+  DATA_KEPT_DAYS,
+  MONTHS_PAID_YEARLY,
+  PLANS,
+  TRIAL_REMINDER_DAYS,
+  WARNING_DAYS,
+  type Period,
+  type PlanId,
+} from "./plans";
 
 /**
  * What happens around a plan's end, in the order a person meets it: a reminder before the
@@ -29,12 +37,6 @@ import { MONTHS_PAID_YEARLY, PLANS, type Period, type PlanId } from "./plans";
  */
 
 const DAY = 86_400_000;
-/** Days the workspace's data is kept once there is no plan. */
-export const DATA_KEPT_DAYS = 30;
-/** The deletion warning goes this many days before. */
-export const WARNING_DAYS = 7;
-/** The trial reminder goes this many days before the first charge. */
-export const TRIAL_REMINDER_DAYS = 2;
 
 /** Statuses of a subscription that is not over: its data stays. */
 const OPEN = ["active", "on_hold", "paused", "past_due", "pending"];

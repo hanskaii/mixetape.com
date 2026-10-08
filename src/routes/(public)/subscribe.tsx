@@ -4,6 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { toast } from "sonner";
 import { siteConfig } from "#/config/site";
 import { Plans } from "#/components/marketing/plans";
+import { PlansFaq } from "#/components/marketing/plans-faq";
 import { Spinner } from "#/components/ui/spinner";
 import { authClient } from "#/modules/auth/auth-client";
 import { getBilling } from "#/modules/billing/billing.fn";
@@ -170,6 +171,7 @@ function SubscribePage() {
       )}
 
       {!billing.open && <Plans signedIn trial={!billing.status} />}
+      <PlansFaq />
     </>
   );
 }

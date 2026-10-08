@@ -12,6 +12,19 @@ export const MONTHS_PAID_YEARLY = 10;
 /** Every plan starts with this many free days; Dodo charges when they end. */
 export const TRIAL_DAYS = 7;
 
+/** Days the workspace's data is kept once there is no plan. */
+export const DATA_KEPT_DAYS = 30;
+/** The deletion warning goes this many days before. */
+export const WARNING_DAYS = 7;
+/** The trial reminder goes this many days before the first charge. */
+export const TRIAL_REMINDER_DAYS = 2;
+
+/**
+ * Most posts one channel may have on one day (UTC): more reads as spam to the platforms and
+ * can get the account limited there. Exempt accounts are not counted.
+ */
+export const POSTS_PER_CHANNEL_DAY = 10;
+
 export const PLANS = {
   creator: { name: "Creator", accounts: 15, monthly: 39 },
   // Studio covers `accounts` and sells more one at a time, `extraMonthly` each.

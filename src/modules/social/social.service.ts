@@ -34,6 +34,7 @@ import {
   requirePlan,
   syncChannelLocks,
 } from "#/modules/billing/billing.service";
+import { POSTS_PER_CHANNEL_DAY } from "#/modules/billing/plans";
 
 /**
  * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
@@ -719,11 +720,6 @@ async function stopWorkflow(instanceId: string | null) {
   }
 }
 
-/**
- * Most posts one channel may have on one day (UTC): more reads as spam to the platforms and
- * can get the account limited there. Exempt accounts are not counted.
- */
-export const POSTS_PER_CHANNEL_DAY = 10;
 const COUNTED: SocialPost["status"][] = ["scheduled", "publishing", "uploaded", "published"];
 
 async function requireDayRoom(accountId: string, at: Date, exceptPostId?: string) {

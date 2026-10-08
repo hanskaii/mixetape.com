@@ -5,6 +5,7 @@ import { Route as RootRoute } from "#/routes/__root";
 import { colors } from "../../components/ui/tokens.stylex";
 import { publicHead } from "./-lib/head";
 import { Plans } from "#/components/marketing/plans";
+import { PlansFaq } from "#/components/marketing/plans-faq";
 
 export const Route = createFileRoute("/(public)/pricing")({
   head: () =>
@@ -79,13 +80,6 @@ const styles = stylex.create({
     marginBlockStart: "1.5rem",
     maxWidth: "640px",
   },
-  note: {
-    color: colors.mutedForeground,
-    fontSize: "0.8125rem",
-    marginBlockEnd: 0,
-    marginBlockStart: "0.75rem",
-    marginInlineStart: "0.5rem",
-  },
   section: {
     borderBlockStartColor: colors.border,
     borderBlockStartStyle: "solid",
@@ -131,7 +125,6 @@ const styles = stylex.create({
     marginBlockStart: "0.25rem",
     maxWidth: "36rem",
   },
-  mail: { color: colors.foreground, textDecoration: "underline", textUnderlineOffset: "4px" },
 });
 
 function PricingPage() {
@@ -149,15 +142,7 @@ function PricingPage() {
         </p>
       </section>
 
-      <div>
-        <Plans signedIn={signedIn} />
-        <p {...stylex.props(styles.note)}>
-          Prices in USD. Questions:{" "}
-          <a href={`mailto:${siteConfig.contactEmail}`} {...stylex.props(styles.mail)}>
-            {siteConfig.contactEmail}
-          </a>
-        </p>
-      </div>
+      <Plans signedIn={signedIn} />
 
       <section {...stylex.props(styles.section)}>
         <h2 {...stylex.props(styles.sectionTitle)}>Every plan includes</h2>
@@ -173,6 +158,8 @@ function PricingPage() {
           ))}
         </ol>
       </section>
+
+      <PlansFaq />
     </>
   );
 }
