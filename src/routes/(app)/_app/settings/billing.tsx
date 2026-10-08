@@ -142,11 +142,11 @@ function BillingPage() {
                 title="No plan yet"
                 meta={
                   billing.status
-                    ? `Your last plan is ${(STATUS[billing.status] ?? billing.status).toLowerCase()}. Scheduling posts needs an active one.`
-                    : "Everything works except scheduling posts, which needs a plan. Every plan starts with a free trial."
+                    ? `Your last plan is ${(STATUS[billing.status] ?? billing.status).toLowerCase()}. The workspace needs an active one.`
+                    : "The workspace needs a plan. Every plan starts with a free trial."
                 }
               >
-                <Button size="sm" render={<Link to="/pricing" />}>
+                <Button size="sm" render={<Link to="/subscribe" />}>
                   Choose a plan
                 </Button>
               </Row>

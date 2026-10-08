@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { Check, Minus, Plus } from "@phosphor-icons/react";
-import { colors } from "../../../components/ui/tokens.stylex";
+import { colors } from "../ui/tokens.stylex";
 import { authClient } from "#/modules/auth/auth-client";
 import { checkoutRequest } from "#/modules/billing/billing.fn";
 import {
@@ -247,16 +247,18 @@ function Features({ items }: { items: string[] }) {
 
 function Trial({
   signedIn,
+  trial,
   plan,
   period,
   accounts,
 }: {
   signedIn: boolean;
+  trial: boolean;
   plan: PlanId;
   period: Billing;
   accounts: number;
 }) {
-  const label = `Start ${TRIAL_DAYS} day free trial`;
+  const label = trial ? `Start ${TRIAL_DAYS} day free trial` : `Choose ${PLANS[plan].name}`;
   return (
     <div {...stylex.props(styles.action)}>
       <LandingCta
@@ -265,13 +267,18 @@ function Trial({
         signedOutLabel={label}
         action={() => startCheckout(plan, period, accounts)}
       />
-      <p {...stylex.props(styles.due)}>$0.00 due today, cancel anytime</p>
+      <p {...stylex.props(styles.due)}>
+        {trial ? "$0.00 due today, cancel anytime" : "Billed today, cancel anytime"}
+      </p>
     </div>
   );
 }
 
-/** The two plans, shown on the pricing page and the landing page. */
-export function Plans({ signedIn }: { signedIn: boolean }) {
+/**
+ * The two plans, shown on the pricing, landing and subscribe pages. `trial` is false for
+ * someone who already had a plan: checkout gives the free trial once.
+ */
+export function Plans({ signedIn, trial = true }: { signedIn: boolean; trial?: boolean }) {
   // What is typed stays as typed until the field loses focus; the price never drops below
   // the minimum meanwhile.
   const [draft, setDraft] = useState(String(STUDIO_MIN));
@@ -314,6 +321,7 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
           </div>
           <Trial
             signedIn={signedIn}
+            trial={trial}
             plan="creator"
             period={billing}
             accounts={PLANS.creator.accounts}
@@ -373,7 +381,13 @@ export function Plans({ signedIn }: { signedIn: boolean }) {
               </button>
             </div>
           </div>
-          <Trial signedIn={signedIn} plan="studio" period={billing} accounts={accounts} />
+          <Trial
+            signedIn={signedIn}
+            trial={trial}
+            plan="studio"
+            period={billing}
+            accounts={accounts}
+          />
           <Features items={STUDIO_FEATURES} />
         </li>
       </ul>

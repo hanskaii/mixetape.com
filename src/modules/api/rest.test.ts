@@ -27,6 +27,7 @@ vi.mock("../library/publish.service", () => ({
   filesSource: vi.fn(),
 }));
 vi.mock("./rate-limit", () => ({ countCall: vi.fn(), RETRY_AFTER_SECONDS: 60 }));
+vi.mock("../billing/billing.service", () => ({ requirePlan: vi.fn() }));
 // The idempotency store without D1: same contract, kept in memory.
 vi.mock("./idempotency.service", async () => {
   const { ServiceError } = await import("./errors");
@@ -71,6 +72,7 @@ import { ENDPOINTS } from "./endpoints";
 import { ServiceError } from "./errors";
 import { requireCaller } from "./http";
 import { countCall } from "./rate-limit";
+import { requirePlan } from "../billing/billing.service";
 import { openApiDocument } from "./openapi";
 import { fromQuery, handle, match } from "./rest";
 import { TOOLS } from "./tools";
@@ -259,6 +261,16 @@ describe("REST endpoints", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("60");
     expect(await response.json()).toMatchObject({ error: { code: "rate_limited" } });
+  });
+
+  it("answers 402 without a plan, before touching anything", async () => {
+    vi.mocked(requirePlan).mockRejectedValueOnce(
+      new ServiceError("mixetape needs a plan", 402, { code: "plan_required" }),
+    );
+    const response = await request("GET", "/accounts");
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({ error: { code: "plan_required" } });
+    expect(social.listAccounts).not.toHaveBeenCalled();
   });
 
   it("disconnects an account", async () => {

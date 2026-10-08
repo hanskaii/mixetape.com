@@ -19,6 +19,7 @@ import { Route as publicIndexRouteImport } from './routes/(public)/index'
 import { Route as publicDataDeletionRouteImport } from './routes/(public)/data-deletion'
 import { Route as publicPricingRouteImport } from './routes/(public)/pricing'
 import { Route as publicPrivacyRouteImport } from './routes/(public)/privacy'
+import { Route as publicSubscribeRouteImport } from './routes/(public)/subscribe'
 import { Route as publicTermsRouteImport } from './routes/(public)/terms'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known/$'
 import { Route as McpToolsDotjsonRouteImport } from './routes/mcp_.tools[.]json'
@@ -89,6 +90,11 @@ const publicPricingRoute = publicPricingRouteImport.update({
 const publicPrivacyRoute = publicPrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => publicRouteRoute,
+} as any)
+const publicSubscribeRoute = publicSubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
   getParentRoute: () => publicRouteRoute,
 } as any)
 const publicTermsRoute = publicTermsRouteImport.update({
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/data-deletion': typeof publicDataDeletionRoute
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
+  '/subscribe': typeof publicSubscribeRoute
   '/terms': typeof publicTermsRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/data-deletion': typeof publicDataDeletionRoute
   '/pricing': typeof publicPricingRoute
   '/privacy': typeof publicPrivacyRoute
+  '/subscribe': typeof publicSubscribeRoute
   '/terms': typeof publicTermsRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp/tools.json': typeof McpToolsDotjsonRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/(public)/data-deletion': typeof publicDataDeletionRoute
   '/(public)/pricing': typeof publicPricingRoute
   '/(public)/privacy': typeof publicPrivacyRoute
+  '/(public)/subscribe': typeof publicSubscribeRoute
   '/(public)/terms': typeof publicTermsRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/mcp_/tools.json': typeof McpToolsDotjsonRoute
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/data-deletion'
     | '/pricing'
     | '/privacy'
+    | '/subscribe'
     | '/terms'
     | '/.well-known/$'
     | '/mcp/tools.json'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/data-deletion'
     | '/pricing'
     | '/privacy'
+    | '/subscribe'
     | '/terms'
     | '/.well-known/$'
     | '/mcp/tools.json'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/(public)/data-deletion'
     | '/(public)/pricing'
     | '/(public)/privacy'
+    | '/(public)/subscribe'
     | '/(public)/terms'
     | '/.well-known/$'
     | '/mcp_/tools.json'
@@ -504,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof publicPrivacyRouteImport
+      parentRoute: typeof publicRouteRoute
+    }
+    '/(public)/subscribe': {
+      id: '/(public)/subscribe'
+      path: '/subscribe'
+      fullPath: '/subscribe'
+      preLoaderRoute: typeof publicSubscribeRouteImport
       parentRoute: typeof publicRouteRoute
     }
     '/(public)/terms': {
@@ -674,6 +693,7 @@ interface publicRouteRouteChildren {
   publicDataDeletionRoute: typeof publicDataDeletionRoute
   publicPricingRoute: typeof publicPricingRoute
   publicPrivacyRoute: typeof publicPrivacyRoute
+  publicSubscribeRoute: typeof publicSubscribeRoute
   publicTermsRoute: typeof publicTermsRoute
   publicIndexRoute: typeof publicIndexRoute
   publicConnectDoneRoute: typeof publicConnectDoneRoute
@@ -685,6 +705,7 @@ const publicRouteRouteChildren: publicRouteRouteChildren = {
   publicDataDeletionRoute: publicDataDeletionRoute,
   publicPricingRoute: publicPricingRoute,
   publicPrivacyRoute: publicPrivacyRoute,
+  publicSubscribeRoute: publicSubscribeRoute,
   publicTermsRoute: publicTermsRoute,
   publicIndexRoute: publicIndexRoute,
   publicConnectDoneRoute: publicConnectDoneRoute,

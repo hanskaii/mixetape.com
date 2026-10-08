@@ -5,6 +5,7 @@ import { requireCaller } from "./http";
 import { once } from "./idempotency.service";
 import { Input, rejectUnknown } from "./input";
 import { countCall, RETRY_AFTER_SECONDS } from "./rate-limit";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * The REST API: resources under /api/v1, for scripts and integrations. Each module declares
@@ -142,6 +143,8 @@ export async function handle(request: Request, endpoints: readonly Endpoint[]): 
     const caller = await requireCaller(request);
     requireScope(caller, endpoint.scope);
     await countCall(caller.userId);
+    // The API is part of a plan, like the workspace.
+    await requirePlan(caller.userId);
     const body = endpoint.body ? await jsonBody(request) : {};
     // The body takes only the fields its schema names. A path parameter repeated in the
     // body is fine: the path wins.

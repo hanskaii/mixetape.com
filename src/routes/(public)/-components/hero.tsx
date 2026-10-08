@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { colors } from "../../../components/ui/tokens.stylex";
 import { HeroDemo } from "./hero-demo";
-import { LandingCta } from "./landing-cta";
+import { LandingCta } from "#/components/marketing/landing-cta";
 
 const styles = stylex.create({
   section: {

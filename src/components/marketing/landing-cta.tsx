@@ -5,7 +5,7 @@ import { ArrowRight } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useModal } from "#/components/providers/modal-providers";
 import { Spinner } from "#/components/ui/spinner";
-import { colors } from "../../../components/ui/tokens.stylex";
+import { colors } from "../ui/tokens.stylex";
 
 const styles = stylex.create({
   primary: {

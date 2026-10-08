@@ -43,6 +43,7 @@ vi.mock("../social/brands.service", () => ({
   deleteBrand: vi.fn(),
 }));
 vi.mock("./rate-limit", () => ({ countCall: vi.fn(), RETRY_AFTER_SECONDS: 60 }));
+vi.mock("../billing/billing.service", () => ({ requirePlan: vi.fn() }));
 // The idempotency store without D1: same contract, kept in memory.
 vi.mock("./idempotency.service", () => {
   const kept = new Map<string, unknown>();

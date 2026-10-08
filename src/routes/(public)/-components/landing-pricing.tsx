@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { colors } from "../../../components/ui/tokens.stylex";
-import { Plans } from "./plans";
+import { Plans } from "#/components/marketing/plans";
 
 const styles = stylex.create({
   section: {

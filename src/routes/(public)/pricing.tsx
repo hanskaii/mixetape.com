@@ -4,7 +4,7 @@ import { siteConfig } from "#/config/site";
 import { Route as RootRoute } from "#/routes/__root";
 import { colors } from "../../components/ui/tokens.stylex";
 import { publicHead } from "./-lib/head";
-import { Plans } from "./-components/plans";
+import { Plans } from "#/components/marketing/plans";
 
 export const Route = createFileRoute("/(public)/pricing")({
   head: () =>

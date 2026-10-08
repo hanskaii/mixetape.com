@@ -2,6 +2,7 @@ import type { Caller } from "./api-keys.service";
 import { errorBody, ServiceError } from "#/modules/api/errors";
 import { countCall } from "./rate-limit";
 import { findTool, runTool, toolsFor } from "./tools";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * mixetape as an MCP server (Streamable HTTP, stateless): the JSON-RPC side only. The
@@ -56,6 +57,8 @@ export async function handleMessage(
       if (!tool) return fail(id, -32602, `Unknown tool: ${String(message.params?.name)}`);
       try {
         await countCall(caller.userId);
+        // The tools are part of a plan, like the workspace.
+        await requirePlan(caller.userId);
         const args = message.params?.arguments;
         const result = await runTool(
           caller,

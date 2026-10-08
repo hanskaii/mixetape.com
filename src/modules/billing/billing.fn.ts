@@ -3,6 +3,15 @@ import { currentUserId } from "#/modules/auth/auth.server";
 import { PLANS, slugOf, type Period, type PlanId } from "./plans";
 import { billingOf, studioCheckout } from "./billing.service";
 
+/**
+ * Whether the signed-in person may use the workspace: an active plan (a trial counts), or
+ * an exempt account. Without one, the workspace sends them to /subscribe.
+ */
+export const getWorkspaceAccess = createServerFn({ method: "GET" }).handler(async () => {
+  const billing = await billingOf(await currentUserId());
+  return { allowed: billing.exempt || Boolean(billing.plan) };
+});
+
 /** The signed-in person's plan, for the billing page. */
 export const getBilling = createServerFn({ method: "GET" }).handler(async () => {
   const billing = await billingOf(await currentUserId());
