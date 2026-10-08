@@ -13,7 +13,7 @@ import { PublishView } from "./-components/publish-view";
 // The view lives in the URL, so a reload or a shared link opens the same days.
 const search = z.object({
   view: z.enum(["calendar", "list"]).optional(),
-  mode: z.enum(["month", "week"]).optional(),
+  mode: z.enum(["month", "week", "days"]).optional(),
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)

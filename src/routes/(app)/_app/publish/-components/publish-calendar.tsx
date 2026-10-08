@@ -47,9 +47,13 @@ import {
   ZoneFilter,
 } from "./publish-filters";
 import { usePostActions } from "./use-post-actions";
+import { DateSheet } from "./date-sheet";
 
-/** The modes the page's URL carries; a phone shows "week" as three days. */
-export type CalendarView = "month" | "week";
+const MODES: { value: CalendarMode; label: string }[] = [
+  { value: "days", label: "3 days" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+];
 
 type Shown = "all" | "queue" | "sent" | "failed";
 const SHOWN: { value: Shown; label: string }[] = [
@@ -94,7 +98,7 @@ function usePhone() {
   return phone;
 }
 
-/** The Publish calendar: a month, a week, or three days on a phone. */
+/** The Publish calendar: a month, a week, or three days. */
 export function PublishCalendar({
   accounts,
   view,
@@ -103,17 +107,17 @@ export function PublishCalendar({
   viewToggle,
 }: {
   accounts: Account[];
-  view: CalendarView;
+  view: CalendarMode;
   /** The day the view is around; today when absent. */
   date: string | undefined;
-  onNavigate: (next: { mode?: CalendarView; date?: string }) => void;
+  onNavigate: (next: { mode?: CalendarMode; date?: string }) => void;
   viewToggle: ReactNode;
 }) {
   const phone = usePhone();
   const [timeZone, setTimeZone] = useViewerZone();
   const { selected, setSelected } = useChannelSelection(accounts);
   const [shown, setShown] = useState<Shown>("all");
-  const mode: CalendarMode = phone && view === "week" ? "days" : view;
+  const mode = view;
   const today = dayKey(new Date(), timeZone);
   const anchor = date ?? today;
   const days = useMemo(() => visibleDays(mode, anchor), [mode, anchor]);
@@ -189,52 +193,60 @@ export function PublishCalendar({
       )}
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <div className="flex items-center">
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Previous"
-            onClick={() => onNavigate({ date: shiftAnchor(mode, anchor, -1) })}
-          >
-            <CaretLeft />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Next"
-            onClick={() => onNavigate({ date: shiftAnchor(mode, anchor, 1) })}
-          >
-            <CaretRight />
-          </Button>
-        </div>
-        <h2 className="min-w-0 text-lg font-semibold tracking-tight text-foreground">
-          {calendarTitle(mode, anchor)}
-        </h2>
-        {isFetching && <Spinner />}
-        <Button size="sm" variant="outline" onClick={() => onNavigate({ date: undefined })}>
-          Today
-        </Button>
+        {phone ? (
+          // A phone moves by picking a date; the arrows and Today live in the sheet.
+          <DateSheet anchor={anchor} today={today} onPick={(next) => onNavigate({ date: next })} />
+        ) : (
+          <>
+            <div className="flex items-center">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Previous"
+                onClick={() => onNavigate({ date: shiftAnchor(mode, anchor, -1) })}
+              >
+                <CaretLeft />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Next"
+                onClick={() => onNavigate({ date: shiftAnchor(mode, anchor, 1) })}
+              >
+                <CaretRight />
+              </Button>
+            </div>
+            <h2 className="min-w-0 text-lg font-semibold tracking-tight text-foreground">
+              {calendarTitle(mode, anchor)}
+            </h2>
+            <Button size="sm" variant="outline" onClick={() => onNavigate({ date: undefined })}>
+              Today
+            </Button>
+          </>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <button type="button" className={FILTER_BUTTON}>
-                {view === "month" ? "Month" : phone ? "3 days" : "Week"} <CaretDown size={13} />
+                {MODES.find((item) => item.value === mode)?.label} <CaretDown size={13} />
               </button>
             }
           />
           <DropdownMenuContent align="start" className="min-w-32">
             <DropdownMenuRadioGroup
-              value={view}
-              onValueChange={(value) => onNavigate({ mode: value as CalendarView })}
+              value={mode}
+              onValueChange={(value) => onNavigate({ mode: value as CalendarMode })}
             >
-              <DropdownMenuRadioItem value="month">Month</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="week">
-                {phone ? "3 days" : "Week"}
-              </DropdownMenuRadioItem>
+              {MODES.map((item) => (
+                <DropdownMenuRadioItem key={item.value} value={item.value}>
+                  {item.label}
+                </DropdownMenuRadioItem>
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {isFetching && <Spinner />}
         <div className="ml-auto flex items-center gap-1">
           {phone ? (
             <FilterSheet
@@ -394,6 +406,8 @@ function MonthGrid({
 
 function TimeGrid({ days, today, byDay, accountById, timeZone, compact }: GridProps) {
   const scroller = useRef<HTMLDivElement>(null);
+  // Seven columns on a phone leave each day too little room for a card's usual row.
+  const narrow = compact && days.length > 3;
   // Posts by day and hour.
   const slots = useMemo(() => {
     const map = new Map<string, Post[]>();
@@ -430,8 +444,17 @@ function TimeGrid({ days, today, byDay, accountById, timeZone, compact }: GridPr
                 : "font-medium text-muted-foreground",
             )}
           >
-            {weekdayName(day, compact ? "short" : "long")}{" "}
-            <span className="ml-1 tabular-nums">{dayOfMonth(day)}</span>
+            {compact ? (
+              <span className="flex flex-col leading-tight">
+                {weekdayName(day, "short")}
+                <span className="tabular-nums">{dayOfMonth(day)}</span>
+              </span>
+            ) : (
+              <>
+                {weekdayName(day, "long")}{" "}
+                <span className="ml-1 tabular-nums">{dayOfMonth(day)}</span>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -449,7 +472,8 @@ function TimeGrid({ days, today, byDay, accountById, timeZone, compact }: GridPr
                 <div
                   key={day}
                   className={cn(
-                    "flex min-h-16 min-w-0 flex-col gap-1.5 border-r border-border p-1.5 last:border-r-0",
+                    "flex min-h-16 min-w-0 flex-col gap-1.5 border-r border-border last:border-r-0",
+                    narrow ? "p-0.5" : "p-1.5",
                     day < today && "bg-muted/50",
                   )}
                 >
@@ -468,11 +492,20 @@ function TimeGrid({ days, today, byDay, accountById, timeZone, compact }: GridPr
                       <button
                         type="button"
                         className={cn(
-                          "flex w-full min-w-0 flex-col gap-1 rounded-lg border p-1.5 text-left hover:brightness-95 sm:p-2",
+                          "flex w-full min-w-0 flex-col gap-1 rounded-lg border text-left hover:brightness-95",
+                          narrow ? "items-center p-1 text-center" : "p-1.5 sm:p-2",
                           tone(post),
                         )}
                       >
-                        <span className="flex items-center gap-1.5 text-xs font-medium tabular-nums">
+                        {/* A phone's week is narrow: the mark over the time, which wraps at its space. */}
+                        <span
+                          className={cn(
+                            "flex gap-1.5 font-medium tabular-nums",
+                            narrow
+                              ? "flex-col items-center gap-0.5 text-[11px] leading-tight [overflow-wrap:normal]"
+                              : "items-center text-xs",
+                          )}
+                        >
                           <PlatformLogo provider={post.provider} size="xs" />
                           {timeIn(post.scheduledAt, timeZone)}
                         </span>
