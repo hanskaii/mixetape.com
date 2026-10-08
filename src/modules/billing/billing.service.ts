@@ -240,6 +240,12 @@ export async function billingOf(userId: string): Promise<Billing> {
 export async function requirePlan(userId: string) {
   const billing = await billingOf(userId);
   if (billing.exempt) return;
+  if (!billing.plan && billing.open)
+    throw new ServiceError(
+      `Your plan is ${billing.status === "paused" ? "paused" : "on hold"}, so scheduling is paused. Pay the open invoice or resume it at ${siteConfig.url}/settings/billing.`,
+      402,
+      { code: "plan_required" },
+    );
   if (!billing.plan)
     throw new ServiceError(
       `Scheduling posts needs a plan. Start the ${TRIAL_DAYS}-day free trial at ${siteConfig.url}/pricing.`,
