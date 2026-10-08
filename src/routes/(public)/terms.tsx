@@ -130,8 +130,8 @@ function Terms() {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Ending your use</h2>
         <p>
-          You can stop at any time by disconnecting your channels and asking us to delete your
-          account. We may suspend access that breaks these terms or a platform's rules. See the{" "}
+          You can stop at any time by disconnecting your channels or deleting your account in
+          Settings. We may suspend access that breaks these terms or a platform's rules. See the{" "}
           <a href="/privacy" className="text-foreground underline">
             Privacy Policy
           </a>{" "}

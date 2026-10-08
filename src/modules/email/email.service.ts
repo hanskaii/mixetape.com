@@ -12,6 +12,8 @@ export async function sendEmail(message: {
   /** Paragraphs, the first being the greeting line. */
   paragraphs: string[];
   link?: { label: string; url: string };
+  /** Where a reply goes, when it is not no-reply (feedback: the person who wrote it). */
+  replyTo?: string;
 }) {
   const text = [
     ...message.paragraphs,
@@ -40,6 +42,7 @@ ${
     await env.EMAIL.send({
       from: env.EMAIL_FROM || `no-reply@${siteConfig.url.replace(/^https?:\/\//, "")}`,
       to: message.to,
+      ...(message.replyTo && { replyTo: message.replyTo }),
       subject: message.subject,
       html,
       text,

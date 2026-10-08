@@ -46,6 +46,7 @@ import {
   useViewerZone,
   ZoneFilter,
 } from "./publish-filters";
+import { FeedbackButton } from "#/components/modals/feedback-button";
 import { usePostActions } from "./use-post-actions";
 import { DateSheet } from "./date-sheet";
 
@@ -176,7 +177,15 @@ export function PublishCalendar({
 
   return (
     <Page>
-      <PageHeader title="Publish" actions={viewToggle} />
+      <PageHeader
+        title="Publish"
+        actions={
+          <>
+            <FeedbackButton />
+            {viewToggle}
+          </>
+        }
+      />
 
       {accounts.length === 0 && (
         <Notice>

@@ -20,6 +20,7 @@ import { Modal, ModalHeader, ModalTitle, ModalDescription } from "#/components/u
 import { useConfirmModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
 import { Spinner } from "#/components/ui/spinner";
+import { DeleteAccount } from "./-components/delete-account";
 
 export const Route = createFileRoute("/(app)/_app/settings/account")({
   head: () => ({
@@ -617,6 +618,8 @@ function AccountSettingsPage() {
             </div>
           </div>
         </div>
+
+        <DeleteAccount email={user?.email} />
       </div>
 
       {/* 2FA Setup Modal */}

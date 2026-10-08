@@ -1,22 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
-import {
-  ArrowCounterClockwise,
-  ArrowSquareOut,
-  CalendarBlank,
-  ChatCircleDots,
-  X,
-} from "@phosphor-icons/react";
+import { ArrowCounterClockwise, ArrowSquareOut, CalendarBlank, X } from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "#/components/ui/dialog";
-import { Textarea } from "#/components/ui/textarea";
+import { FeedbackButton } from "#/components/modals/feedback-button";
 import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { Spinner } from "#/components/ui/spinner";
@@ -79,7 +66,6 @@ export function PublishView({
   const [tab, setTab] = useState<Tab>("queue");
   const { selected, setSelected } = useChannelSelection(accounts);
   const [timeZone, setTimeZone] = useViewerZone();
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { cancel, retry, retrying } = usePostActions();
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   const accountById = useMemo(
@@ -224,15 +210,7 @@ export function PublishView({
         description="What your agents have scheduled, and what already went out."
         actions={
           <>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label="Give feedback"
-              title="Give feedback"
-              onClick={() => setFeedbackOpen(true)}
-            >
-              <ChatCircleDots size={19} />
-            </Button>
+            <FeedbackButton />
             {viewToggle}
           </>
         }
@@ -330,20 +308,6 @@ export function PublishView({
           </div>
         </div>
       </Panel>
-
-      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share feedback</DialogTitle>
-            <DialogDescription>
-              Tell us what would make publishing easier for you.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea aria-label="Your feedback" placeholder="Your feedback..." rows={4} />
-          <p className="text-xs text-muted-foreground">Feedback submission is coming soon.</p>
-          <Button disabled>Send feedback</Button>
-        </DialogContent>
-      </Dialog>
     </Page>
   );
 }

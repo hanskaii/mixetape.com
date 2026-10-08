@@ -108,11 +108,14 @@ function DataDeletion() {
         <h2 className="text-base font-semibold">Delete everything</h2>
         <p>
           To close your {siteConfig.name} account and delete all its data — profile, channels and
-          their tokens, posts, files and API keys — write to{" "}
+          their tokens, posts, files, groups, brands, webhooks and API keys — sign in and open{" "}
+          <strong>Settings → Account → Delete account</strong>. It happens at once and we confirm by
+          email. A plan that still renews is cancelled in Billing first. Cannot sign in any more?
+          Write to{" "}
           <a href={`mailto:${siteConfig.contactEmail}`} className="text-foreground underline">
             {siteConfig.contactEmail}
           </a>{" "}
-          from the email you sign in with. It is done within 30 days, and we confirm by email.
+          from the email you used, and we delete it within 30 days.
         </p>
       </section>
     </div>

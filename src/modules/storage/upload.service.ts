@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { ServiceError } from "#/modules/api/errors";
 import { requiredSecret } from "#/modules/secrets/secrets.service";
+import { randomToken } from "#/modules/secrets/crypto";
 import { presignUrl } from "./presign";
 import { MEDIA_PREFIX } from "./storage.service";
 
@@ -33,10 +34,13 @@ const r2Url = (key: string) => `r2://${key}`;
 export const publicUrl = (key: string) =>
   `${env.MEDIA_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`;
 
-/** A file's place in the bucket: under the owner's folder, which is how ownership is proven. */
+/**
+ * A file's place in the bucket: under the owner's folder, which is how ownership is proven,
+ * then a random segment, so a public URL cannot be guessed from another one.
+ */
 function newKey(userId: string, fileName: string, prefix = MEDIA_PREFIX): string {
   const name = fileName.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-120) || "file";
-  return `${prefix}${userId}/${Date.now()}-${name}`;
+  return `${prefix}${userId}/${randomToken(12)}/${name}`;
 }
 
 /** The bucket key of an `r2://` URL or a bare key, if it is the user's. */
