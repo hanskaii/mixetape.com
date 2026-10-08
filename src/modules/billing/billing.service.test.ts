@@ -133,6 +133,12 @@ describe("publishing needs a plan", () => {
     expect(error).toMatchObject({ code: "plan_limit_reached" });
   });
 
+  it("keeps a plan in its grace period (past_due) publishing", async () => {
+    state.users = [{ billingExempt: false }];
+    state.subscription = { ...creator, status: "past_due" };
+    await expect(requirePlan("u1")).resolves.toBeUndefined();
+  });
+
   it("allows a plan that covers every channel", async () => {
     state.users = [{ billingExempt: false }];
     state.subscription = creator;

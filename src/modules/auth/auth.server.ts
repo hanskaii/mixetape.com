@@ -122,6 +122,15 @@ function billing(dodo: NonNullable<Credentials["dodo"]>) {
         onSubscriptionCancelled: record,
         onSubscriptionFailed: record,
         onSubscriptionExpired: record,
+        // Events the plugin has no handler for: a failed renewal inside a grace period, and
+        // a changed payment method.
+        onPayload: async (payload) => {
+          if (
+            payload.type === "subscription.past_due" ||
+            payload.type === "subscription.update_payment_method"
+          )
+            await record(payload);
+        },
       }),
     ],
   });

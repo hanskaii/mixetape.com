@@ -173,8 +173,12 @@ export async function recordSubscription(payload: {
 
 // ── entitlement ──────────────────────────────────────────────────────────────
 
-/** Dodo statuses that still allow publishing; a trial is `active`. */
-const ENTITLED = ["active"];
+/**
+ * Dodo statuses that still allow publishing: `active` (a trial is active), and `past_due`,
+ * the grace period after a failed renewal, which Dodo says must not cut access off. Access
+ * ends at `on_hold` or `cancelled`.
+ */
+const ENTITLED = ["active", "past_due"];
 
 /**
  * Statuses of a subscription that is not over yet: someone with one manages it in the portal
