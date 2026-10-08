@@ -8,6 +8,9 @@ const state = vi.hoisted(() => ({
   subQueue: [] as (Record<string, unknown> | undefined)[],
   connected: 0,
   saved: [] as Record<string, unknown>[],
+  // Channels as syncChannelLocks reads them (already in its order), and what it sets.
+  accounts: [] as { id: string; locked: boolean }[],
+  updates: [] as Record<string, unknown>[],
 }));
 
 vi.mock("#/database", () => ({
@@ -18,9 +21,16 @@ vi.mock("#/database", () => ({
         findFirst: async () =>
           state.subQueue.length ? state.subQueue.shift() : state.subscription,
       },
+      socialAccounts: { findMany: async () => state.accounts },
     },
     select: () => ({ from: () => ({ where: async () => [{ connected: state.connected }] }) }),
-    update: () => ({ set: () => ({ where: async () => {} }) }),
+    update: () => ({
+      set: (values: Record<string, unknown>) => ({
+        where: async () => {
+          state.updates.push(values);
+        },
+      }),
+    }),
     insert: () => ({
       values: (row: Record<string, unknown>) => ({
         onConflictDoUpdate: async () => {
@@ -38,7 +48,9 @@ import {
   checkoutProducts,
   planProblem,
   recordSubscription,
+  requireChannelRoom,
   requirePlan,
+  syncChannelLocks,
 } from "./billing.service";
 
 beforeEach(() => {
@@ -58,6 +70,8 @@ beforeEach(() => {
   state.subQueue = [];
   state.connected = 0;
   state.saved = [];
+  state.accounts = [];
+  state.updates = [];
 });
 
 describe("catalog", () => {
@@ -113,7 +127,7 @@ describe("publishing needs a plan", () => {
 
   it("lets an exempt account publish without one", async () => {
     state.users = [{ billingExempt: true }];
-    await expect(requirePlan("u1")).resolves.toBeUndefined();
+    await expect(requirePlan("u1")).resolves.toBeTruthy();
   });
 
   it("refuses without a plan", async () => {
@@ -124,26 +138,77 @@ describe("publishing needs a plan", () => {
     });
   });
 
-  it("refuses when more channels are connected than the plan covers", async () => {
-    state.users = [{ billingExempt: false }];
-    state.subscription = creator;
-    state.connected = 16;
-    const error = await requirePlan("u1").catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ServiceError);
-    expect(error).toMatchObject({ code: "plan_limit_reached" });
-  });
-
   it("keeps a plan in its grace period (past_due) publishing", async () => {
     state.users = [{ billingExempt: false }];
     state.subscription = { ...creator, status: "past_due" };
-    await expect(requirePlan("u1")).resolves.toBeUndefined();
+    await expect(requirePlan("u1")).resolves.toBeTruthy();
   });
 
-  it("allows a plan that covers every channel", async () => {
+  it("allows a plan with more channels connected than it covers (the extra ones are locked)", async () => {
     state.users = [{ billingExempt: false }];
     state.subscription = creator;
-    state.connected = 15;
-    await expect(requirePlan("u1")).resolves.toBeUndefined();
+    state.connected = 16;
+    await expect(requirePlan("u1")).resolves.toBeTruthy();
+  });
+});
+
+describe("connecting channels", () => {
+  const creator = { plan: "creator", period: "monthly", accounts: 15, status: "active" };
+
+  it("needs a plan, even for the first channel", async () => {
+    state.users = [{ billingExempt: false }];
+    await expect(requireChannelRoom("u1", 1)).rejects.toMatchObject({
+      status: 402,
+      code: "plan_required",
+    });
+  });
+
+  it("allows up to the plan's accounts, and says how many are left past them", async () => {
+    state.users = [{ billingExempt: false }];
+    state.subscription = creator;
+    state.connected = 13;
+    await expect(requireChannelRoom("u1", 2)).resolves.toBeUndefined();
+    state.users = [{ billingExempt: false }];
+    const error = await requireChannelRoom("u1", 3).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ServiceError);
+    expect(error).toMatchObject({ code: "channel_limit_reached" });
+    expect((error as Error).message).toMatch(/add 2 more/);
+  });
+
+  it("has no limit for an exempt account", async () => {
+    state.users = [{ billingExempt: true }];
+    state.connected = 500;
+    await expect(requireChannelRoom("u1", 50)).resolves.toBeUndefined();
+  });
+});
+
+describe("channel locks", () => {
+  const creator = { plan: "creator", period: "monthly", accounts: 15, status: "active" };
+  const channels = (n: number, locked = false) =>
+    Array.from({ length: n }, (_, i) => ({ id: `a${i}`, locked }));
+
+  it("locks the channels past the plan's accounts", async () => {
+    state.users = [{ billingExempt: false }];
+    state.subscription = creator;
+    state.accounts = channels(17);
+    await syncChannelLocks("u1");
+    expect(state.updates).toEqual([{ locked: true }]);
+  });
+
+  it("unlocks them once the plan has room", async () => {
+    state.users = [{ billingExempt: false }];
+    state.subscription = creator;
+    state.accounts = [...channels(10), ...channels(2, true)];
+    await syncChannelLocks("u1");
+    expect(state.updates).toEqual([{ locked: false }]);
+  });
+
+  it("changes nothing when the plan covers every channel", async () => {
+    state.users = [{ billingExempt: false }];
+    state.subscription = creator;
+    state.accounts = channels(15);
+    await syncChannelLocks("u1");
+    expect(state.updates).toEqual([]);
   });
 });
 

@@ -128,6 +128,9 @@ export const socialAccounts = sqliteTable(
     accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
     scopes: text("scopes"),
     status: text("status").notNull().default("active"), // 'active' | 'reconnect'
+    // Beyond what the plan covers after a downgrade: kept connected, but nothing is posted to
+    // it until the plan grows or the user makes room (billing.service syncChannelLocks).
+    locked: integer("locked", { mode: "boolean" }).notNull().default(false),
     // When the platform said this access was revoked: its tokens are gone from then on, and a
     // YouTube channel's data goes too if it is not connected again (social/access.service).
     revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
@@ -166,7 +169,8 @@ export const socialPosts = sqliteTable(
     caption: text("caption"),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, JsonValue>>(), // per-platform fields
     scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }).notNull(),
-    // 'scheduled' → 'publishing' → 'published' | 'failed'; 'cancelled' by the user
+    // 'scheduled' → 'publishing' → 'published' | 'failed'; 'cancelled' by the user; 'paused'
+    // when it fell due while the plan had ended (billing.service)
     status: text("status").notNull().default("scheduled"),
     platformPostId: text("platform_post_id"),
     platformUrl: text("platform_url"),
@@ -551,6 +555,8 @@ export const subscriptions = sqliteTable(
       .notNull()
       .default(false),
     nextBillingAt: integer("next_billing_at", { mode: "timestamp_ms" }),
+    // When the free trial ends, while the subscription is in one (for the reminder email).
+    trialEndsAt: integer("trial_ends_at", { mode: "timestamp_ms" }),
     // When Dodo sent the webhook last stored; an older one arriving late is ignored.
     eventAt: integer("event_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })

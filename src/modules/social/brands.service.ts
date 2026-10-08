@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "#/database/index";
 import { brandAccounts, brands, socialAccounts } from "#/database/schema";
 import { ServiceError } from "#/modules/api/errors";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * Brands: the user's own groups of connected channels (say "Hans Explainer" = its YouTube
@@ -76,6 +77,7 @@ const view = async (userId: string, id: string) =>
   (await brandViews(userId)).find((brand) => brand.id === id)!;
 
 export async function createBrand(userId: string, input: { name: string; accountIds?: string[] }) {
+  await requirePlan(userId);
   const name = await checkName(userId, input.name);
   const accountIds = await ownedAccounts(userId, input.accountIds ?? []);
   const id = crypto.randomUUID();
@@ -90,6 +92,7 @@ export async function updateBrand(
   id: string,
   input: { name?: string; accountIds?: string[] },
 ) {
+  await requirePlan(userId);
   await ownedBrand(userId, id);
   if (input.name !== undefined) {
     const name = await checkName(userId, input.name, id);

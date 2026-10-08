@@ -168,12 +168,14 @@ function Privacy() {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Retention and deletion</h2>
         <p>
-          Data is kept for as long as your account is active. Disconnecting a channel removes its
-          stored tokens. Deleting a post removes it from the queue (posts already published stay on
-          the platform itself, governed by that platform's own policies). To close your account and
-          delete its data — profile, channels and their tokens, posts, files and API keys — write to
-          us at the email below. How to delete your data, including from Facebook, Instagram or
-          Threads:{" "}
+          Data is kept for as long as your account has a plan. When a plan ends, the workspace's
+          data is kept for 30 days and then deleted — channels and their tokens, posts, files,
+          groups, brands and webhooks — with an email a week before; your sign-in account and
+          billing history are kept. Disconnecting a channel removes its stored tokens. Deleting a
+          post removes it from the queue (posts already published stay on the platform itself,
+          governed by that platform's own policies). To close your account and delete its data —
+          profile, channels and their tokens, posts, files and API keys — write to us at the email
+          below. How to delete your data, including from Facebook, Instagram or Threads:{" "}
           <a href="/data-deletion" className="text-foreground underline">
             Delete your data
           </a>

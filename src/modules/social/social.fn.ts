@@ -4,6 +4,7 @@ import { PROVIDER_LIST } from "./providers";
 import * as apiKeys from "#/modules/api/api-keys.service";
 import * as brands from "./brands.service";
 import * as social from "./social.service";
+import { setChannelLock } from "#/modules/billing/billing.service";
 
 /**
  * Server functions behind the app's pages. Each one resolves the signed-in user and hands
@@ -73,6 +74,14 @@ export const chooseConnectChannels = createServerFn({ method: "POST" })
 export const removeAccount = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => social.deleteAccount(await currentUserId(), data.id));
+
+/** Picks which channels stay active when more are connected than the plan covers. */
+export const setAccountLock = createServerFn({ method: "POST" })
+  .validator((data: { id: string; locked: boolean }) => ({
+    id: String(data.id),
+    locked: data.locked === true,
+  }))
+  .handler(async ({ data }) => setChannelLock(await currentUserId(), data.id, data.locked));
 
 // ── API keys ──────────────────────────────────────────────────────────────────
 

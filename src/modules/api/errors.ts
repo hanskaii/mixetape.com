@@ -29,8 +29,10 @@ export const ERROR_CODES = {
   platform_error: "The platform refused or failed the call; the message says why",
   rate_limited: "Too many requests; wait Retry-After seconds",
   platform_unavailable: "mixetape cannot connect that platform yet",
-  plan_required: "Scheduling posts needs a plan; start the free trial at /pricing",
-  plan_limit_reached: "More channels are connected than the plan covers",
+  plan_required: "The account has no active plan; choose one at /subscribe",
+  channel_locked: "The channel is locked: the plan covers fewer channels than are connected",
+  channel_limit_reached: "Connecting this would go past the channels the plan covers",
+  daily_limit_reached: "The channel already has the most posts allowed on that day",
   internal_error: "Something failed on mixetape's side",
 } as const;
 

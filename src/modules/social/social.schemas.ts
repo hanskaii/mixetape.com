@@ -67,7 +67,7 @@ export const POST_FILTERS = {
     type: "array",
     items: {
       type: "string",
-      enum: ["scheduled", "publishing", "uploaded", "published", "failed", "cancelled"],
+      enum: ["scheduled", "publishing", "uploaded", "published", "failed", "paused", "cancelled"],
     },
     description: "Only posts in these statuses",
   },
@@ -183,7 +183,7 @@ export const POST = object(
     leadMinutes: nullable({ type: "integer", description: "Sent this long before scheduledAt" }),
     status: {
       type: "string",
-      enum: ["scheduled", "publishing", "uploaded", "published", "failed", "cancelled"],
+      enum: ["scheduled", "publishing", "uploaded", "published", "failed", "paused", "cancelled"],
       description:
         "scheduled: waiting in mixetape, still editable; publishing: on its way; uploaded: on the platform, live at scheduledAt; published: live; failed: see error",
     },

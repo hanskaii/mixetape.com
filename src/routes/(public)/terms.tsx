@@ -90,7 +90,8 @@ function Terms() {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Plans, billing and refunds</h2>
         <p>
-          Posts can be scheduled on a paid plan. Plans are priced by the number of social accounts
+          The workspace, the API and the MCP server need a paid plan; without one you can still sign
+          in, choose a plan and see your billing. Plans are priced by the number of social accounts
           they cover and are billed monthly or yearly in advance; the prices and what each plan
           includes are on the{" "}
           <a href="/pricing" className="text-foreground underline">
@@ -110,8 +111,19 @@ function Terms() {
         <p>
           Periods already paid for are not refunded, but if you were charged by mistake or cannot
           use the service because of a fault on our side, write to us within 14 days of the charge
-          and we will put it right. If a payment fails, scheduling is paused until it succeeds;
-          posts you have already scheduled for a plan that has ended are not published.
+          and we will put it right. If a payment fails, the workspace is paused until it succeeds.
+        </p>
+        <p>
+          When a plan ends, posts that fall due are paused rather than published; subscribe again
+          and they can be sent from the queue. If your workspace has no plan for 30 days, its
+          channels and their tokens, posts, files, groups, brands and webhooks are deleted; we email
+          you a week before. Your sign-in account and billing history stay. If you move to a plan
+          that covers fewer accounts than you have connected, the most recently connected channels
+          are locked and their posts pause; you choose which ones stay active.
+        </p>
+        <p>
+          To keep channels from being used for spam, each channel can have at most 10 posts on the
+          same day.
         </p>
       </section>
 

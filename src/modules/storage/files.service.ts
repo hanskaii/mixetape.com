@@ -13,6 +13,7 @@ import { contains, decodeCursor, page } from "#/modules/api/cursor";
 import { probe, type Probe } from "./probe";
 import { deleteUserFile } from "./storage.service";
 import * as uploads from "./upload.service";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * The files in a user's storage, indexed in D1 with what was read from each file (kind, size
@@ -33,7 +34,7 @@ import * as uploads from "./upload.service";
 export const UNATTACHED_HOURS = 24;
 const UNATTACHED = UNATTACHED_HOURS * 60 * 60 * 1000;
 /** Posts that still need their files: not out yet, or failed and waiting for a retry. */
-const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed"];
+const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed", "paused"];
 
 export type FileView = ReturnType<typeof fileView>;
 
@@ -121,6 +122,8 @@ export async function createFileUpload(
   userId: string,
   input: { fileName: string; contentType?: string; size?: number; groupId?: string },
 ) {
+  // Storing files is part of a plan; an avatar goes elsewhere (storage.fn).
+  await requirePlan(userId);
   await checkGroup(userId, input.groupId);
   const upload = await uploads.createUpload(userId, input);
   const contentType = upload.headers["Content-Type"];
@@ -172,6 +175,7 @@ export async function importFile(
   userId: string,
   input: { url: string; fileName?: string; groupId?: string },
 ) {
+  await requirePlan(userId);
   await checkGroup(userId, input.groupId);
   const stored = await uploads.importFromUrl(userId, input);
   const id = crypto.randomUUID();

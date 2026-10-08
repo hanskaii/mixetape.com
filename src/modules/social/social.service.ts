@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "#/database/index";
 import {
   mediaFiles,
@@ -28,7 +28,12 @@ import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
 import { releasePostFiles } from "#/modules/storage/files.service";
 import { emitEvent, type WebhookEventType } from "#/modules/webhooks/webhooks.service";
-import { requirePlan } from "#/modules/billing/billing.service";
+import {
+  billingOf,
+  requireChannelRoom,
+  requirePlan,
+  syncChannelLocks,
+} from "#/modules/billing/billing.service";
 
 /**
  * mixetape's platform apps, connected accounts and posts. The UI's server functions, the REST API, MCP
@@ -291,6 +296,8 @@ async function completeConnect(
   const fresh = accounts.filter((account) => !connected.has(account.platformAccountId));
 
   const refreshed = await saveAccounts(userId, provider, grant, known, at);
+  // Reconnecting never counts; adding one, or offering a choice of several, needs room.
+  await requireChannelRoom(userId, Math.min(fresh.length, 1));
   if (fresh.length <= 1) {
     const added = await saveAccounts(userId, provider, grant, fresh, at);
     return { userId, via, result: { status: "done", channels: [...refreshed, ...added] } };
@@ -328,6 +335,7 @@ export async function chooseChannels(userId: string, state: string, platformAcco
   const picked = pending.accounts.filter((account) =>
     platformAccountIds.includes(account.platformAccountId),
   );
+  await requireChannelRoom(userId, picked.length);
   const channels = await saveAccounts(userId, pending.provider, pending.grant, picked, pending.at);
   const stored: StoredResult = { status: "done", channels, userId };
   await env.KIT_CACHE.put(`oauth:result:${state}`, JSON.stringify(stored), {
@@ -409,6 +417,7 @@ export function accountView(account: Awaited<ReturnType<typeof listAccounts>>[nu
     name: account.name.trim(),
     handle: account.handle,
     status: account.status,
+    locked: account.locked,
     capabilities: capabilitiesOf(platform),
     formats: platform.formats,
   };
@@ -418,6 +427,8 @@ export async function deleteAccount(userId: string, id: string) {
   await db
     .delete(socialAccounts)
     .where(and(eq(socialAccounts.id, id), eq(socialAccounts.userId, userId)));
+  // A slot freed: a channel locked after a downgrade may be active again.
+  await syncChannelLocks(userId);
 }
 
 /**
@@ -705,9 +716,39 @@ async function stopWorkflow(instanceId: string | null) {
   }
 }
 
+/**
+ * Most posts one channel may have on one day (UTC): more reads as spam to the platforms and
+ * can get the account limited there. Exempt accounts are not counted.
+ */
+export const POSTS_PER_CHANNEL_DAY = 10;
+const COUNTED: SocialPost["status"][] = ["scheduled", "publishing", "uploaded", "published"];
+
+async function requireDayRoom(accountId: string, at: Date, exceptPostId?: string) {
+  const day = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()));
+  const next = new Date(day.getTime() + 86_400_000);
+  const [{ posts }] = await db
+    .select({ posts: count() })
+    .from(socialPosts)
+    .where(
+      and(
+        eq(socialPosts.accountId, accountId),
+        gte(socialPosts.scheduledAt, day),
+        lt(socialPosts.scheduledAt, next),
+        inArray(socialPosts.status, COUNTED),
+        exceptPostId ? ne(socialPosts.id, exceptPostId) : undefined,
+      ),
+    );
+  if (posts >= POSTS_PER_CHANNEL_DAY)
+    throw new ServiceError(
+      `This channel already has ${POSTS_PER_CHANNEL_DAY} posts on ${day.toISOString().slice(0, 10)} (UTC), the most one channel may have in a day: more reads as spam to the platform. Pick another day.`,
+      429,
+      { code: "daily_limit_reached" },
+    );
+}
+
 export async function createPost(userId: string, input: CreatePostInput) {
   // Every way of scheduling (workspace, MCP, REST, library groups) comes through here.
-  await requirePlan(userId);
+  const billing = await requirePlan(userId);
   const account = await db.query.socialAccounts.findFirst({
     where: and(eq(socialAccounts.id, input.accountId), eq(socialAccounts.userId, userId)),
   });
@@ -716,6 +757,12 @@ export async function createPost(userId: string, input: CreatePostInput) {
     throw new ServiceError("This account needs to be reconnected first", 409, {
       code: "account_needs_reconnect",
     });
+  if (account.locked && !billing.exempt)
+    throw new ServiceError(
+      `${account.name} is locked: your plan covers fewer channels than are connected. Unlock it in Channels (lock another first) or change plans.`,
+      402,
+      { code: "channel_locked" },
+    );
 
   const id = newId();
   const leadMinutes = leadFor(account.provider, input.leadMinutes);
@@ -724,6 +771,8 @@ export async function createPost(userId: string, input: CreatePostInput) {
     input.media ?? (input.mediaUrl ? [input.mediaUrl] : []),
   );
   checkPostFormat(account.provider, facts);
+  const scheduledAt = checkTime(input.scheduledAt, leadMinutes);
+  if (!billing.exempt) await requireDayRoom(account.id, scheduledAt);
   await db.insert(socialPosts).values({
     id,
     userId,
@@ -734,7 +783,7 @@ export async function createPost(userId: string, input: CreatePostInput) {
     groupId: input.groupId ?? null,
     caption: input.caption ?? null,
     metadata: checkMetadata(account.provider, input.metadata, input.caption),
-    scheduledAt: checkTime(input.scheduledAt, leadMinutes),
+    scheduledAt,
     leadMinutes,
   });
 
@@ -770,13 +819,15 @@ export async function editPost(userId: string, id: string, input: EditPostInput)
     checkPostFormat(post.provider, resolved.facts);
     media = resolved.media;
   }
+  const scheduledAt =
+    input.scheduledAt !== undefined ? checkTime(input.scheduledAt, leadMinutes ?? 0) : undefined;
+  if (scheduledAt && !(await billingOf(userId)).exempt)
+    await requireDayRoom(post.accountId, scheduledAt, id);
   await updatePost(id, {
     leadMinutes,
     ...(media && { mediaUrl: media[0].url, media }),
     ...(input.caption !== undefined && { caption: input.caption }),
-    ...(input.scheduledAt !== undefined && {
-      scheduledAt: checkTime(input.scheduledAt, leadMinutes ?? 0),
-    }),
+    ...(scheduledAt && { scheduledAt }),
     ...(input.metadata !== undefined && {
       metadata: checkMetadata(post.provider, { ...post.metadata, ...input.metadata }, caption),
     }),
@@ -875,29 +926,33 @@ export async function listPosts(userId: string, filter: PostFilter = {}) {
 /** Stops a post that has not been published; its workflow sees the status and ends. */
 export async function cancelPost(userId: string, id: string) {
   const post = await getPost(userId, id);
-  if (post.status !== "scheduled")
+  if (post.status !== "scheduled" && post.status !== "paused")
     throw new ServiceError(`A ${post.status} post cannot be cancelled`, 409, {
       code: "invalid_post_state",
     });
   await db
     .update(socialPosts)
     .set({ status: "cancelled", updatedAt: new Date() })
-    .where(and(eq(socialPosts.id, id), eq(socialPosts.status, "scheduled")));
+    .where(and(eq(socialPosts.id, id), inArray(socialPosts.status, ["scheduled", "paused"])));
   await stopWorkflow(post.workflowId ?? id);
   await releasePostFiles(id);
   await announcePost(id);
   return getPost(userId, id);
 }
 
-/** Sends a failed post again, now or at its original time if that is still ahead. */
+/**
+ * Sends a failed or paused post again (paused: it fell due while the plan had ended), now or
+ * at its original time if that is still ahead.
+ */
 export async function retryPost(userId: string, id: string) {
-  await requirePlan(userId);
+  const billing = await requirePlan(userId);
   const post = await getPost(userId, id);
-  if (post.status !== "failed")
-    throw new ServiceError("Only a failed post can be retried", 409, {
+  if (post.status !== "failed" && post.status !== "paused")
+    throw new ServiceError("Only a failed or paused post can be retried", 409, {
       code: "invalid_post_state",
     });
   const scheduledAt = post.scheduledAt.getTime() > Date.now() ? post.scheduledAt : new Date();
+  if (!billing.exempt) await requireDayRoom(post.accountId, scheduledAt, id);
   await updatePost(id, { status: "scheduled", scheduledAt, error: null });
   await dispatch(id, "retry");
   return getPost(userId, id);

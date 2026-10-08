@@ -18,6 +18,7 @@ const account = (id: string, name: string, handle: string): PublishData["account
   provider: "youtube",
   platformAccountId: `UC-${id}`,
   grantedBy: null,
+  locked: false,
   name,
   handle,
   avatar: null,

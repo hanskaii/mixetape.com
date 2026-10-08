@@ -41,7 +41,7 @@ type TimelineItem =
   | { type: "day"; key: string; label: { day: string; date: string } }
   | { type: "post"; key: string; post: Post };
 
-const ACTIVE = new Set(["scheduled", "publishing", "uploaded", "failed"]);
+const ACTIVE = new Set(["scheduled", "publishing", "uploaded", "failed", "paused"]);
 const STATUS: Record<
   string,
   { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
@@ -51,6 +51,8 @@ const STATUS: Record<
   uploaded: { label: "Uploaded", variant: "secondary" },
   published: { label: "Sent", variant: "secondary" },
   failed: { label: "Failed", variant: "destructive" },
+  // Due while the plan had ended: kept, and can be sent again once there is a plan.
+  paused: { label: "Paused", variant: "outline" },
   cancelled: { label: "Cancelled", variant: "outline" },
 };
 
@@ -276,7 +278,7 @@ export function PublishView({ accounts, posts }: PublishData) {
               <ArrowSquareOut />
             </Button>
           )}
-          {post.status === "scheduled" && (
+          {(post.status === "scheduled" || post.status === "paused") && (
             <Button
               size="icon-sm"
               variant="ghost"
@@ -286,7 +288,7 @@ export function PublishView({ accounts, posts }: PublishData) {
               <X />
             </Button>
           )}
-          {post.status === "failed" && (
+          {(post.status === "failed" || post.status === "paused") && (
             <Button
               size="icon-sm"
               variant="ghost"

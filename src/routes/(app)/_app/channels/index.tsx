@@ -8,6 +8,8 @@ import {
   DotsThree,
   Plus,
   LinkBreak,
+  Lock,
+  LockOpen,
   PencilSimple,
   Trash,
   WarningCircle,
@@ -31,7 +33,13 @@ import {
   Rows,
 } from "#/components/layouts/workspace-page";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
-import { getChannelsData, removeAccount, removeBrand } from "#/modules/social/social.fn";
+import { toast } from "sonner";
+import {
+  getChannelsData,
+  removeAccount,
+  removeBrand,
+  setAccountLock,
+} from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
 import { removalDate } from "#/modules/social/revocation";
 import { BrandModal } from "./-components/brand-modal";
@@ -111,6 +119,17 @@ function ChannelsPage() {
       />,
     );
 
+  // Only offered while some channel is locked: the user picks which ones stay active.
+  const anyLocked = accounts.some((account) => account.locked);
+  const setLock = async (id: string, locked: boolean) => {
+    try {
+      await setAccountLock({ data: { id, locked } });
+      await refresh();
+    } catch (problem) {
+      toast.error(problem instanceof Error ? problem.message : "Could not change the channel");
+    }
+  };
+
   const deleteBrand = (id: string, name: string) =>
     confirm({
       title: "Delete this brand?",
@@ -153,6 +172,13 @@ function ChannelsPage() {
           <WarningCircle /> {error}
         </Notice>
       )}
+      {anyLocked && (
+        <Notice>
+          <Lock /> More channels are connected than your plan covers, so some are locked: their
+          posts pause until they are unlocked. Lock one to unlock another, disconnect channels you
+          no longer use, or change plans in Billing.
+        </Notice>
+      )}
 
       {groups.length ? (
         groups.map((group) => (
@@ -177,7 +203,9 @@ function ChannelsPage() {
                   meta={revokedNote(account) ?? account.handle ?? account.platformAccountId}
                 >
                   <span {...stylex.props(styles.actions)}>
-                    {account.status === "active" ? (
+                    {account.locked ? (
+                      <Badge variant="outline">Locked</Badge>
+                    ) : account.status === "active" ? (
                       <Badge variant="secondary">Active</Badge>
                     ) : (
                       <Button
@@ -193,6 +221,8 @@ function ChannelsPage() {
                       name={account.name}
                       platform={group.name}
                       url={channelUrl(account)}
+                      locked={anyLocked ? account.locked : undefined}
+                      onLock={(locked) => setLock(account.id, locked)}
                       onRefresh={() =>
                         connect(account.provider, account.name, account.handle ?? undefined)
                       }
@@ -258,17 +288,24 @@ function ChannelsPage() {
   );
 }
 
-/** A channel's actions: see it on its platform, sign in to it again, or remove it. */
+/**
+ * A channel's actions: see it on its platform, sign in to it again, lock or unlock it (while
+ * the plan covers fewer channels than are connected), or remove it.
+ */
 function ChannelMenu({
   name,
   platform,
   url,
+  locked,
+  onLock,
   onRefresh,
   onDisconnect,
 }: {
   name: string;
   platform: string;
   url: string | null;
+  locked: boolean | undefined;
+  onLock: (locked: boolean) => void;
   onRefresh: () => void;
   onDisconnect: () => void;
 }) {
@@ -291,6 +328,11 @@ function ChannelMenu({
         <DropdownMenuItem onClick={onRefresh}>
           <ArrowsClockwise /> Refresh connection
         </DropdownMenuItem>
+        {locked !== undefined && (
+          <DropdownMenuItem onClick={() => onLock(!locked)}>
+            {locked ? <LockOpen /> : <Lock />} {locked ? "Unlock channel" : "Lock channel"}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={onDisconnect}>
           <LinkBreak /> Disconnect channel

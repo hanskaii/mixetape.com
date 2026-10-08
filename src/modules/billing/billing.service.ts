@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
 import { env } from "cloudflare:workers";
 import DodoPayments from "dodopayments";
 import { db } from "#/database";
@@ -73,7 +73,21 @@ type SubscriptionData = {
   next_billing_date?: string;
   customer?: { customer_id?: string; email?: string };
   metadata?: Record<string, string>;
+  trial_period_days?: number;
+  created_at?: string;
 };
+
+/** Subscription statuses after which the plan is over (on hold and paused are not). */
+export const ENDED = ["cancelled", "expired", "failed"];
+
+/** When the free trial ends, while the subscription is still in it; null otherwise. */
+function trialEnd(data: SubscriptionData): Date | null {
+  const days = data.trial_period_days ?? 0;
+  const started = data.created_at ? Date.parse(data.created_at) : NaN;
+  if (!days || Number.isNaN(started)) return null;
+  const ends = started + days * 86_400_000;
+  return ends > Date.now() ? new Date(ends) : null;
+}
 
 function asSubscription(data: unknown): SubscriptionData | null {
   if (!data || typeof data !== "object") return null;
@@ -120,7 +134,7 @@ async function ownerOf(data: SubscriptionData): Promise<string | null> {
  */
 export async function recordSubscription(payload: {
   type: string;
-  timestamp?: string;
+  timestamp?: string | Date;
   data: unknown;
 }) {
   const data = asSubscription(payload.data);
@@ -151,6 +165,7 @@ export async function recordSubscription(payload: {
     accounts: PLANS[product.plan].accounts + (product.plan === "studio" ? extra : 0),
     cancelAtPeriodEnd: Boolean(data.cancel_at_next_billing_date),
     nextBillingAt: data.next_billing_date ? new Date(data.next_billing_date) : null,
+    trialEndsAt: trialEnd(data),
     eventAt,
     updatedAt: new Date(),
   };
@@ -169,6 +184,8 @@ export async function recordSubscription(payload: {
       .update(user)
       .set({ dodoCustomerId: customerId })
       .where(and(eq(user.id, userId), isNull(user.dodoCustomerId)));
+  await syncChannelLocks(userId);
+  return { userId, subscriptionId: data.subscription_id, ended: ENDED.includes(data.status) };
 }
 
 // ── entitlement ──────────────────────────────────────────────────────────────
@@ -238,36 +255,123 @@ export async function billingOf(userId: string): Promise<Billing> {
 }
 
 /**
- * Throws unless the user may schedule posts: a plan whose accounts cover every connected
- * channel, or an exempt account. The publish workflow asks again when a post goes out.
+ * Throws unless the user may use mixetape: an active plan (a trial counts) or an exempt
+ * account. The workspace, REST, MCP and every write ask; the publish workflow asks again
+ * when a post goes out.
  */
-export async function requirePlan(userId: string) {
+export async function requirePlan(userId: string): Promise<Billing> {
   const billing = await billingOf(userId);
-  if (billing.exempt) return;
+  if (billing.exempt) return billing;
   if (!billing.plan && billing.open)
     throw new ServiceError(
-      `Your plan is ${billing.status === "paused" ? "paused" : "on hold"}, so scheduling is paused. Pay the open invoice or resume it at ${siteConfig.url}/settings/billing.`,
+      `Your plan is ${billing.status === "paused" ? "paused" : "on hold"}, so the workspace is paused. Pay the open invoice or resume it at ${siteConfig.url}/settings/billing.`,
       402,
       { code: "plan_required" },
     );
   if (!billing.plan)
     throw new ServiceError(
-      `Scheduling posts needs a plan. Start the ${TRIAL_DAYS}-day free trial at ${siteConfig.url}/pricing.`,
+      `mixetape needs a plan. Choose one at ${siteConfig.url}/subscribe.`,
       402,
       { code: "plan_required" },
     );
-  if (billing.connected > billing.plan.accounts)
-    throw new ServiceError(
-      `Your ${billing.plan.name} plan covers ${billing.plan.accounts} social accounts and ${billing.connected} are connected. Disconnect some or change plans at ${siteConfig.url}/settings/billing.`,
-      402,
-      { code: "plan_limit_reached" },
-    );
+  return billing;
+}
+
+// ── locked channels ──────────────────────────────────────────────────────────
+
+/**
+ * Locks the channels beyond what the plan covers, and unlocks them when there is room again.
+ * The channels kept active are the ones already active, oldest first, so a downgrade locks
+ * the most recently connected and a choice the user made (setChannelLock) stays. Without a
+ * plan nothing is locked: nothing can be posted anyway.
+ */
+export async function syncChannelLocks(userId: string) {
+  const billing = await billingOf(userId);
+  const allowed = billing.exempt || !billing.plan ? Infinity : billing.plan.accounts;
+  const rows = await db.query.socialAccounts.findMany({
+    where: eq(socialAccounts.userId, userId),
+    columns: { id: true, locked: true },
+    orderBy: [asc(socialAccounts.locked), asc(socialAccounts.createdAt)],
+  });
+  const lock = rows
+    .slice(allowed)
+    .filter((row) => !row.locked)
+    .map((row) => row.id);
+  const unlock = rows
+    .slice(0, allowed)
+    .filter((row) => row.locked)
+    .map((row) => row.id);
+  if (lock.length)
+    await db.update(socialAccounts).set({ locked: true }).where(inArray(socialAccounts.id, lock));
+  if (unlock.length)
+    await db
+      .update(socialAccounts)
+      .set({ locked: false })
+      .where(inArray(socialAccounts.id, unlock));
+}
+
+/**
+ * The user picks which channels stay active: lock one to make room, then unlock another.
+ * Unlocking needs room in the plan.
+ */
+export async function setChannelLock(userId: string, accountId: string, locked: boolean) {
+  const account = await db.query.socialAccounts.findFirst({
+    where: and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)),
+  });
+  if (!account) throw new ServiceError("Channel not found", 404);
+  if (!locked && account.locked) {
+    const billing = await billingOf(userId);
+    const allowed = billing.exempt || !billing.plan ? Infinity : billing.plan.accounts;
+    const [{ active }] = await db
+      .select({ active: count() })
+      .from(socialAccounts)
+      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.locked, false)));
+    if (active >= allowed)
+      throw new ServiceError(
+        `Your plan covers ${allowed} active channels. Lock another channel first, or change plans at ${siteConfig.url}/settings/billing.`,
+        402,
+        { code: "channel_limit_reached" },
+      );
+  }
+  await db.update(socialAccounts).set({ locked }).where(eq(socialAccounts.id, accountId));
+}
+
+/** Why a post on this channel may not go out now; null when it may (publish workflow). */
+export async function lockedChannelProblem(accountId: string): Promise<string | null> {
+  const account = await db.query.socialAccounts.findFirst({
+    where: eq(socialAccounts.id, accountId),
+    columns: { locked: true, name: true },
+  });
+  return account?.locked
+    ? `${account.name} is locked: the plan covers fewer channels than are connected. Unlock it in Channels or change plans.`
+    : null;
+}
+
+/**
+ * How many more channels the user may connect: the plan's accounts less those connected;
+ * reconnecting one of them never counts. Throws without a plan, or when `adding` would go
+ * past it.
+ */
+export async function requireChannelRoom(userId: string, adding: number) {
+  if (adding <= 0) return;
+  const billing = await requirePlan(userId);
+  if (billing.exempt || !billing.plan) return;
+  const allowed = billing.plan.accounts;
+  const room = Math.max(0, allowed - billing.connected);
+  if (adding <= room) return;
+  const left = room ? `You can add ${room} more.` : "No more can be added.";
+  throw new ServiceError(
+    `Your ${billing.plan.name} plan covers ${allowed} channels and ${billing.connected} are connected. ${left} Change plans at ${siteConfig.url}/settings/billing to connect more.`,
+    402,
+    { code: "channel_limit_reached" },
+  );
 }
 
 /** Why the user may not publish now, or null when they may (for the publish workflow). */
-export async function planProblem(userId: string): Promise<string | null> {
+export async function planProblem(userId: string, accountId?: string): Promise<string | null> {
   try {
-    await requirePlan(userId);
+    const billing = await requirePlan(userId);
+    if (accountId && !billing.exempt) return lockedChannelProblem(accountId);
     return null;
   } catch (error) {
     if (error instanceof ServiceError && error.status === 402) return error.message;

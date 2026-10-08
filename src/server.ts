@@ -5,6 +5,7 @@ export { PublishWorkflow } from "./modules/social/publish.workflow";
 export { WebhookWorkflow } from "./modules/webhooks/webhook.workflow";
 import { checkSocialAccess } from "./modules/social/social.scheduled";
 import { expireStorage } from "./modules/storage/storage.scheduled";
+import { runBillingLifecycle } from "./modules/billing/billing.scheduled";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -37,6 +38,7 @@ export default {
     await Promise.all([
       expireStorage(controller, env, ctx),
       checkSocialAccess(controller, env, ctx),
+      runBillingLifecycle(controller, env, ctx),
     ]);
   },
 };

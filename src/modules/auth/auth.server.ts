@@ -22,6 +22,7 @@ import {
   recordSubscription,
 } from "#/modules/billing/billing.service";
 import { ServiceError } from "#/modules/api/errors";
+import { notifyPlanEnded } from "#/modules/billing/lifecycle.service";
 import { codeRequestRefusal, isQaInbox, verifyTurnstile } from "./sign-in-guard";
 
 type Credentials = {
@@ -122,7 +123,10 @@ async function guardedCheckout(ctx: Parameters<typeof getSessionFromCtx>[0]) {
  * /api/auth/dodopayments/webhooks. Present only once the API key and webhook secret are set.
  */
 function billing(dodo: NonNullable<Credentials["dodo"]>) {
-  const record = (payload: { type: string; data: unknown }) => recordSubscription(payload);
+  const record = async (payload: { type: string; timestamp?: string | Date; data: unknown }) => {
+    const recorded = await recordSubscription(payload);
+    if (recorded?.ended) await notifyPlanEnded(recorded.userId, recorded.subscriptionId);
+  };
   return dodopayments({
     client: dodo.client,
     // Off: the plugin's sign-up hook fails the sign-up when Dodo cannot be reached. Checkout
@@ -131,7 +135,7 @@ function billing(dodo: NonNullable<Credentials["dodo"]>) {
     use: [
       checkout({
         products: async () => checkoutProducts(),
-        successUrl: "/settings/billing?checkout=done",
+        successUrl: "/subscribe?checkout=done",
         authenticatedUsersOnly: true,
       }),
       portal(),

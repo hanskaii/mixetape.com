@@ -17,6 +17,7 @@ import {
   updatePost,
 } from "./social.service";
 import { ServiceError } from "#/modules/api/errors";
+import { requirePlan } from "#/modules/billing/billing.service";
 
 /**
  * Work on what is already on a platform: a post's live details, thumbnail, playlists,
@@ -118,6 +119,7 @@ export async function postInsights(userId: string, id: string) {
  * post still waiting in mixetape takes metadata.thumbnailUrl instead.
  */
 export async function setPostThumbnail(userId: string, id: string, imageUrl: string) {
+  await requirePlan(userId);
   if (!(imageUrl ?? "").startsWith("https://"))
     throw new ServiceError("imageUrl must be a public https URL");
   const { post, platformPostId, use, token } = await onPlatform(userId, id, "thumbnails");
@@ -128,6 +130,7 @@ export async function setPostThumbnail(userId: string, id: string, imageUrl: str
 
 /** Changes the details of a post that is already on the platform (title, tags, privacy…). */
 export async function editPublishedPost(userId: string, id: string, changes: Metadata) {
+  await requirePlan(userId);
   const { post, platformPostId, use, token } = await onPlatform(userId, id, "editing");
   await platformCall(() => use.update(platformPostId, changes, token));
   // Keep mixetape's copy in step; null clears a field.
@@ -152,6 +155,7 @@ export async function createCollection(
   accountId: string,
   input: { title?: string; description?: string; visibility?: string },
 ) {
+  await requirePlan(userId);
   const title = requiredText(input.title, "title");
   const visibility = input.visibility ?? "public";
   if (!["public", "unlisted", "private"].includes(visibility))
@@ -168,6 +172,7 @@ export async function addToCollection(
   collectionId: string,
   position?: number,
 ) {
+  await requirePlan(userId);
   const id = requiredText(collectionId, "collectionId");
   if (position !== undefined && (!Number.isInteger(position) || position < 0))
     throw new ServiceError("position must be a whole number from 0");
@@ -184,6 +189,7 @@ export async function listCaptions(userId: string, postId: string) {
 }
 
 export async function putCaption(userId: string, postId: string, input: Partial<CaptionInput>) {
+  await requirePlan(userId);
   const caption: CaptionInput = {
     language: requiredText(input.language, "language"),
     name: input.name?.trim(),
@@ -215,6 +221,7 @@ export async function listComments(
 }
 
 export async function postComment(userId: string, postId: string, text: string) {
+  await requirePlan(userId);
   const body = requiredText(text, "text");
   const { platformPostId, use, token } = await onPlatform(userId, postId, "comments");
   return platformCall(() => use.post(platformPostId, body, token));
@@ -226,6 +233,7 @@ export async function replyToComment(
   commentId: string,
   text: string,
 ) {
+  await requirePlan(userId);
   const parent = requiredText(commentId, "commentId");
   const body = requiredText(text, "text");
   const { use, token } = await onPlatform(userId, postId, "comments");
@@ -241,6 +249,7 @@ export async function moderateComment(
   status: string,
   banAuthor = false,
 ) {
+  await requirePlan(userId);
   const id = requiredText(commentId, "commentId");
   const moderation = MODERATION.find((candidate) => candidate === status);
   if (!moderation) throw new ServiceError(`status must be one of ${MODERATION.join(", ")}`);
