@@ -201,9 +201,9 @@
     // Pinterest app on Trial access: Pins only in the API Sandbox (providers/pinterest/api.ts).
     // Remove once Standard access is granted, then reconnect Pinterest accounts.
     "PINTEREST_SANDBOX": "true",
-    // Dodo Payments: test_mode until checkout goes live, and the products scripts/dodo-catalog.mjs
-    // made in that mode (billing/plans.ts). Test and live modes have different product ids.
-    "DODO_MODE": "test_mode",
-    "DODO_CATALOG": "{\"creator_monthly\":\"pdt_0NpG5a6KT5A4d9XeptUaU\",\"creator_yearly\":\"pdt_0NpG5a9O5czOVcVMwEwpD\",\"studio_monthly\":\"pdt_0NpG5aBrR0pjhCuOvP6Gr\",\"studio_yearly\":\"pdt_0NpG5aDtb94MSYjEXEtGh\",\"extra_account_monthly\":\"adn_0NpG5a0s0P6bKJlL41iG5\",\"extra_account_yearly\":\"adn_0NpG5a3GoSxGO2YbnUOyU\"}",
+    // Dodo Payments: live since 2026-10-08. The products scripts/dodo-catalog.mjs made in live
+    // mode (billing/plans.ts); test and live modes have different product ids.
+    "DODO_MODE": "live_mode",
+    "DODO_CATALOG": "{\"creator_monthly\":\"pdt_0NpI4K0BhgcCNAhuyyIWo\",\"creator_yearly\":\"pdt_0NpI4K2SDfkiRu3qvyqqx\",\"studio_monthly\":\"pdt_0NpI4K4EWC6xIxBPELsbO\",\"studio_yearly\":\"pdt_0NpI4K6PmeVrcEkEDurNd\",\"extra_account_monthly\":\"adn_0NpI4Jw56YmCAte8U8FzI\",\"extra_account_yearly\":\"adn_0NpI4JyWz9rC8flExxNyl\"}",
   },
 }
