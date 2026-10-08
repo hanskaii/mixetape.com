@@ -23,7 +23,7 @@ function Privacy() {
     <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated October 4, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated October 8, 2026</p>
       </div>
 
       <section className="space-y-2">
@@ -42,6 +42,11 @@ function Privacy() {
             <strong className="text-foreground">Account:</strong> your name, email address and, if
             you sign in with Google or GitHub, the profile image and account ID those providers give
             us.
+          </li>
+          <li>
+            <strong className="text-foreground">Subscription:</strong> your plan and period, its
+            status, the number of social accounts it covers, when it renews, and the customer ID our
+            payment provider gives you. Card details stay with the provider.
           </li>
           <li>
             <strong className="text-foreground">Channel access:</strong> for each channel you
@@ -151,9 +156,12 @@ function Privacy() {
         <h2 className="text-base font-semibold">Sharing</h2>
         <p>
           Your posts and their metadata are sent to the social platforms you connect, because that
-          is the point of the service. We do not share your data with any other third party. Our
-          infrastructure providers (hosting, storage, database) process data on our behalf under
-          their own security commitments; they do not use it for their own purposes.
+          is the point of the service. When you subscribe, your name and email address are sent to
+          our payment provider, Dodo Payments, which processes the payment, keeps the billing
+          records and handles tax as the merchant of record; mixetape never sees or stores your card
+          number. We do not share your data with any other third party. Our infrastructure providers
+          (hosting, storage, database) process data on our behalf under their own security
+          commitments; they do not use it for their own purposes.
         </p>
       </section>
 

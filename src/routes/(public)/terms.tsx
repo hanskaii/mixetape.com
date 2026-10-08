@@ -19,7 +19,7 @@ function Terms() {
     <div className="mx-auto w-full max-w-2xl space-y-8 py-10 text-sm leading-relaxed text-foreground">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Terms of Service</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated October 2, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated October 8, 2026</p>
       </div>
 
       <section className="space-y-2">
@@ -84,6 +84,34 @@ function Terms() {
           show the status of every post so you can retry it. To the extent the law allows,{" "}
           {siteConfig.name} is not liable for lost reach, revenue or content arising from the use of
           the service.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-base font-semibold">Plans, billing and refunds</h2>
+        <p>
+          Posts can be scheduled on a paid plan. Plans are priced by the number of social accounts
+          they cover and are billed monthly or yearly in advance; the prices and what each plan
+          includes are on the{" "}
+          <a href="/pricing" className="text-foreground underline">
+            pricing page
+          </a>
+          . A new subscriber's first plan starts with a 7-day free trial: nothing is charged during
+          it, and the first charge is made when it ends unless you cancel before.
+        </p>
+        <p>
+          Subscriptions renew automatically at the end of each period, at the price shown when you
+          subscribed, until you cancel. You can cancel at any time from Billing in your workspace;
+          the plan then stays active until the end of the period you paid for and is not renewed.
+          Payments are processed by our payment provider, Dodo Payments, which acts as the merchant
+          of record: it charges your card, collects any sales tax or VAT that applies, issues the
+          invoice and handles payment questions.
+        </p>
+        <p>
+          Periods already paid for are not refunded, but if you were charged by mistake or cannot
+          use the service because of a fault on our side, write to us within 14 days of the charge
+          and we will put it right. If a payment fails, scheduling is paused until it succeeds;
+          posts you have already scheduled for a plan that has ended are not published.
         </p>
       </section>
 
