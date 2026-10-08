@@ -204,6 +204,6 @@
     // Dodo Payments: test_mode until checkout goes live, and the products scripts/dodo-catalog.mjs
     // made in that mode (billing/plans.ts). Test and live modes have different product ids.
     "DODO_MODE": "test_mode",
-    "DODO_CATALOG": "{}",
+    "DODO_CATALOG": "{\"marketer_monthly\":\"pdt_0NpG5a6KT5A4d9XeptUaU\",\"marketer_yearly\":\"pdt_0NpG5a9O5czOVcVMwEwpD\",\"operator_monthly\":\"pdt_0NpG5aBrR0pjhCuOvP6Gr\",\"operator_yearly\":\"pdt_0NpG5aDtb94MSYjEXEtGh\",\"extra_account_monthly\":\"adn_0NpG5a0s0P6bKJlL41iG5\",\"extra_account_yearly\":\"adn_0NpG5a3GoSxGO2YbnUOyU\"}",
   },
 }
