@@ -77,6 +77,11 @@ const API_STATUS = {
 async function guardedCheckout(ctx: Parameters<typeof getSessionFromCtx>[0]) {
   const session = await getSessionFromCtx(ctx);
   if (!session) return;
+  // Dodo refuses a customer without a name, and the plugin takes it from the session.
+  if (!session.user.name?.trim())
+    await ctx.context.internalAdapter.updateUser(session.user.id, {
+      name: session.user.email.split("@")[0],
+    });
   try {
     return { context: { body: await checkoutFor(session.user.id, ctx.body ?? {}) } };
   } catch (error) {
@@ -169,6 +174,17 @@ function createAuth(credentials: Credentials) {
     ],
     emailAndPassword: {
       enabled: false,
+    },
+    // Signing up with an email code gives no name; checkout (Dodo) and the workspace need
+    // one, so it starts as the email's local part and the person can change it in Profile.
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (data) => ({
+            data: { ...data, name: data.name?.trim() || data.email.split("@")[0] },
+          }),
+        },
+      },
     },
     user: {
       additionalFields: {
