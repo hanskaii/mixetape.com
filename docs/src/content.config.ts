@@ -15,6 +15,9 @@ export const collections = {
         // Nimbus docs are agent-friendly by default. Set `audience: human`
         // to flag a page that's written primarily for human readers.
         audience: z.literal("human").optional(),
+        // The title search results show, when the page's own title (its H1) is a word that
+        // only makes sense in the sidebar ("Codex", "YouTube").
+        seoTitle: z.string().optional(),
       },
     }),
   ),

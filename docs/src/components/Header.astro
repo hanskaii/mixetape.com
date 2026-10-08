@@ -47,7 +47,7 @@ const href = (path: string) => withBase(path, import.meta.env.BASE_URL);
            sidebar's edge. -->
       <a
         href={href("/introduction")}
-        aria-label={`${config.title} docs`}
+        aria-label={config.title}
         class="group flex items-center gap-2 no-underline lg:w-[calc(var(--nb-sidebar-width)-3.25rem-1px)] lg:shrink-0"
       >
         <span
@@ -66,7 +66,7 @@ const href = (path: string) => withBase(path, import.meta.env.BASE_URL);
           </svg>
         </span>
         <span class="text-[1.2rem] font-bold leading-none tracking-[-0.07em] text-foreground">
-          {config.title}
+          mixetape
         </span>
         <span class="text-foreground/70 border-border-strong hidden rounded-md border px-1.5 py-0.5 text-[11px] leading-none font-semibold tracking-[0.08em] uppercase sm:inline-block">
           Docs

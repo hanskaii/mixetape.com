@@ -4,10 +4,25 @@ import nimbus, {
   defineConfig as defineNimbusConfig,
 } from "@cloudflare/nimbus-docs";
 import { tableScroll } from "@cloudflare/nimbus-docs/markdown";
+import { readFileSync } from "node:fs";
+
+// API reference pages search engines need not index (each is also noindex on the page): the
+// schema pages, and operations the spec marks deprecated (an old path kept for clients).
+const openapi = JSON.parse(readFileSync("./src/api/openapi.json", "utf8")) as {
+  paths: Record<string, Record<string, { deprecated?: boolean; operationId?: string; tags?: string[] }>>;
+};
+const DEPRECATED = Object.values(openapi.paths)
+  .flatMap((methods) => Object.values(methods))
+  .filter((operation) => operation.deprecated && operation.operationId)
+  .map((operation) => `/api/${operation.tags?.[0] ?? ""}/${operation.operationId}/`);
+const unlisted = (url: string) =>
+  url.includes("/api/schemas/") || DEPRECATED.some((path) => url.endsWith(path));
 
 const nimbusConfig = defineNimbusConfig({
   site: "https://docs.mixetape.com",
-  title: "mixetape",
+  // Ends every page's title ("Codex | mixetape docs"), so docs and the app read apart in
+  // search results; the header shows the product name and a Docs label.
+  title: "mixetape docs",
   description:
     "Docs for mixetape, the agent-first social scheduler: connect an agent over MCP or REST, schedule posts, and manage them once they are live.",
   locale: "en",
@@ -62,6 +77,7 @@ export default defineConfig({
   },
   integrations: [
     nimbus(nimbusConfig, {
+      sitemap: { serialize: (item) => (unlisted(item.url) ? null : item) },
       // Authoring rules are opt-in by design — your repo, your taste. The
       // two below are the load-bearing pair: frontmatter has to validate
       // against the content schema for the page to render properly, and

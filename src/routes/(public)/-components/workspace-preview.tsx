@@ -136,7 +136,7 @@ export function WorkspacePreview() {
     <figure {...stylex.props(styles.figure)}>
       <div {...stylex.props(styles.frame)}>
         <div inert {...stylex.props(styles.window)}>
-          <PageTitleLevel value="h2">
+          <PageTitleLevel value="p">
             <WorkspaceLayout activePath="/publish">
               <PublishView {...SAMPLE} />
             </WorkspaceLayout>

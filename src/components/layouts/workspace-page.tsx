@@ -156,10 +156,17 @@ export const Page = ({ children }: { children: ReactNode }) => (
 );
 
 /**
- * The heading level of a page title. A workspace page shown inside another page (the landing
- * page's preview) sets it to "h2", so that page keeps a single h1.
+ * The heading level of a page title. A workspace page shown as a picture inside another page
+ * (the landing page's preview) sets "p": its titles are text, not headings, so the page around
+ * it keeps its own outline.
  */
-export const PageTitleLevel = createContext<"h1" | "h2">("h1");
+export const PageTitleLevel = createContext<"h1" | "h2" | "p">("h1");
+
+/** The tag for a heading one level under the page title ("p" inside a preview). */
+export function useSectionTag(): "h2" | "h3" | "p" {
+  const level = useContext(PageTitleLevel);
+  return level === "h1" ? "h2" : level === "h2" ? "h3" : "p";
+}
 
 export function PageHeader({
   title,
@@ -196,12 +203,13 @@ export function Panel({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const Heading = useSectionTag();
   return (
     <section {...stylex.props(styles.panel)}>
       {title && (
         <div {...stylex.props(styles.panelHeader)}>
           {icon}
-          <h2 {...stylex.props(styles.panelTitle)}>{title}</h2>
+          <Heading {...stylex.props(styles.panelTitle)}>{title}</Heading>
           {count !== undefined && <span {...stylex.props(styles.count)}>{count}</span>}
           {actions}
         </div>

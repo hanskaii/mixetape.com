@@ -5,8 +5,11 @@ import { siteConfig } from "#/config/site";
 // page's content last changed — bump it with the page, never per request, or engines learn to
 // ignore it.
 const PAGES = [
-  { path: "/", updated: "2026-10-02" },
-  { path: "/pricing", updated: "2026-10-02" },
+  { path: "/", updated: "2026-10-09" },
+  { path: "/pricing", updated: "2026-10-09" },
+  { path: "/terms", updated: "2026-10-08" },
+  { path: "/privacy", updated: "2026-10-08" },
+  { path: "/data-deletion", updated: "2026-10-08" },
 ];
 
 export const Route = createFileRoute("/sitemap.xml")({

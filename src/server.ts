@@ -6,11 +6,14 @@ export { WebhookWorkflow } from "./modules/webhooks/webhook.workflow";
 import { checkSocialAccess } from "./modules/social/social.scheduled";
 import { expireStorage } from "./modules/storage/storage.scheduled";
 import { runBillingLifecycle } from "./modules/billing/billing.scheduled";
+import { canonicalRedirect } from "./modules/seo/canonical";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     try {
       const url = new URL(request.url);
+      const canonical = canonicalRedirect(request, url);
+      if (canonical) return canonical;
 
       if (url.pathname.startsWith("/@")) {
         const rewrittenUrl = new URL(request.url);

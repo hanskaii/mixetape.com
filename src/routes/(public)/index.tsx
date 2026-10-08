@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Route as RootRoute } from "#/routes/__root";
 import { siteConfig } from "#/config/site";
+import { PLANS } from "#/modules/billing/plans";
 import { publicHead } from "./-lib/head";
 import { ForAgents } from "./-components/for-agents";
 import { Hero } from "./-components/hero";
@@ -30,6 +31,14 @@ const structuredData = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       image: `${siteConfig.url}${siteConfig.ogImage}`,
+      // The plans' monthly prices (Studio's base; each account past 100 is $1 more).
+      offers: (["creator", "studio"] as const).map((id) => ({
+        "@type": "Offer",
+        name: PLANS[id].name,
+        price: PLANS[id].monthly,
+        priceCurrency: "USD",
+        url: `${siteConfig.url}/pricing`,
+      })),
       publisher: { "@id": `${siteConfig.url}/#organization` },
     },
     {
@@ -37,7 +46,8 @@ const structuredData = {
       "@id": `${siteConfig.url}/#organization`,
       name: siteConfig.name,
       url: `${siteConfig.url}/`,
-      logo: `${siteConfig.url}/favicon.svg`,
+      // A square PNG (512px), the format and size search engines take for a logo.
+      logo: `${siteConfig.url}/logo.png`,
       email: siteConfig.contactEmail,
     },
   ],

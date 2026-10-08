@@ -5,8 +5,12 @@
   "compatibility_date": "2026-09-28",
   "workers_dev": false,
   "routes": [{ "pattern": "docs.mixetape.com", "custom_domain": true }],
+  // A thin Worker in front of the static files makes every redirect permanent (worker.ts).
+  "main": "./worker.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": true
   }
 }

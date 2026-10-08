@@ -4,7 +4,13 @@ import { ArrowCounterClockwise, ArrowSquareOut, CalendarBlank, X } from "@phosph
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { FeedbackButton } from "#/components/modals/feedback-button";
-import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
+import {
+  Notice,
+  Page,
+  PageHeader,
+  Panel,
+  useSectionTag,
+} from "#/components/layouts/workspace-page";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { Spinner } from "#/components/ui/spinner";
 import {
@@ -64,6 +70,7 @@ export function PublishView({
   viewToggle?: ReactNode;
 }) {
   const [tab, setTab] = useState<Tab>("queue");
+  const DayHeading = useSectionTag();
   const { selected, setSelected } = useChannelSelection(accounts);
   const [timeZone, setTimeZone] = useViewerZone();
   const { cancel, retry, retrying } = usePostActions();
@@ -265,13 +272,13 @@ export function PublishView({
               >
                 {timeline.map((item) =>
                   item.type === "day" ? (
-                    <h2
+                    <DayHeading
                       key={item.key}
                       className="pb-1 pt-5 text-lg font-semibold text-foreground first:pt-0 sm:pt-3 sm:text-[15px]"
                     >
                       {item.label.day},{" "}
                       <span className="font-medium text-muted-foreground">{item.label.date}</span>
-                    </h2>
+                    </DayHeading>
                   ) : (
                     postRow(item.post)
                   ),

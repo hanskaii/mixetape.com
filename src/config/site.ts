@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "mixetape",
   title: "mixetape | Agent-first social media scheduling",
   description:
-    "Let AI agents schedule posts to YouTube, TikTok, Instagram, Facebook, Threads and Pinterest through MCP or a REST API — editable until they go out.",
+    "AI agents schedule your posts to YouTube, TikTok, Instagram, Facebook, Threads, Pinterest, Bluesky and Mastodon over MCP or REST, editable until they go out.",
   /** The share card (1200×630), served from public/. */
   ogImage: "/og.png",
   url: process.env.SITE_URL || "http://localhost:3000",

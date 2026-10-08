@@ -42,6 +42,7 @@ function metaDescription(title: string, text: string | undefined) {
 
 <BaseLayout
   title={`${page.title} · API`}
+  noindex={page.kind === "schema" || page.deprecated === true}
   description={metaDescription(page.title, page.description)}
   markdownUrl={page.markdownHref}
   socialImage={socialImage}

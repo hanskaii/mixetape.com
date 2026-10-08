@@ -18,9 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import type { DocsPageProps } from "@cloudflare/nimbus-docs/types";
 import { getVersionStatus, getVersionAlternates, withBase } from "@cloudflare/nimbus-docs/runtime";
 
-type Props = DocsPageProps & { audience?: "human" };
+type Props = DocsPageProps & { audience?: "human"; seoTitle?: string };
 
-const { title, description, sidebar, headings, breadcrumbs, prevNext, mode = "doc", banner, head = [], searchable, noindex, markdownUrl, socialImage, lastUpdated, editUrl, draft, audience, collection, entryId } = Astro.props;
+const { title, seoTitle, description, sidebar, headings, breadcrumbs, prevNext, mode = "doc", banner, head = [], searchable, noindex, markdownUrl, socialImage, lastUpdated, editUrl, draft, audience, collection, entryId } = Astro.props;
 
 // `searchable` derives from `noindex` when omitted: a non-crawlable page is
 // by default not in the site search either. Explicit `searchable: true`
@@ -75,7 +75,7 @@ const hasContentFooter = Astro.slots.has("content-footer");
 const hasPagination = Astro.slots.has("pagination");
 ---
 
-<BaseLayout title={title} description={description} noindex={noindex || draft} markdownUrl={markdownUrl} socialImage={socialImage} lastUpdated={lastUpdated} head={head} collection={collection} entryId={entryId}>
+<BaseLayout title={seoTitle ?? title} description={description} noindex={noindex || draft} markdownUrl={markdownUrl} socialImage={socialImage} lastUpdated={lastUpdated} head={head} collection={collection} entryId={entryId}>
   <div class="flex flex-col min-h-screen">
     {hasHeader ? <slot name="header" /> : <Header collection={collection} entryId={entryId} showSidebar={showSidebar} />}
 

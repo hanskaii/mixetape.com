@@ -11,9 +11,9 @@ export const Route = createFileRoute("/(public)/pricing")({
   head: () =>
     publicHead({
       path: "/pricing",
-      title: `Pricing | ${siteConfig.name}`,
+      title: `Pricing for AI agent social media scheduling | ${siteConfig.name}`,
       description:
-        "mixetape plans: Creator at $39 a month for 15 accounts, Studio from $100 a month for 100 accounts and $1 each after. 7-day free trial, eight platforms, MCP and REST.",
+        "Creator is $39 a month for 15 accounts; Studio starts at $100 for 100 and $1 per account after. 7-day free trial, eight platforms, MCP and REST included.",
     }),
   component: PricingPage,
 });
@@ -142,6 +142,8 @@ function PricingPage() {
         </p>
       </section>
 
+      {/* The plans' outline level, for readers and search engines; the cards say it visually. */}
+      <h2 className="sr-only">Plans</h2>
       <Plans signedIn={signedIn} />
 
       <section {...stylex.props(styles.section)}>

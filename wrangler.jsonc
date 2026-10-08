@@ -15,6 +15,11 @@
       "pattern": "mixetape.com",
       "custom_domain": true,
     },
+    // Only so www.mixetape.com answers: the Worker sends it on to mixetape.com.
+    {
+      "pattern": "www.mixetape.com",
+      "custom_domain": true,
+    },
   ],
   "d1_databases": [
     {
