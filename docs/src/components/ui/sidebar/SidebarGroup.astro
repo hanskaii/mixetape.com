@@ -10,6 +10,7 @@ import type { HTMLAttributes } from "astro/types";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import SidebarGroupHeader from "./SidebarGroupHeader.astro";
 import SidebarLink from "./SidebarLink.astro";
+import { groupIcon, linkIcon } from "@/lib/sidebar-icons";
 import type { SidebarItem, SidebarBadge } from "@cloudflare/nimbus-docs/types";
 
 interface Props extends HTMLAttributes<"div"> {
@@ -76,15 +77,15 @@ const isOpen = Boolean(hasActive || collapsed === false || collapsed === undefin
               items={item.children}
               collapsed={item.collapsed}
               badge={item.badge}
-              icon={item.icon}
+              icon={item.icon ?? groupIcon(item.label)}
               indexHref={item.indexHref}
               indexIsCurrent={item.indexIsCurrent}
               indexIsExternal={item.indexIsExternal}
             />
           ) : item.type === "external" ? (
-            <SidebarLink label={item.label} href={item.href} badge={item.badge} target="_blank" rel="noopener" />
+            <SidebarLink label={item.label} href={item.href} badge={item.badge} icon={linkIcon(item.href)} target="_blank" rel="noopener" />
           ) : (
-            <SidebarLink label={item.label} href={item.href} isCurrent={item.isCurrent} badge={item.badge} />
+            <SidebarLink label={item.label} href={item.href} isCurrent={item.isCurrent} badge={item.badge} icon={linkIcon(item.href)} />
           )}
         </li>
       ))}

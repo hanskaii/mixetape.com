@@ -3,6 +3,7 @@
  * SidebarLink — a leaf row. The optional `leading` slot renders before the
  * label for consumers that need a leading decoration.
  */
+import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
 import { cn } from "@/lib/cn";
 import type { HTMLAttributes } from "astro/types";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +15,11 @@ interface Props extends HTMLAttributes<"a"> {
   href: string;
   isCurrent?: boolean;
   badge?: SidebarBadge;
+  /** Optional leading icon (astro-icon name), drawn in the text colour. */
+  icon?: string;
 }
 
-const { label, href, isCurrent, badge, class: className, ...attrs } = Astro.props;
+const { label, href, isCurrent, badge, icon, class: className, ...attrs } = Astro.props;
 const resolvedHref = withBase(href, import.meta.env.BASE_URL);
 ---
 
@@ -34,6 +37,7 @@ const resolvedHref = withBase(href, import.meta.env.BASE_URL);
   {...attrs}
 >
   <slot name="leading" />
+  {icon && <Icon name={icon} class="h-4 w-4 shrink-0" />}
   <span class="break-words">{label}</span>
   {badge &&
     (typeof badge === "string" ? (

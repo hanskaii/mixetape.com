@@ -10,6 +10,7 @@ import SidebarGroup from "./SidebarGroup.astro";
 import SidebarLink from "./SidebarLink.astro";
 import type { SidebarItem } from "@cloudflare/nimbus-docs/types";
 import { sidebarHash } from "@cloudflare/nimbus-docs/runtime";
+import { groupIcon, linkIcon } from "@/lib/sidebar-icons";
 
 interface Props extends HTMLAttributes<"div"> {
   items: SidebarItem[];
@@ -37,7 +38,7 @@ const hash = sidebarHash(items);
             items={item.children}
             collapsed={item.collapsed}
             badge={item.badge}
-            icon={item.icon}
+            icon={item.icon ?? groupIcon(item.label)}
             indexHref={item.indexHref}
             indexIsCurrent={item.indexIsCurrent}
             indexIsExternal={item.indexIsExternal}
@@ -49,7 +50,7 @@ const hash = sidebarHash(items);
         </li>
       ) : (
         <li>
-          <SidebarLink label={item.label} href={item.href} isCurrent={item.isCurrent} badge={item.badge} />
+          <SidebarLink label={item.label} href={item.href} isCurrent={item.isCurrent} badge={item.badge} icon={linkIcon(item.href)} />
         </li>
       ),
     )}
