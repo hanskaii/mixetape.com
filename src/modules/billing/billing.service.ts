@@ -269,7 +269,14 @@ export async function planProblem(userId: string): Promise<string | null> {
 
 const MAX_EXTRA_ACCOUNTS = 10_000;
 
-type CheckoutBody = {
+/**
+ * What the pricing page sends. Better Auth merges a hook's body into the request's rather
+ * than replacing it, so anything else (a discount code, prices, a return URL) would reach
+ * Dodo untouched: it is refused instead. Discount codes are entered on Dodo's own page.
+ */
+const CHECKOUT_FIELDS = new Set(["slug", "product_cart"]);
+
+type CheckoutBody = Record<string, unknown> & {
   slug?: unknown;
   product_cart?: unknown;
 };
@@ -278,9 +285,15 @@ type CheckoutBody = {
  * The checkout session the Dodo plugin may open for this user, whatever the browser sent:
  * one plan product, Studio's extra-account add-on only with Studio of the same period, the
  * trial only for someone who never had a subscription, and the user's own id as reference.
- * Everything else in the request (discount codes, prices, other products) is dropped.
+ * Any other field in the request is refused (CHECKOUT_FIELDS).
  */
 export async function checkoutFor(userId: string, body: CheckoutBody) {
+  const extraField = Object.keys(body).find((key) => !CHECKOUT_FIELDS.has(key));
+  if (extraField)
+    throw new ServiceError(`Checkout does not take ${extraField}.`, 400, {
+      code: "unknown_field",
+      field: extraField,
+    });
   const billing = await billingOf(userId);
   if (billing.open)
     throw new ServiceError("You already have a plan. Change or resume it from Billing.", 409, {

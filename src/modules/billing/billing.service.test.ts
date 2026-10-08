@@ -200,6 +200,10 @@ describe("checkout, whatever the browser sends", () => {
       { product_cart: [{ product_id: "pdt_cm", addons: [{ addon_id: "adn_m", quantity: 3 }] }] },
     ],
     ["an unknown slug", { slug: "free-forever" }],
+    ["a discount code", { slug: "creator-monthly", discount_code: "FREE100" }],
+    ["a longer trial", { slug: "creator-monthly", subscription_data: { trial_period_days: 365 } }],
+    ["someone else's reference", { slug: "creator-monthly", referenceId: "u2" }],
+    ["a return URL", { slug: "creator-monthly", return_url: "https://evil.example" }],
   ])("refuses %s", async (_name, body) => {
     state.users = [{ billingExempt: false }];
     await expect(checkoutFor("u1", body)).rejects.toMatchObject({ status: 400 });
