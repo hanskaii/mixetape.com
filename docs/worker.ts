@@ -10,21 +10,38 @@ type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
 const withSlash = (path: string) =>
   path.startsWith("/") && !path.endsWith("/") && !/\.[a-z0-9]+$/i.test(path) ? `${path}/` : path;
 
+/**
+ * Where a moved page points, read from the start of its HTML (Astro writes these as
+ * `<!doctype html><title>Redirecting to: …` with a meta refresh); null for any other page.
+ */
+async function movedTo(response: Response): Promise<string | null> {
+  const reader = response.clone().body?.getReader();
+  if (!reader) return null;
+  const { value } = await reader.read();
+  void reader.cancel();
+  const start = new TextDecoder().decode(value?.slice(0, 600));
+  if (!start.startsWith("<!doctype html><title>Redirecting to:")) return null;
+  return start.match(/http-equiv="refresh" content="0;url=([^"]+)"/)?.[1] ?? null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const response = await env.ASSETS.fetch(request);
     const url = new URL(request.url);
+    // The Worker answers before anything else, so it also keeps the docs on https.
+    if (url.protocol === "http:") {
+      url.protocol = "https:";
+      return Response.redirect(url.href, 301);
+    }
+    const response = await env.ASSETS.fetch(request);
 
     if (response.status === 307) {
       const location = response.headers.get("location");
       if (location) return Response.redirect(new URL(location, url).href, 308);
     }
 
-    // A moved page is a tiny HTML file with a meta refresh: answer with the move itself.
-    const size = Number(response.headers.get("content-length") ?? Infinity);
-    if (response.ok && size < 1024 && response.headers.get("content-type")?.includes("text/html")) {
-      const html = await response.clone().text();
-      const target = html.match(/http-equiv="refresh" content="0;url=([^"]+)"/)?.[1];
+    // A moved page answers with the move itself.
+    if (response.ok && response.headers.get("content-type")?.includes("text/html")) {
+      const target = await movedTo(response);
       if (target) return Response.redirect(new URL(withSlash(target), url).href, 308);
     }
     return response;

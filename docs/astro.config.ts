@@ -50,16 +50,16 @@ const nimbusConfig = defineNimbusConfig({
 export default defineConfig({
   // No landing page: the docs open on their introduction.
   redirects: {
-    "/": "/introduction",
+    "/": "/introduction/",
     // Pages that moved when agents (MCP) and the REST API got their own sections.
-    "/tools": "/agents/tools",
-    "/tips": "/agents/tips",
-    "/connect-an-agent/mcp": "/agents",
-    "/connect-an-agent/claude-code": "/agents/claude-code",
-    "/connect-an-agent/codex": "/agents/codex",
-    "/connect-an-agent/cursor": "/agents/cursor",
-    "/connect-an-agent/opencode": "/agents/opencode",
-    "/connect-an-agent/rest-api": "/rest-api",
+    "/tools": "/agents/tools/",
+    "/tips": "/agents/tips/",
+    "/connect-an-agent/mcp": "/agents/",
+    "/connect-an-agent/claude-code": "/agents/claude-code/",
+    "/connect-an-agent/codex": "/agents/codex/",
+    "/connect-an-agent/cursor": "/agents/cursor/",
+    "/connect-an-agent/opencode": "/agents/opencode/",
+    "/connect-an-agent/rest-api": "/rest-api/",
   },
   // nimbus:adapter
   output: "static",
