@@ -3,7 +3,11 @@
 // accounts. Run it once per mode with that mode's API key:
 //
 //   DODO_PAYMENTS_API_KEY=… node scripts/dodo-catalog.mjs              (test mode)
-//   DODO_PAYMENTS_API_KEY=… node scripts/dodo-catalog.mjs live_mode
+//   DODO_PAYMENTS_API_KEY=… DODO_BRAND_ID=brnd_… node scripts/dodo-catalog.mjs live_mode
+//
+// DODO_BRAND_ID is the mixetape brand (Dodo → Settings → Business → Brands): its name, logo
+// and support email are what checkout shows. Brands are separate in test and live mode; leave
+// it unset to use the account's primary brand.
 //
 // Anything already there under the same name is reused, so running it again is safe. It
 // prints the DODO_CATALOG value for wrangler.jsonc (and .dev.vars), never the key.
@@ -18,6 +22,7 @@ if (!bearerToken) {
 const environment = process.argv[2] === "live_mode" ? "live_mode" : "test_mode";
 const dodo = new DodoPayments({ bearerToken, environment });
 
+const brand_id = process.env.DODO_BRAND_ID || undefined;
 const TRIAL_DAYS = 7;
 const YEAR_MONTHS = 10; // a year costs ten months
 
@@ -50,6 +55,7 @@ async function plan(name, description, dollars, interval, addons = []) {
     name,
     description,
     tax_category: "saas",
+    brand_id,
     addons,
     price: {
       type: "recurring_price",
