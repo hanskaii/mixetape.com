@@ -34,7 +34,26 @@ import { requirePlan } from "#/modules/billing/billing.service";
 export const UNATTACHED_HOURS = 24;
 const UNATTACHED = UNATTACHED_HOURS * 60 * 60 * 1000;
 /** Posts that still need their files: not out yet, or failed and waiting for a retry. */
-const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed", "paused"];
+export const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed", "paused"];
+
+/**
+ * The files posts still need, by r2:// URL — read the way `expireFiles` reads them (the
+ * post's media, and its metadata, where a YouTube thumbnail lives), so the library never
+ * shows a countdown for a file storage is keeping.
+ */
+export function heldBy(
+  posts: { mediaUrl: string; media?: unknown; metadata?: unknown }[],
+  urls: string[],
+) {
+  const text = posts.map(
+    (post) =>
+      post.mediaUrl + JSON.stringify(post.media ?? "") + JSON.stringify(post.metadata ?? ""),
+  );
+  return urls.filter((url) => {
+    const key = url.slice("r2://".length);
+    return text.some((item) => item.includes(key));
+  });
+}
 
 export type FileView = ReturnType<typeof fileView>;
 

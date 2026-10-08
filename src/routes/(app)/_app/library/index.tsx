@@ -165,7 +165,8 @@ const fileHeight = (file: FileView, column: number) =>
 function LibraryPage() {
   const router = useRouter();
   const data = Route.useLoaderData();
-  const { groups, accounts, brands, platforms, scheduled, retentionHours } = data;
+  const { groups, accounts, brands, platforms, scheduled, held, retentionHours } = data;
+  const heldSet = useMemo(() => new Set(held), [held]);
   const { confirm } = useConfirmModal();
   const { openModal, closeModal } = useModal();
   const input = useRef<HTMLInputElement>(null);
@@ -447,6 +448,7 @@ function LibraryPage() {
               order={selected.length > 1 ? (order.get(tile.file.id) ?? 0) : 0}
               selecting={selected.length > 0}
               scheduled={scheduled[tile.file.url] ?? 0}
+              held={heldSet.has(tile.file.url)}
               onToggle={cardToggle}
               onDragStart={cardDragStart}
               onDragEnd={cardDragEnd}

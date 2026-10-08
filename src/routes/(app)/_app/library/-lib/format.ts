@@ -40,6 +40,14 @@ export function selectionSummary(files: Facts[]) {
   return file.durationMs ? `${label} · ${formatDuration(file.durationMs)}` : label;
 }
 
-/** Days until storage lets go of a file. */
-export const daysLeft = (expiresAt: Date | string) =>
-  Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
+/**
+ * How long until storage lets go of a file, "5h" / "5 hours"; under an hour, "<1h" — the
+ * hourly cleanup takes it on its next run.
+ */
+export function timeLeft(expiresAt: Date | string) {
+  const hours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 3_600_000);
+  if (hours <= 1) return { short: "<1h", long: "less than an hour" };
+  if (hours < 48) return { short: `${hours}h`, long: `${hours} hours` };
+  const days = Math.ceil(hours / 24);
+  return { short: `${days}d`, long: `${days} days` };
+}

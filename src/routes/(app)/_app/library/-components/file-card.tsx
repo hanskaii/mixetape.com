@@ -4,7 +4,7 @@ import { CalendarCheck, Check, Hourglass, Play } from "@phosphor-icons/react";
 import { Badge } from "#/components/ui/badge";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
-import { daysLeft, formatDuration } from "../-lib/format";
+import { timeLeft, formatDuration } from "../-lib/format";
 import { MediaImage } from "./media-image";
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';
@@ -117,6 +117,7 @@ export const FileCard = memo(function FileCard({
   order,
   selecting,
   scheduled,
+  held,
   onToggle,
   onDragStart,
   onDragEnd,
@@ -129,12 +130,14 @@ export const FileCard = memo(function FileCard({
   selecting: boolean;
   /** Posts not yet out that use this file. */
   scheduled: number;
+  /** A post still needs it, so storage keeps it: no countdown. */
+  held: boolean;
   onToggle: (file: FileView, event: React.MouseEvent | React.KeyboardEvent) => void;
   onDragStart: (file: FileView, event: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const left = daysLeft(file.expiresAt);
+  const left = held ? null : timeLeft(file.expiresAt);
 
   return (
     <div
@@ -187,12 +190,9 @@ export const FileCard = memo(function FileCard({
             <CalendarCheck weight="bold" /> Scheduled
           </Badge>
         )}
-        {left <= 7 && (
-          <Badge
-            style={styles.dark}
-            title={`Storage deletes it in ${left} day${left === 1 ? "" : "s"}`}
-          >
-            <Hourglass /> {left}d
+        {left && (
+          <Badge style={styles.dark} title={`Storage deletes it in ${left.long}`}>
+            <Hourglass /> {left.short}
           </Badge>
         )}
       </span>

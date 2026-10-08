@@ -16,7 +16,7 @@ import * as publishing from "./publish.service";
 
 type Metadata = Record<string, JsonValue>;
 
-const PENDING = ["scheduled", "publishing", "uploaded"];
+const PENDING = new Set(["scheduled", "publishing", "uploaded"]);
 
 export const getLibraryData = createServerFn({ method: "GET" }).handler(async () => {
   const userId = await payingUserId();
@@ -25,18 +25,27 @@ export const getLibraryData = createServerFn({ method: "GET" }).handler(async ()
     files.listFiles(userId, { loose: true, limit: 80 }),
     social.listAccounts(userId),
     brands.listBrands(userId),
-    social.listPosts(userId, { status: PENDING, limit: 500 }),
+    social.listPosts(userId, { status: files.NEEDS_FILES, limit: 500 }),
   ]);
   // How many posts not yet out use each file, for the "scheduled" mark on its card.
   const scheduled: Record<string, number> = {};
   for (const post of pending.posts)
-    for (const item of social.postMedia(post)) scheduled[item.url] = (scheduled[item.url] ?? 0) + 1;
+    if (PENDING.has(post.status))
+      for (const item of social.postMedia(post))
+        scheduled[item.url] = (scheduled[item.url] ?? 0) + 1;
+  // Files storage keeps for a post (failed and paused ones, thumbnails included): no
+  // countdown on their cards.
+  const held = files.heldBy(
+    pending.posts,
+    fileList.files.map((file) => file.url),
+  );
 
   const providers = [...new Set(accounts.map((account) => account.provider))];
   return {
     groups: groupList.groups,
     files: fileList,
     scheduled,
+    held,
     accounts: accounts.map((account) => ({
       id: account.id,
       name: account.name.trim(),
