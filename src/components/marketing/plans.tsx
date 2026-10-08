@@ -64,7 +64,8 @@ const STUDIO_FEATURES = [
   "Priority email support",
 ];
 
-const LG = "@media (min-width: 1024px)";
+// Two cards side by side from tablet width; stacked only on phones.
+const MD = "@media (min-width: 768px)";
 
 const styles = stylex.create({
   // The same width on every page that shows the plans: two cards, not a full-bleed spread.
@@ -111,7 +112,7 @@ const styles = stylex.create({
   grid: {
     display: "grid",
     gap: "1rem",
-    gridTemplateColumns: { default: "1fr", [LG]: "repeat(2, 1fr)" },
+    gridTemplateColumns: { default: "1fr", [MD]: "repeat(2, 1fr)" },
     listStyle: "none",
     marginBlock: 0,
     paddingInline: 0,
