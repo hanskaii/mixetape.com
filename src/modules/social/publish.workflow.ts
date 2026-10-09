@@ -40,7 +40,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
       if (!loaded) return null;
       // A reschedule or retry hands the post to a newer instance; this one steps aside.
       if (loaded.post.workflowId && loaded.post.workflowId !== event.instanceId) {
-        return { status: "superseded", scheduledAt: 0, uploadAt: 0, userId: "", accountId: "" };
+        return { status: "superseded", scheduledAt: 0, uploadAt: 0 };
       }
       const provider = getProvider(loaded.post.provider);
       const scheduledAt = loaded.post.scheduledAt.getTime();
@@ -55,8 +55,6 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
         status: loaded.post.status,
         scheduledAt,
         uploadAt,
-        userId: loaded.post.userId,
-        accountId: loaded.post.accountId,
       };
     });
     if (!plan || plan.status !== "scheduled") return { skipped: plan?.status ?? "missing" };
@@ -66,9 +64,12 @@ export class PublishWorkflow extends WorkflowEntrypoint<Env, PublishParams> {
     }
 
     // Scheduled while on a plan is not enough: a post goes out only while the plan lasts.
-    const refusal = await step.do("check plan", async () =>
-      planProblem(plan.userId, plan.accountId),
-    );
+    // The owner is read from the post here rather than from the plan step's output: an
+    // instance that began sleeping before that output carried them has only the old shape.
+    const refusal = await step.do("check plan", async () => {
+      const loaded = await loadForPublishing(postId);
+      return loaded ? planProblem(loaded.post.userId, loaded.post.accountId) : null;
+    });
     if (refusal) {
       // Paused, not failed: its files are kept, and it can be sent again once there is a
       // plan, until the account's data is deleted 30 days after the plan ended.
