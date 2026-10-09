@@ -27,6 +27,7 @@ import {
 import { checkFormat, kindFromUrl, type FileFacts } from "./formats";
 import { checkLead } from "./timing";
 import { releasePostFiles } from "#/modules/storage/files.service";
+import { keepChannelAvatar } from "#/modules/storage/avatar.service";
 import { emitEvent, type WebhookEventType } from "#/modules/webhooks/webhooks.service";
 import {
   billingOf,
@@ -373,7 +374,13 @@ async function saveAccounts(
     const values = {
       name: account.name,
       handle: account.handle ?? null,
-      avatar: account.avatar ?? null,
+      // Our own copy of the picture: platforms' links expire (keepChannelAvatar).
+      avatar: await keepChannelAvatar(
+        userId,
+        provider,
+        account.platformAccountId,
+        account.avatar ?? existing?.avatar,
+      ),
       accessToken,
       // Google omits the refresh token on some re-consents; keep the one we had.
       refreshToken: refreshToken ?? existing?.refreshToken ?? null,

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { PlatformLogo } from "./platform-logo";
 import { colors } from "./tokens.stylex";
@@ -54,10 +55,17 @@ export function ChannelAvatar({
   /** The platform's mark in the corner; off where the platform is said another way. */
   badge?: boolean;
 }) {
+  // A picture that does not load shows the name's initial, like none at all.
+  const [broken, setBroken] = useState<string | null>(null);
   return (
     <span {...stylex.props(styles.root, styles[size])}>
-      {avatar ? (
-        <img src={avatar} alt="" {...stylex.props(styles.picture)} />
+      {avatar && broken !== avatar ? (
+        <img
+          src={avatar}
+          alt=""
+          onError={() => setBroken(avatar)}
+          {...stylex.props(styles.picture)}
+        />
       ) : (
         <span aria-hidden="true" {...stylex.props(styles.picture, styles.initial)}>
           {name.trim().charAt(0).toUpperCase()}

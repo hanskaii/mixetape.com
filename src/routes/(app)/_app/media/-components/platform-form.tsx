@@ -305,7 +305,7 @@ export function PlatformForm({
                 value={text}
                 onChange={(event) => onChange(field.key, event.target.value || undefined)}
               >
-                <option value="">Default</option>
+                <option value="">{field.emptyLabel ?? "Default"}</option>
                 {field.options?.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

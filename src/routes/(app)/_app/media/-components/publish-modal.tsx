@@ -13,7 +13,12 @@ import { PlatformLogo } from "#/components/ui/platform-logo";
 import { Segmented } from "#/components/ui/segmented";
 import { Textarea } from "#/components/ui/textarea";
 import type { JsonValue } from "#/database/schema";
-import { getTikTokCreators, planSelection, publishSelection } from "#/modules/library/library.fn";
+import {
+  getPinterestBoards,
+  getTikTokCreators,
+  planSelection,
+  publishSelection,
+} from "#/modules/library/library.fn";
 import { useQuery } from "@tanstack/react-query";
 import type { PlanRow } from "#/modules/library/publish.service";
 import type { Field as FieldSpec } from "#/modules/social/fields";
@@ -468,6 +473,15 @@ export function PublishModal({
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
+  // Pinterest's boards, read from the first Pinterest account chosen: a Pin goes to one of
+  // its numeric board ids, which the form offers by name.
+  const pinterestAccounts = chosen.filter((id) => accountsById.get(id)?.provider === "pinterest");
+  const boards = useQuery({
+    queryKey: ["pinterest-boards", pinterestAccounts[0]],
+    queryFn: () => getPinterestBoards({ data: { accountId: pinterestAccounts[0] ?? "" } }),
+    enabled: pinterestAccounts.length > 0,
+    staleTime: 60_000,
+  });
   const tiktokValues = metadata.platforms.tiktok;
   const tiktokBlock = tiktokIds.length
     ? tiktokProblem({
@@ -856,7 +870,32 @@ export function PublishModal({
                   <PlatformForm
                     images={coverImages}
                     key={activeTab.id}
-                    fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
+                    fields={activeTab.fields
+                      .filter((field) => singleVideo || !field.videoOnly)
+                      .map((field) =>
+                        activeTab.id === "pinterest" && field.key === "boardId"
+                          ? {
+                              ...field,
+                              type: "select" as const,
+                              emptyLabel: boards.isPending
+                                ? "Loading boards…"
+                                : boards.error
+                                  ? "Could not load boards"
+                                  : boards.data?.length
+                                    ? "Choose a board"
+                                    : "No boards yet",
+                              options: (boards.data ?? []).map((board) => ({
+                                value: board.id,
+                                label: board.title,
+                              })),
+                              hint: boards.error
+                                ? boards.error.message
+                                : pinterestAccounts.length > 1
+                                  ? `Boards of ${accountsById.get(pinterestAccounts[0])?.name}; a Pin goes to the same board on every Pinterest account chosen, so post to one at a time`
+                                  : "The board the Pin goes to",
+                            }
+                          : field,
+                      )}
                     values={overrides[activeTab.id] ?? {}}
                     caption={caption}
                     onChange={(key, value) => setOverride(activeTab.id, key, value)}

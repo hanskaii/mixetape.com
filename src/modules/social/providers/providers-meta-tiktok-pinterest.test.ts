@@ -303,6 +303,17 @@ describe("pinterest", () => {
     expect(() => pinterestProvider.metadata.validate({}, "caption")).toThrow("boardId");
   });
 
+  it("takes a board's numeric id only, so a typo is refused before go-live", () => {
+    expect(() => pinterestProvider.metadata.validate({ boardId: "sample" }, "")).toThrow(
+      /numeric id/,
+    );
+    expect(
+      pinterestProvider.metadata.validate({ boardId: " 840625155387196173 " }, ""),
+    ).toMatchObject({
+      boardId: "840625155387196173",
+    });
+  });
+
   it("pins an image by URL to the chosen board", async () => {
     const calls = scriptFetch([Response.json({ id: "pin-7" })]);
     const result = await pinterestProvider.upload(

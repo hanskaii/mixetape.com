@@ -5,6 +5,7 @@ import * as brands from "#/modules/social/brands.service";
 import { platformFields } from "#/modules/social/fields";
 import { getProvider } from "#/modules/social/providers";
 import * as social from "#/modules/social/social.service";
+import { listCollections } from "#/modules/social/platform.service";
 import { tiktokCreatorInfo } from "#/modules/social/providers/tiktok/creator";
 import * as files from "#/modules/storage/files.service";
 import * as groups from "./groups.service";
@@ -166,4 +167,19 @@ export const getTikTokCreators = createServerFn({ method: "POST" })
         return { accountId, name: account.name.trim(), ...creator };
       }),
     );
+  });
+
+/**
+ * The boards of a Pinterest account, for the Board choice in the publish form: Pinterest
+ * takes a board's numeric id, which nobody should have to look up.
+ */
+export const getPinterestBoards = createServerFn({ method: "POST" })
+  .validator((data: { accountId: string }) => ({ accountId: String(data?.accountId ?? "") }))
+  .handler(async ({ data }) => {
+    const boards = await listCollections(await payingUserId(), data.accountId);
+    return boards.map((board) => ({
+      id: board.id,
+      title: board.title,
+      visibility: board.visibility ?? null,
+    }));
   });

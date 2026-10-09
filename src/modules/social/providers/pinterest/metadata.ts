@@ -32,8 +32,18 @@ const https = (name: string) => (value: JsonValue) => {
   return url.startsWith("https://") ? url : fail(`${name} must be a public https URL`);
 };
 
+/** Pinterest's board ids are numbers; anything else is refused by Pinterest at go-live. */
+const boardId = (value: JsonValue) => {
+  const id = typeof value === "string" ? value.trim() : fail("boardId must be text");
+  return /^\d{1,64}$/.test(id)
+    ? id
+    : fail(
+        `boardId must be a board's numeric id, not "${id.slice(0, 40)}": choose one of the account's boards (list its collections)`,
+      );
+};
+
 const FIELDS: Record<string, (value: JsonValue) => JsonValue> = {
-  boardId: text("boardId", 64),
+  boardId,
   title: text("title", 100),
   description: text("description", 800),
   link: https("link"),

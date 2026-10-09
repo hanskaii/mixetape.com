@@ -23,6 +23,8 @@ export type Field = {
   caption?: boolean;
   /** Only means something for a single video (a cover, a Reel/video choice). */
   videoOnly?: boolean;
+  /** For a select: the text of its empty option, where "Default" does not fit. */
+  emptyLabel?: string;
 };
 
 /** Fields about a single video: covers, the Reel/video choice, feed sharing for Reels. */
