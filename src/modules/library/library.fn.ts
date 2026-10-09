@@ -5,6 +5,7 @@ import * as brands from "#/modules/social/brands.service";
 import { platformFields } from "#/modules/social/fields";
 import { getProvider } from "#/modules/social/providers";
 import * as social from "#/modules/social/social.service";
+import { tiktokCreatorInfo } from "#/modules/social/providers/tiktok/creator";
 import * as files from "#/modules/storage/files.service";
 import * as groups from "./groups.service";
 import * as publishing from "./publish.service";
@@ -144,4 +145,25 @@ export const publishSelection = createServerFn({ method: "POST" })
       await groups.updateGroup(userId, data.groupId, { title, caption, description });
     }
     return result;
+  });
+
+/**
+ * TikTok's creator info for the chosen accounts, read fresh each time TikTok's form opens
+ * (TikTok's Direct Post rules): who the post goes to, the privacy levels and interactions
+ * each allows, its longest video, or why it cannot post now.
+ */
+export const getTikTokCreators = createServerFn({ method: "POST" })
+  .validator((data: { accountIds: string[] }) => ({
+    accountIds: (Array.isArray(data?.accountIds) ? data.accountIds : []).map(String).slice(0, 20),
+  }))
+  .handler(async ({ data }) => {
+    const userId = await payingUserId();
+    return Promise.all(
+      data.accountIds.map(async (accountId) => {
+        const account = await social.loadAccount(userId, accountId);
+        if (account.provider !== "tiktok") throw new Error("Not a TikTok account");
+        const creator = await tiktokCreatorInfo(await social.accessTokenFor(account));
+        return { accountId, name: account.name.trim(), ...creator };
+      }),
+    );
   });

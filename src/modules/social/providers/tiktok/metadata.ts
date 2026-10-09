@@ -24,6 +24,10 @@ export type TikTokVideoMeta = {
   coverFrameMs?: number;
   /** Label the video as AI-generated content. */
   isAigc?: boolean;
+  /** Commercial content: promotes the creator's own business ("Promotional content"). */
+  brandOrganic?: boolean;
+  /** Commercial content: promotes a third party ("Paid partnership"); not with SELF_ONLY. */
+  brandContent?: boolean;
 };
 
 const fail = (message: string): never => {
@@ -52,6 +56,8 @@ const FIELDS: Record<string, (value: JsonValue) => JsonValue> = {
       ? value
       : fail("coverFrameMs must be a whole number of milliseconds"),
   isAigc: bool("isAigc"),
+  brandOrganic: bool("brandOrganic"),
+  brandContent: bool("brandContent"),
 };
 
 export const tiktokMetadata: MetadataSpec = {
@@ -64,6 +70,9 @@ export const tiktokMetadata: MetadataSpec = {
       metadata[key] = check(value);
     }
     if (metadata.title === undefined && caption?.trim()) metadata.title = title(caption);
+    // TikTok: branded content is public or friends-only, never private.
+    if (metadata.brandContent === true && (metadata.privacyLevel ?? "SELF_ONLY") === "SELF_ONLY")
+      fail("Branded content visibility cannot be set to private (SELF_ONLY)");
     return metadata;
   },
 
@@ -83,6 +92,14 @@ export const tiktokMetadata: MetadataSpec = {
       disableStitch: { type: "boolean" },
       coverFrameMs: { type: "number", description: "Cover frame, ms from the start" },
       isAigc: { type: "boolean", description: "Label as AI-generated content" },
+      brandOrganic: {
+        type: "boolean",
+        description: "Promotes the creator's own business: labeled Promotional content",
+      },
+      brandContent: {
+        type: "boolean",
+        description: "Promotes a third party: labeled Paid partnership; not with SELF_ONLY",
+      },
     },
   },
 };

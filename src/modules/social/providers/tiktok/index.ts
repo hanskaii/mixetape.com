@@ -94,6 +94,8 @@ export const tiktokProvider: SocialProvider = {
               disable_stitch: meta.disableStitch ?? false,
               video_cover_timestamp_ms: meta.coverFrameMs,
               is_aigc: meta.isAigc,
+              brand_organic_toggle: meta.brandOrganic ?? false,
+              brand_content_toggle: meta.brandContent ?? false,
             },
             source_info: {
               source: "FILE_UPLOAD",

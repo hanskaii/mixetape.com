@@ -88,6 +88,7 @@ export function PublishButton({
   disabled,
   busy,
   onSubmit,
+  reason,
 }: {
   when: "now" | "later";
   at: string;
@@ -98,6 +99,8 @@ export function PublishButton({
   disabled: boolean;
   busy: boolean;
   onSubmit: () => void;
+  /** Why it is disabled, shown on hover (a disabled button shows no title of its own). */
+  reason?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const time = new Date(at);
@@ -106,7 +109,7 @@ export function PublishButton({
   const Icon = when === "now" ? PaperPlaneTilt : CalendarBlank;
 
   return (
-    <div {...stylex.props(styles.group)}>
+    <div title={disabled && reason ? reason : undefined} {...stylex.props(styles.group)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={

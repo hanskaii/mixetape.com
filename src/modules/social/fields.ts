@@ -36,6 +36,9 @@ const HIDDEN = new Set([
   "playlistIds",
   "coverFrameMs",
   "coverFrameSeconds",
+  // TikTok's commercial disclosure has its own controls in TikTok's form.
+  "brandOrganic",
+  "brandContent",
 ]);
 
 type Property = {

@@ -13,7 +13,8 @@ import { PlatformLogo } from "#/components/ui/platform-logo";
 import { Segmented } from "#/components/ui/segmented";
 import { Textarea } from "#/components/ui/textarea";
 import type { JsonValue } from "#/database/schema";
-import { planSelection, publishSelection } from "#/modules/library/library.fn";
+import { getTikTokCreators, planSelection, publishSelection } from "#/modules/library/library.fn";
+import { useQuery } from "@tanstack/react-query";
 import type { PlanRow } from "#/modules/library/publish.service";
 import type { Field as FieldSpec } from "#/modules/social/fields";
 import type { FileView } from "#/modules/storage/files.service";
@@ -22,6 +23,7 @@ import { selectionSummary } from "../-lib/format";
 import { PostPreview } from "./post-preview";
 import { PublishButton } from "./publish-button";
 import { PlatformForm } from "./platform-form";
+import { TikTokConsent, TikTokForm, tiktokProblem } from "./tiktok-form";
 import { Spinner } from "#/components/ui/spinner";
 
 type Values = Record<string, JsonValue>;
@@ -360,6 +362,8 @@ export function PublishModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  // TikTok's commercial content disclosure: off until the person turns it on.
+  const [tiktokDisclose, setTiktokDisclose] = useState(false);
   const planned = useRef("");
 
   const singleVideo = files.length === 1 && files[0].kind === "video";
@@ -368,8 +372,21 @@ export function PublishModal({
     ...files.filter((file) => file.kind === "image"),
     ...images.filter((image) => !files.some((file) => file.id === image.id)),
   ];
+  // TikTok's interactions stay off until the person allows them (TikTok's Direct Post rules),
+  // so they are sent as off unless the form turned them on.
   const metadata = useMemo(
-    () => ({ ...start.shared, platforms: overrides }),
+    () => ({
+      ...start.shared,
+      platforms: {
+        ...overrides,
+        tiktok: {
+          disableComment: true,
+          disableDuet: true,
+          disableStitch: true,
+          ...overrides.tiktok,
+        },
+      },
+    }),
     [start.shared, overrides],
   );
 
@@ -441,6 +458,27 @@ export function PublishModal({
   };
 
   const chosenRows = chosen.flatMap((id) => rows.get(id) ?? []);
+  // TikTok's creator info, read whenever the TikTok accounts chosen change, for its form and
+  // its checks (who the post goes to, what each account allows).
+  const tiktokIds = chosen.filter((id) => accountsById.get(id)?.provider === "tiktok");
+  const creators = useQuery({
+    queryKey: ["tiktok-creators", tiktokIds],
+    queryFn: () => getTikTokCreators({ data: { accountIds: tiktokIds } }),
+    enabled: tiktokIds.length > 0,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+  const tiktokValues = metadata.platforms.tiktok;
+  const tiktokBlock = tiktokIds.length
+    ? tiktokProblem({
+        creators: creators.data,
+        loading: creators.isPending,
+        failed: creators.error ? creators.error.message || "TikTok could not be reached." : null,
+        values: tiktokValues,
+        disclose: tiktokDisclose,
+        videoMs: singleVideo ? (files[0].durationMs ?? null) : null,
+      })
+    : null;
   const ready = chosenRows.filter((row) => row.ready);
   const blockedRows = chosenRows.filter((row) => !row.ready);
   // A problem a field can fix is said at that field.
@@ -559,6 +597,14 @@ export function PublishModal({
               The files leave your library once every post is out. Until then each post can be
               changed or cancelled in Publish.
             </ModalDescription>
+            {result.scheduled.some(
+              (row) => accountsById.get(row.accountId)?.provider === "tiktok",
+            ) && (
+              <ModalDescription>
+                TikTok can take a few minutes to process a video before it shows on your profile;
+                its progress shows in Publish.
+              </ModalDescription>
+            )}
           </ModalHeader>
           {left.length > 0 && (
             <ul {...stylex.props(styles.leftList)}>
@@ -789,14 +835,33 @@ export function PublishModal({
                     ),
                   }))}
                 />
-                <PlatformForm
-                  images={coverImages}
-                  key={activeTab.id}
-                  fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
-                  values={overrides[activeTab.id] ?? {}}
-                  caption={caption}
-                  onChange={(key, value) => setOverride(activeTab.id, key, value)}
-                />
+                {activeTab.id === "tiktok" ? (
+                  <TikTokForm
+                    creators={creators.data}
+                    loading={creators.isPending}
+                    failed={creators.error?.message ?? null}
+                    values={tiktokValues}
+                    caption={caption}
+                    disclose={tiktokDisclose}
+                    onDisclose={(on) => {
+                      setTiktokDisclose(on);
+                      if (!on) {
+                        setOverride("tiktok", "brandOrganic", undefined);
+                        setOverride("tiktok", "brandContent", undefined);
+                      }
+                    }}
+                    onChange={(key, value) => setOverride("tiktok", key, value)}
+                  />
+                ) : (
+                  <PlatformForm
+                    images={coverImages}
+                    key={activeTab.id}
+                    fields={activeTab.fields.filter((field) => singleVideo || !field.videoOnly)}
+                    values={overrides[activeTab.id] ?? {}}
+                    caption={caption}
+                    onChange={(key, value) => setOverride(activeTab.id, key, value)}
+                  />
+                )}
               </section>
             )}
           </div>
@@ -838,9 +903,28 @@ export function PublishModal({
           </aside>
         </div>
 
+        {tiktokIds.length > 0 && (
+          // TikTok's consent line, right before the publish button.
+          <div className="flex justify-end px-5 pt-3 sm:px-6">
+            <TikTokConsent values={tiktokValues} />
+          </div>
+        )}
         <div {...stylex.props(styles.footer)}>
           {error ? (
             <p {...stylex.props(styles.status, styles.problem)}>{error}</p>
+          ) : tiktokBlock ? (
+            <p {...stylex.props(styles.status, styles.problem)}>
+              TikTok — {tiktokBlock}{" "}
+              {activeTab?.id !== "tiktok" && (
+                <button
+                  type="button"
+                  onClick={() => setTab("tiktok")}
+                  className="underline underline-offset-2"
+                >
+                  Open TikTok
+                </button>
+              )}
+            </p>
           ) : blockedRows.length ? (
             <p {...stylex.props(styles.status, styles.problem)}>
               {blockedRows[0].name} — {blockedRows[0].problems[0]}
@@ -858,7 +942,8 @@ export function PublishModal({
             onWhen={setWhen}
             onAt={setAt}
             count={ready.length}
-            disabled={busy || !ready.length || past}
+            disabled={busy || !ready.length || past || Boolean(tiktokBlock)}
+            reason={tiktokBlock}
             busy={busy}
             onSubmit={submit}
           />
