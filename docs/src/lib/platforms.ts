@@ -4,14 +4,14 @@
  * action works; these name and draw them.
  */
 export const PLATFORMS = [
-  { id: "youtube", name: "YouTube", icon: "ph:youtube-logo" },
-  { id: "facebook", name: "Facebook", icon: "ph:facebook-logo" },
-  { id: "instagram", name: "Instagram", icon: "ph:instagram-logo" },
-  { id: "threads", name: "Threads", icon: "ph:threads-logo" },
-  { id: "tiktok", name: "TikTok", icon: "ph:tiktok-logo" },
-  { id: "pinterest", name: "Pinterest", icon: "ph:pinterest-logo" },
-  { id: "bluesky", name: "Bluesky", icon: "ph:butterfly" },
-  { id: "mastodon", name: "Mastodon", icon: "ph:mastodon-logo" },
+  { id: "youtube", name: "YouTube", icon: "youtube" },
+  { id: "facebook", name: "Facebook", icon: "facebook" },
+  { id: "instagram", name: "Instagram", icon: "instagram" },
+  { id: "threads", name: "Threads", icon: "threads" },
+  { id: "tiktok", name: "TikTok", icon: "tiktok" },
+  { id: "pinterest", name: "Pinterest", icon: "pinterest" },
+  { id: "bluesky", name: "Bluesky", icon: "bluesky" },
+  { id: "mastodon", name: "Mastodon", icon: "mastodon" },
 ] as const;
 
 export type Platform = (typeof PLATFORMS)[number];

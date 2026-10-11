@@ -20,14 +20,14 @@ const LINKS: Record<string, string> = {
   "/agents/tips": "ph:sparkle",
   "/rest-api": "ph:code",
   "/api": "ph:books",
-  "/platforms/youtube": "ph:youtube-logo",
-  "/platforms/facebook": "ph:facebook-logo",
-  "/platforms/instagram": "ph:instagram-logo",
-  "/platforms/threads": "ph:threads-logo",
-  "/platforms/tiktok": "ph:tiktok-logo",
-  "/platforms/pinterest": "ph:pinterest-logo",
-  "/platforms/bluesky": "ph:butterfly",
-  "/platforms/mastodon": "ph:mastodon-logo",
+  "/platforms/youtube": "youtube",
+  "/platforms/facebook": "facebook",
+  "/platforms/instagram": "instagram",
+  "/platforms/threads": "threads",
+  "/platforms/tiktok": "tiktok",
+  "/platforms/pinterest": "pinterest",
+  "/platforms/bluesky": "bluesky",
+  "/platforms/mastodon": "mastodon",
 };
 
 const GROUPS: Record<string, string> = {

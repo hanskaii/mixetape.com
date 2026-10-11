@@ -1,14 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import {
-  Butterfly,
-  FacebookLogo,
-  InstagramLogo,
-  MastodonLogo,
-  PinterestLogo,
-  ThreadsLogo,
-  TiktokLogo,
-  YoutubeLogo,
-} from "@phosphor-icons/react";
+import { PlatformMark } from "#/components/ui/platform-logo";
 import { colors } from "../../../components/ui/tokens.stylex";
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';
@@ -16,20 +7,20 @@ const MONO = '"Geist Mono Variable", ui-monospace, monospace';
 // `soon`: mixetape has no app on that platform yet, so it cannot be connected — say so
 // rather than present it as live (PRODUCT.md, Honest surface).
 const PLATFORMS = [
-  { name: "TikTok", Icon: TiktokLogo, color: "bg-[#101010]", soon: false },
-  { name: "YouTube", Icon: YoutubeLogo, color: "bg-[#ff0033]", soon: false },
+  { name: "TikTok", id: "tiktok", color: "bg-[#101010]", soon: false },
+  { name: "YouTube", id: "youtube", color: "bg-[#ff0033]", soon: false },
   {
     name: "Instagram",
-    Icon: InstagramLogo,
+    id: "instagram",
     color: "bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045]",
     soon: false,
   },
-  { name: "Threads", Icon: ThreadsLogo, color: "bg-[#101010]", soon: false },
-  { name: "Facebook", Icon: FacebookLogo, color: "bg-[#1877f2]", soon: false },
-  { name: "Pinterest", Icon: PinterestLogo, color: "bg-[#e60023]", soon: false },
+  { name: "Threads", id: "threads", color: "bg-[#101010]", soon: false },
+  { name: "Facebook", id: "facebook", color: "bg-[#1877f2]", soon: false },
+  { name: "Pinterest", id: "pinterest", color: "bg-[#e60023]", soon: false },
   // Built; "soon" until their first live post has gone out.
-  { name: "Bluesky", Icon: Butterfly, color: "bg-[#1185fe]", soon: false },
-  { name: "Mastodon", Icon: MastodonLogo, color: "bg-[#6364ff]", soon: false },
+  { name: "Bluesky", id: "bluesky", color: "bg-[#1185fe]", soon: false },
+  { name: "Mastodon", id: "mastodon", color: "bg-[#6364ff]", soon: false },
 ] as const;
 
 const styles = stylex.create({
@@ -65,7 +56,7 @@ export function Platforms() {
         Publishes to
       </h2>
       <ul className="flex flex-wrap items-center gap-2.5" aria-label="Publishing platforms">
-        {PLATFORMS.map(({ name, Icon, color, soon }, index) => (
+        {PLATFORMS.map(({ name, id, color, soon }, index) => (
           <li key={name} className="group relative list-none">
             <span
               role="img"
@@ -73,7 +64,7 @@ export function Platforms() {
               aria-label={soon ? `${name}, coming soon` : name}
               className={`flex size-10 cursor-default items-center justify-center rounded-[10px] text-white shadow-[0_4px_10px_rgba(0,0,0,0.24)] ring-1 ring-black/10 outline-none transition-[transform,box-shadow] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:shadow-[0_12px_22px_rgba(0,0,0,0.3)] group-focus-within:-translate-y-1.5 group-focus-within:scale-110 motion-reduce:transform-none motion-reduce:transition-none dark:ring-white/20 ${index % 2 ? "group-hover:rotate-3" : "group-hover:-rotate-3"} ${color}`}
             >
-              <Icon size={23} weight="fill" aria-hidden="true" />
+              <PlatformMark provider={id} className="size-[23px]" />
             </span>
             <span
               aria-hidden="true"
