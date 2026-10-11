@@ -200,7 +200,7 @@ function ChannelsPage() {
                     />
                   }
                   title={account.name}
-                  meta={revokedNote(account) ?? account.handle ?? account.platformAccountId}
+                  meta={revokedNote(account) ?? account.handle ?? undefined}
                 >
                   <span {...stylex.props(styles.actions)}>
                     {account.locked ? (
