@@ -186,8 +186,9 @@ export function PublishBoard({
   };
 
   return (
-    // The full width, not a page's column: the more days side by side, the better.
-    <div className="flex w-full min-w-0 flex-col gap-5 px-4 py-4 md:px-7 md:py-6">
+    // The full width, not a page's column: the more days side by side, the better. And the
+    // height under the workspace header (3.75rem): the board scrolls inside it, both ways.
+    <div className="relative flex h-[calc(100dvh-3.75rem)] w-full min-w-0 flex-col gap-5 px-4 pt-4 md:px-7 md:pt-6">
       <div className="flex flex-wrap items-center gap-2">
         <Title className="m-0 mr-1 text-xl font-semibold tracking-tight text-foreground">
           <span className="sr-only">Publish: </span>
@@ -312,7 +313,7 @@ export function PublishBoard({
       />
 
       {selecting && (
-        <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-popover py-1.5 pr-1.5 pl-4 text-sm text-popover-foreground shadow-lg">
+        <div className="absolute bottom-6 left-1/2 z-20 flex w-max -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover py-1.5 pr-1.5 pl-4 text-sm text-popover-foreground shadow-lg">
           <span className="tabular-nums">
             {picked.size ? `${picked.size} selected` : "Pick scheduled posts"}
           </span>
@@ -418,7 +419,10 @@ function DayColumns({
 
   const columns = virtualizer.getVirtualItems();
   return (
-    <div ref={board} className="-mx-4 overflow-x-auto overscroll-x-contain pb-4 md:-mx-7">
+    <div
+      ref={board}
+      className="-mx-4 min-h-0 flex-1 overflow-auto overscroll-contain pb-6 md:-mx-7"
+    >
       {/* The month's full width, so the scrollbar is true; the rendered columns sit at their
           place in it, and the row takes the height of the tallest of them. No scroll
           snapping: it would only know the rendered columns and pull the board back to them. */}
@@ -474,7 +478,8 @@ const DayColumn = memo(function DayColumn({
       style={{ width }}
       className="flex shrink-0 flex-col gap-2.5"
     >
-      <header className="flex items-center gap-2.5">
+      {/* Stays at the top of the board as its posts scroll under it. */}
+      <header className="sticky top-0 z-10 flex items-center gap-2.5 bg-background pb-1">
         <span
           className={cn(
             "grid size-10 shrink-0 place-items-center rounded-xl border text-base font-semibold tabular-nums",
