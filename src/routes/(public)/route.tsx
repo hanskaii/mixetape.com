@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
 import Footer from "#/components/layouts/footer";
 import { AppHeader } from "#/components/layouts/app-header";
 import { colors } from "../../components/ui/tokens.stylex";
+import { Route as RootRoute } from "#/routes/__root";
 
 // The public site: landing page, privacy and the connect callback, in one bordered column
 // with the site header and footer.
@@ -34,6 +36,21 @@ const styles = stylex.create({
 });
 
 function PublicLayout() {
+  const router = useRouter();
+  const signedIn = Boolean(RootRoute.useRouteContext().session?.user);
+  // Someone signed in is likely to open the workspace from here. Its layout chunk carries the
+  // workspace's pending view (sidebar and the page's skeleton): fetched as soon as this page
+  // has loaded, so the first click shows that rather than a bare placeholder.
+  useEffect(() => {
+    if (!signedIn) return;
+    const preload = () => {
+      void router.loadRouteChunk(router.routesById["/(app)/_app"]);
+      void router.loadRouteChunk(router.routesById["/(app)/_app/publish/"]);
+    };
+    if (document.readyState === "complete") preload();
+    else window.addEventListener("load", preload, { once: true });
+    return () => window.removeEventListener("load", preload);
+  }, [router, signedIn]);
   return (
     <div {...stylex.props(styles.shell)}>
       <AppHeader />
