@@ -4,6 +4,7 @@ import { SignOut } from "@phosphor-icons/react/SignOut";
 import { Shield } from "@phosphor-icons/react/Shield";
 import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
 import { authClient } from "#/modules/auth/auth-client";
+import { refreshSession } from "#/modules/auth/auth.fn";
 import { Route as RootRoute } from "#/routes/__root";
 import { Button } from "#/components/ui/button";
 import { siteConfig } from "#/config/site";
@@ -95,7 +96,7 @@ export function HeaderUser() {
           <DropdownMenuItem
             onClick={async () => {
               await authClient.signOut();
-              router.invalidate();
+              refreshSession(router);
             }}
             className="text-destructive focus:bg-destructive/10 focus:text-destructive gap-2 cursor-pointer"
           >

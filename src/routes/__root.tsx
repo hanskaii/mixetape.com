@@ -1,5 +1,5 @@
 import { HeadContent, Scripts, createRootRouteWithContext, Link } from "@tanstack/react-router";
-import { getAuthSession } from "../modules/auth/auth.fn";
+import { sessionQuery } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
 import { Toaster } from "../components/ui/sonner";
 import { StyleXDev } from "../components/providers/stylex-dev";
@@ -86,8 +86,8 @@ function RootError({ error, reset }: { error: any; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
-    const session = await getAuthSession();
+  beforeLoad: async ({ context }) => {
+    const session = await context.queryClient.fetchQuery(sessionQuery);
     return {
       session,
       user: session?.user ?? null,
