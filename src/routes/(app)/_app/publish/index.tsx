@@ -1,7 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { CalendarBlank, ListBullets } from "@phosphor-icons/react";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
+import { ListBullets } from "@phosphor-icons/react/ListBullets";
 import { Segmented } from "#/components/ui/segmented";
+import { Skeleton } from "#/components/ui/skeleton";
+import { Page, PageHeader, Panel, PendingRows } from "#/components/layouts/workspace-page";
 import { getQueueData } from "#/modules/social/social.fn";
 import { siteConfig } from "#/config/site";
 import { calendarPostsQuery, getPublishAccounts } from "./-fn/calendar.fn";
@@ -38,7 +41,49 @@ export const Route = createFileRoute("/(app)/_app/publish/")({
   },
   head: () => ({ meta: [{ title: `Publish | ${siteConfig.name}` }] }),
   component: PublishPage,
+  pendingComponent: PublishPending,
 });
+
+// The calendar's frame (a month of cells) or the list's rows, before the posts arrive.
+function PublishPending() {
+  const { view = "calendar" } = Route.useSearch();
+  return (
+    <Page>
+      <PageHeader title="Publish" actions={<Skeleton className="h-8 w-28 rounded-full" />} />
+      {view === "list" ? (
+        <Panel>
+          <PendingRows rows={5} lead />
+        </Panel>
+      ) : (
+        <div role="status" aria-label="Loading" className="flex flex-col gap-3">
+          <Skeleton className="h-8 w-56 rounded-full" />
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="grid grid-cols-7 border-b border-border">
+              {Array.from({ length: 7 }, (_, day) => (
+                <div
+                  key={day}
+                  className="flex justify-center border-r border-border py-2.5 last:border-r-0"
+                >
+                  <Skeleton className="h-3 w-8" />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {Array.from({ length: 35 }, (_, cell) => (
+                <div
+                  key={cell}
+                  className="min-h-24 border-r border-b border-border p-1.5 sm:min-h-32 [&:nth-child(7n)]:border-r-0"
+                >
+                  <Skeleton className="size-6 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </Page>
+  );
+}
 
 function PublishPage() {
   const data = Route.useLoaderData();

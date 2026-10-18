@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowCounterClockwise, ArrowSquareOut, CalendarBlank, X } from "@phosphor-icons/react";
+import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
+import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
+import { X } from "@phosphor-icons/react/X";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { FeedbackButton } from "#/components/modals/feedback-button";

@@ -1,6 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import { UploadSimple, Check, WarningCircle } from "@phosphor-icons/react";
+import { UploadSimple } from "@phosphor-icons/react/UploadSimple";
+import { Check } from "@phosphor-icons/react/Check";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { authClient } from "#/modules/auth/auth-client";
 import { refreshSession } from "#/modules/auth/auth.fn";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
@@ -11,6 +13,7 @@ import { Textarea } from "#/components/ui/textarea";
 import { siteConfig } from "#/config/site";
 import { uploadAvatar } from "#/modules/storage/browser-upload";
 import { Spinner } from "#/components/ui/spinner";
+import { Skeleton } from "#/components/ui/skeleton";
 
 export const Route = createFileRoute("/(app)/_app/settings/profile")({
   loader: async () => {
@@ -26,7 +29,54 @@ export const Route = createFileRoute("/(app)/_app/settings/profile")({
     ],
   }),
   component: ProfileSettingsPage,
+  pendingComponent: ProfilePending,
 });
+
+const HEADER = {
+  title: "Your profile",
+  description: "The name and image that represent you in mixetape.",
+};
+
+// The form's labels as they are, with the fields waiting on the loader's profile.
+function ProfilePending() {
+  const fields = [
+    { label: "Profile Photo", field: <Skeleton className="size-12 rounded-full" /> },
+    { label: "Username Handle", field: <Skeleton className="h-9 w-full rounded-lg" /> },
+    { label: "Bio", field: <Skeleton className="h-20 w-full rounded-lg" /> },
+  ];
+  return (
+    <Page>
+      <PageHeader {...HEADER} />
+      <div
+        role="status"
+        aria-label="Loading"
+        className="bg-card rounded-2xl ring-1 ring-foreground/10 p-5 sm:p-6 flex flex-col gap-4"
+      >
+        <div>
+          <h2 className="text-base font-bold font-display text-foreground tracking-tight">
+            Profile Details
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Manage your public display name, handle, bio, and profile avatar.
+          </p>
+        </div>
+        <div className="flex flex-col divide-y divide-border/60">
+          {fields.map(({ label, field }) => (
+            <div
+              key={label}
+              className="py-3.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            >
+              <span className="sm:w-48 shrink-0 text-xs font-semibold text-foreground">
+                {label}
+              </span>
+              <div className="flex-1 max-w-md">{field}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Page>
+  );
+}
 
 function ProfileSettingsPage() {
   const router = useRouter();
@@ -97,10 +147,7 @@ function ProfileSettingsPage() {
 
   return (
     <Page>
-      <PageHeader
-        title="Your profile"
-        description="The name and image that represent you in mixetape."
-      />
+      <PageHeader {...HEADER} />
       {message && (
         <div
           className={`flex items-center gap-2 p-3.5 rounded-2xl text-xs font-medium ring-1 ${

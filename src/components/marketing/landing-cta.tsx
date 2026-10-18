@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { toast } from "sonner";
 import { useModal } from "#/components/providers/modal-providers";
 import { Spinner } from "#/components/ui/spinner";

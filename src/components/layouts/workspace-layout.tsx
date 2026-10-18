@@ -1,17 +1,15 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import {
-  CalendarDots,
-  FileText,
-  Gear,
-  Key,
-  PlugsConnected,
-  Robot,
-  ShieldCheck,
-  CreditCard,
-  Images,
-} from "@phosphor-icons/react";
+import { CalendarDots } from "@phosphor-icons/react/CalendarDots";
+import { FileText } from "@phosphor-icons/react/FileText";
+import { Gear } from "@phosphor-icons/react/Gear";
+import { Key } from "@phosphor-icons/react/Key";
+import { PlugsConnected } from "@phosphor-icons/react/PlugsConnected";
+import { Robot } from "@phosphor-icons/react/Robot";
+import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
+import { CreditCard } from "@phosphor-icons/react/CreditCard";
+import { Images } from "@phosphor-icons/react/Images";
 import {
   Sidebar,
   SidebarGroup,

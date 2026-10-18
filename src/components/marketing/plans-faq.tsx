@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Plus } from "@phosphor-icons/react";
+import { Plus } from "@phosphor-icons/react/Plus";
 import { siteConfig } from "#/config/site";
 import {
   DATA_KEPT_DAYS,

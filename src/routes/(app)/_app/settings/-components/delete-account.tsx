@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Trash } from "@phosphor-icons/react";
+import { Trash } from "@phosphor-icons/react/Trash";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,

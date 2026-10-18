@@ -9,6 +9,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Segmented } from "#/components/ui/segmented";
 import { Notice, Page, PageHeader, Panel } from "#/components/layouts/workspace-page";
+import { Skeleton } from "#/components/ui/skeleton";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";
 import type { GroupView } from "#/modules/library/groups.service";
@@ -37,7 +38,17 @@ export const Route = createFileRoute("/(app)/_app/media/")({
   loader: () => getLibraryData(),
   head: () => ({ meta: [{ title: `Media & Storage | ${siteConfig.name}` }] }),
   component: MediaPage,
+  pendingComponent: MediaPending,
 });
+
+const HEADER = {
+  title: "Media & Storage",
+  description:
+    "Drop your videos and images here. Put what goes out together in a carousel, then publish it to every channel it fits.",
+};
+
+// Tall and short cards, as thumbnails of mixed shapes fall in the masonry.
+const PENDING_TILES = ["16rem", "11rem", "13rem", "18rem", "12rem", "15rem", "10rem", "14rem"];
 
 type Kind = "all" | "video" | "image" | "group";
 const KINDS: { value: Kind; label: string }[] = [
@@ -164,7 +175,48 @@ const styles = stylex.create({
     paddingBlock: "1rem",
     paddingInline: "1.25rem",
   },
+  pendingSegmented: { borderRadius: radius.full, height: "2rem", width: "12rem" },
+  pendingSearch: {
+    borderRadius: radius.lg,
+    height: "2rem",
+    width: { default: "100%", "@media (min-width: 640px)": "16rem" },
+  },
+  pendingMasonry: { columnGap: "1rem", columnWidth: "12rem" },
+  pendingTile: (height: string) => ({
+    borderRadius: radius["2xl"],
+    breakInside: "avoid",
+    height,
+    marginBlockEnd: "1rem",
+  }),
 });
+
+function MediaPending() {
+  return (
+    <Page>
+      <PageHeader
+        {...HEADER}
+        actions={
+          <Button size="sm" disabled>
+            <UploadSimple /> Upload
+          </Button>
+        }
+      />
+      <Panel>
+        <div {...stylex.props(styles.body)} role="status" aria-label="Loading">
+          <div {...stylex.props(styles.toolbar)}>
+            <Skeleton style={styles.pendingSegmented} />
+            <Skeleton style={styles.pendingSearch} />
+          </div>
+          <div {...stylex.props(styles.pendingMasonry)}>
+            {PENDING_TILES.map((height, tile) => (
+              <Skeleton key={tile} style={styles.pendingTile(height)} />
+            ))}
+          </div>
+        </div>
+      </Panel>
+    </Page>
+  );
+}
 
 const fileHeight = (file: FileView, column: number) =>
   column * Math.min(Math.max(file.width && file.height ? file.height / file.width : 1, 0.56), 1.78);

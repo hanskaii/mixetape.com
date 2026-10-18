@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-  ArrowCounterClockwise,
-  ArrowSquareOut,
-  CaretDown,
-  CaretLeft,
-  CaretRight,
-  CaretUp,
-  Stack,
-  X,
-} from "@phosphor-icons/react";
+import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
+import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
+import { CaretRight } from "@phosphor-icons/react/CaretRight";
+import { CaretUp } from "@phosphor-icons/react/CaretUp";
+import { Stack } from "@phosphor-icons/react/Stack";
+import { X } from "@phosphor-icons/react/X";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {

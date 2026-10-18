@@ -1,19 +1,17 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import * as stylex from "@stylexjs/stylex";
-import {
-  ArrowSquareOut,
-  ArrowsClockwise,
-  Check,
-  DotsThree,
-  Plus,
-  LinkBreak,
-  Lock,
-  LockOpen,
-  PencilSimple,
-  Trash,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
+import { ArrowsClockwise } from "@phosphor-icons/react/ArrowsClockwise";
+import { Check } from "@phosphor-icons/react/Check";
+import { DotsThree } from "@phosphor-icons/react/DotsThree";
+import { Plus } from "@phosphor-icons/react/Plus";
+import { LinkBreak } from "@phosphor-icons/react/LinkBreak";
+import { Lock } from "@phosphor-icons/react/Lock";
+import { LockOpen } from "@phosphor-icons/react/LockOpen";
+import { PencilSimple } from "@phosphor-icons/react/PencilSimple";
+import { Trash } from "@phosphor-icons/react/Trash";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -29,6 +27,7 @@ import {
   Page,
   PageHeader,
   Panel,
+  PendingRows,
   Row,
   Rows,
 } from "#/components/layouts/workspace-page";
@@ -54,11 +53,36 @@ export const Route = createFileRoute("/(app)/_app/channels/")({
   loader: () => getChannelsData(),
   head: () => ({ meta: [{ title: `Channels | ${siteConfig.name}` }] }),
   component: ChannelsPage,
+  pendingComponent: ChannelsPending,
 });
+
+const HEADER = { title: "Channels", description: "Where your agents can post." };
 
 const styles = stylex.create({
   actions: { alignItems: "center", display: "flex", gap: "0.25rem" },
 });
+
+// A platform's panel of accounts, each with its avatar, before the loader brings them.
+function ChannelsPending() {
+  return (
+    <Page>
+      <PageHeader
+        {...HEADER}
+        actions={
+          <Button size="sm" disabled>
+            <Plus /> Connect
+          </Button>
+        }
+      />
+      <Panel>
+        <PendingRows rows={3} lead />
+      </Panel>
+      <Panel>
+        <PendingRows rows={2} lead />
+      </Panel>
+    </Page>
+  );
+}
 
 function ChannelsPage() {
   const router = useRouter();
@@ -153,8 +177,7 @@ function ChannelsPage() {
   return (
     <Page>
       <PageHeader
-        title="Channels"
-        description="Where your agents can post."
+        {...HEADER}
         actions={
           <Button size="sm" onClick={choosePlatform}>
             <Plus /> Connect

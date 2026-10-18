@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CaretDown,
-  CaretLeft,
-  CaretRight,
-  Check,
-  Funnel,
-  Globe,
-  SquaresFour,
-  Stack,
-} from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
+import { CaretRight } from "@phosphor-icons/react/CaretRight";
+import { Check } from "@phosphor-icons/react/Check";
+import { Funnel } from "@phosphor-icons/react/Funnel";
+import { Globe } from "@phosphor-icons/react/Globe";
+import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
+import { Stack } from "@phosphor-icons/react/Stack";
 import { BottomSheet } from "#/components/ui/bottom-sheet";
 import { Button } from "#/components/ui/button";
 import {

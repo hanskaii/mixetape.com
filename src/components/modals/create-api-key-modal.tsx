@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Check, Copy } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react/Check";
+import { Copy } from "@phosphor-icons/react/Copy";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";

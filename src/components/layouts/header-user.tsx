@@ -1,5 +1,9 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Gear, SignOut, Shield, SquaresFour, CreditCard } from "@phosphor-icons/react";
+import { Gear } from "@phosphor-icons/react/Gear";
+import { SignOut } from "@phosphor-icons/react/SignOut";
+import { Shield } from "@phosphor-icons/react/Shield";
+import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
+import { CreditCard } from "@phosphor-icons/react/CreditCard";
 import { authClient } from "#/modules/auth/auth-client";
 import { refreshSession } from "#/modules/auth/auth.fn";
 import { Route as RootRoute } from "#/routes/__root";

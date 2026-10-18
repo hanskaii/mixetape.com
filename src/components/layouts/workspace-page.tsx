@@ -136,8 +136,6 @@ const styles = stylex.create({
   // Placeholders in PagePending, sized like the text they stand in for.
   skeletonTitle: { height: "1.6rem", width: "9rem" },
   skeletonDescription: { height: "0.875rem", marginBlockStart: "0.5rem", width: "16rem" },
-  skeletonAction: { borderRadius: "999px", height: "2rem", width: "6.5rem" },
-  skeletonPanelTitle: { height: "0.75rem", width: "6rem" },
   skeletonLead: { borderRadius: "999px", height: "2rem", width: "2rem" },
   skeletonLineLong: { height: "0.8125rem", width: "60%" },
   skeletonLineShort: { height: "0.8125rem", width: "40%" },
@@ -274,37 +272,40 @@ export function Notice({
   return <p {...stylex.props(styles.notice, styles[tone])}>{children}</p>;
 }
 
+/** Rows of a Panel whose data is still on its way: a mark, a title and a line of meta. */
+export function PendingRows({ rows = 3, lead = false }: { rows?: number; lead?: boolean }) {
+  return (
+    <div role="status" aria-label="Loading">
+      {Array.from({ length: rows }, (_, row) => (
+        <div key={row} {...stylex.props(styles.row, lead ? styles.withLead : styles.noLead)}>
+          {lead && <Skeleton style={styles.skeletonLead} />}
+          <div {...stylex.props(styles.rowMain)}>
+            <Skeleton style={row % 2 ? styles.skeletonLineShort : styles.skeletonLineLong} />
+            <Skeleton style={styles.skeletonMeta} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
- * In place of a page whose loader is still out: the page's frame (header, a panel of rows)
- * so a click shows at once that it landed.
+ * The fallback for a page with no pending view of its own: a header and a panel of rows.
+ * Pages with a loader draw their own, with their real title and only the data left blank.
  */
 export function PagePending() {
   return (
-    <div role="status" aria-label="Loading">
-      <Page>
-        <div {...stylex.props(styles.header)}>
-          <div {...stylex.props(styles.heading)}>
-            <Skeleton style={styles.skeletonTitle} />
-            <Skeleton style={styles.skeletonDescription} />
-          </div>
-          <Skeleton style={styles.skeletonAction} />
+    <Page>
+      <div {...stylex.props(styles.header)}>
+        <div {...stylex.props(styles.heading)}>
+          <Skeleton style={styles.skeletonTitle} />
+          <Skeleton style={styles.skeletonDescription} />
         </div>
-        <div {...stylex.props(styles.panel)}>
-          <div {...stylex.props(styles.panelHeader)}>
-            <Skeleton style={styles.skeletonPanelTitle} />
-          </div>
-          {[0, 1, 2, 3, 4].map((row) => (
-            <div key={row} {...stylex.props(styles.row, styles.withLead)}>
-              <Skeleton style={styles.skeletonLead} />
-              <div {...stylex.props(styles.rowMain)}>
-                <Skeleton style={row % 2 ? styles.skeletonLineShort : styles.skeletonLineLong} />
-                <Skeleton style={styles.skeletonMeta} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </Page>
-    </div>
+      </div>
+      <Panel>
+        <PendingRows rows={5} lead />
+      </Panel>
+    </Page>
   );
 }
 

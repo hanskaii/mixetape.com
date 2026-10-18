@@ -1,4 +1,4 @@
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react/CircleNotch";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { customClassName } from "./stylex-utils";

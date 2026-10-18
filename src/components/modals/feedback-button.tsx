@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { ChatCircleDots } from "@phosphor-icons/react";
+import { ChatCircleDots } from "@phosphor-icons/react/ChatCircleDots";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {

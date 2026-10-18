@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { CalendarBlank, CaretDown, CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
+import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { BottomSheet } from "#/components/ui/bottom-sheet";
 import { Button } from "#/components/ui/button";
 import { cn } from "#/components/ui/utils";

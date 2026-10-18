@@ -87,7 +87,11 @@ function RootError({ error, reset }: { error: any; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.fetchQuery(sessionQuery);
+    // Kept from the server render: used at once, checked again behind the page when stale.
+    const session = await context.queryClient.ensureQueryData({
+      ...sessionQuery,
+      revalidateIfStale: true,
+    });
     return {
       session,
       user: session?.user ?? null,

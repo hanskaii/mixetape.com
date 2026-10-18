@@ -1,6 +1,8 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Check, Minus, Plus } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react/Check";
+import { Minus } from "@phosphor-icons/react/Minus";
+import { Plus } from "@phosphor-icons/react/Plus";
 import { colors } from "../ui/tokens.stylex";
 import { authClient } from "#/modules/auth/auth-client";
 import { checkoutRequest } from "#/modules/billing/billing.fn";

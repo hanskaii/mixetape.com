@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { CheckCircle, Info, Warning, WarningCircle } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { Info } from "@phosphor-icons/react/Info";
+import { Warning } from "@phosphor-icons/react/Warning";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import { Spinner } from "#/components/ui/spinner";
 

@@ -15,9 +15,11 @@ import {
   Page,
   PageHeader,
   Panel,
+  PendingRows,
   Row,
   Rows,
 } from "#/components/layouts/workspace-page";
+import { Skeleton } from "#/components/ui/skeleton";
 import { useConfirmModal, useModal } from "#/components/providers/modal-providers";
 import { CreateApiKeyModal } from "#/components/modals/create-api-key-modal";
 import { CreateWebhookModal } from "#/components/modals/create-webhook-modal";
@@ -42,7 +44,13 @@ export const Route = createFileRoute("/(app)/_app/api-keys/")({
   },
   head: () => ({ meta: [{ title: `API keys | ${siteConfig.name}` }] }),
   component: ApiKeysPage,
+  pendingComponent: ApiKeysPending,
 });
+
+const HEADER = {
+  title: "API keys",
+  description: "Agents and pipelines schedule, manage and upload through these.",
+};
 
 const USED: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
 
@@ -65,7 +73,40 @@ const styles = stylex.create({
     whiteSpace: "pre",
   },
   hint: { color: colors.mutedForeground, fontSize: "0.75rem", lineHeight: 1.55, margin: 0 },
+  pendingCode: { borderRadius: "0.625rem", height: "2.6rem" },
+  pendingHint: { height: "0.75rem", width: "80%" },
 });
+
+// The page as it will be, with only what the loader brings left blank.
+function ApiKeysPending() {
+  return (
+    <Page>
+      <PageHeader
+        {...HEADER}
+        actions={
+          <Button size="sm" disabled>
+            <Plus /> New key
+          </Button>
+        }
+      />
+      <Panel title="Connect an agent">
+        <div {...stylex.props(styles.connect)}>
+          <Skeleton style={styles.pendingCode} />
+          <Skeleton style={styles.pendingHint} />
+        </div>
+      </Panel>
+      <Panel title="Keys">
+        <PendingRows rows={2} />
+      </Panel>
+      <Panel title="Connected apps">
+        <PendingRows rows={1} />
+      </Panel>
+      <Panel title="Webhooks">
+        <PendingRows rows={1} />
+      </Panel>
+    </Page>
+  );
+}
 
 function ApiKeysPage() {
   const router = useRouter();
@@ -143,8 +184,7 @@ function ApiKeysPage() {
   return (
     <Page>
       <PageHeader
-        title="API keys"
-        description="Agents and pipelines schedule, manage and upload through these."
+        {...HEADER}
         actions={
           <Button size="sm" onClick={create}>
             <Plus /> New key

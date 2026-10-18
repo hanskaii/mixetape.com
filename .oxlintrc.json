@@ -4,7 +4,19 @@
   "categories": {
     "correctness": "error"
   },
-  "rules": {},
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@phosphor-icons/react",
+            "message": "Import each icon from its own file, e.g. @phosphor-icons/react/ArrowLeft: the package root makes the dev server load all 1,500 icons."
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "builtin": true,
     "browser": true

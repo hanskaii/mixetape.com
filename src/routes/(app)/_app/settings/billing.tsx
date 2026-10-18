@@ -9,6 +9,7 @@ import {
   Page,
   PageHeader,
   Panel,
+  PendingRows,
   Row,
   Rows,
 } from "#/components/layouts/workspace-page";
@@ -27,7 +28,24 @@ export const Route = createFileRoute("/(app)/_app/settings/billing")({
     ],
   }),
   component: BillingPage,
+  pendingComponent: BillingPending,
 });
+
+const HEADER = {
+  title: "Billing",
+  description: "Your plan, how many social accounts it covers, and its invoices.",
+};
+
+function BillingPending() {
+  return (
+    <Page>
+      <PageHeader {...HEADER} />
+      <Panel title="Plan">
+        <PendingRows rows={2} />
+      </Panel>
+    </Page>
+  );
+}
 
 const DATE: Intl.DateTimeFormatOptions = { dateStyle: "medium" };
 
@@ -80,10 +98,7 @@ function BillingPage() {
 
   return (
     <Page>
-      <PageHeader
-        title="Billing"
-        description="Your plan, how many social accounts it covers, and its invoices."
-      />
+      <PageHeader {...HEADER} />
 
       {checkout === "done" && !billing.plan && (
         <Notice>Checkout finished. Your plan appears here as soon as payment confirms it.</Notice>

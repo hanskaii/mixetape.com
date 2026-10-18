@@ -6,7 +6,7 @@ import {
   ModalTitle,
   ModalDescription,
 } from "#/components/ui/modal";
-import { Warning } from "@phosphor-icons/react";
+import { Warning } from "@phosphor-icons/react/Warning";
 import type { ReactNode } from "react";
 import { Spinner } from "#/components/ui/spinner";
 
