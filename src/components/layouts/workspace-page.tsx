@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { colors } from "../ui/tokens.stylex";
 
 /**
@@ -132,6 +133,12 @@ const styles = stylex.create({
     paddingInline: "1rem",
     textAlign: "center",
   },
+  pending: {
+    color: colors.mutedForeground,
+    display: "flex",
+    justifyContent: "center",
+    paddingBlock: "6rem",
+  },
   notice: {
     alignItems: "center",
     borderRadius: "0.75rem",
@@ -262,6 +269,15 @@ export function Notice({
   children: ReactNode;
 }) {
   return <p {...stylex.props(styles.notice, styles[tone])}>{children}</p>;
+}
+
+/** In place of a page whose loader is still out, so a click shows at once that it landed. */
+export function PagePending() {
+  return (
+    <div {...stylex.props(styles.pending)} role="status" aria-label="Loading">
+      <SpinnerGap className="size-5 animate-spin" />
+    </div>
+  );
 }
 
 /**

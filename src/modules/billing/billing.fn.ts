@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { currentUserId } from "#/modules/auth/auth.server";
 import { PLANS, slugOf, type Period, type PlanId } from "./plans";
@@ -10,6 +11,14 @@ import { billingOf, studioCheckout } from "./billing.service";
 export const getWorkspaceAccess = createServerFn({ method: "GET" }).handler(async () => {
   const billing = await billingOf(await currentUserId());
   return { allowed: billing.exempt || Boolean(billing.plan) };
+});
+
+// A grant is kept on the client for a while, so a click between workspace pages does not wait
+// on this round trip before the page's own loader. The workspace gate drops a refusal at once.
+export const workspaceAccessQuery = queryOptions({
+  queryKey: ["workspace-access"],
+  queryFn: () => getWorkspaceAccess(),
+  staleTime: 5 * 60_000,
 });
 
 /** The signed-in person's plan, for the billing page. */

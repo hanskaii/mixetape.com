@@ -8,6 +8,10 @@
     "enabled": true,
   },
   "upload_source_maps": true,
+  // D1 is in APAC; without this a request could run in Europe (an Indonesian ISP routed to
+  // Marseille) and pay an intercontinental round trip for every query. Smart Placement moves
+  // the Worker next to the database it keeps calling.
+  "placement": { "mode": "smart" },
   // The app lives on mixetape.com only; workers.dev would be a second origin for auth.
   "workers_dev": false,
   "routes": [
