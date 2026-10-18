@@ -1,5 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { Sun, Moon, Desktop } from "@phosphor-icons/react";
+import { Sun } from "@phosphor-icons/react/Sun";
+import { Moon } from "@phosphor-icons/react/Moon";
+import { Desktop } from "@phosphor-icons/react/Desktop";
 import { Button } from "../ui/button";
 
 type ThemeMode = "light" | "dark" | "auto";

@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { UploadSimple, Check, WarningCircle } from "@phosphor-icons/react";
 import { authClient } from "#/modules/auth/auth-client";
+import { refreshSession } from "#/modules/auth/auth.fn";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
 import { Button } from "#/components/ui/button";
 import { Page, PageHeader } from "#/components/layouts/workspace-page";
@@ -56,7 +57,7 @@ function ProfileSettingsPage() {
       await updateProfileData({ data: { image: uploadedUrl } });
 
       setMessage({ type: "success", text: "Avatar updated" });
-      router.invalidate();
+      refreshSession(router);
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Error uploading avatar" });
     } finally {
@@ -86,7 +87,7 @@ function ProfileSettingsPage() {
       });
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
-      router.invalidate();
+      refreshSession(router);
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Error saving profile" });
     } finally {

@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import QRCode from "qrcode";
 import { authClient } from "#/modules/auth/auth-client";
-import { getUserLinkedAccounts, unlinkUserAccount } from "#/modules/auth/auth.fn";
+import { getUserLinkedAccounts, unlinkUserAccount, refreshSession } from "#/modules/auth/auth.fn";
 import { Button } from "#/components/ui/button";
 import { Page, PageHeader } from "#/components/layouts/workspace-page";
 import { Input } from "#/components/ui/input";
@@ -191,7 +191,7 @@ function AccountSettingsPage() {
               return;
             }
             setTwoFactorEnabled(false);
-            router.invalidate();
+            refreshSession(router);
           } catch (err) {
             console.error("Failed to disable 2FA:", err);
           }
@@ -284,7 +284,7 @@ function AccountSettingsPage() {
         setTwoFactorEnabled(true);
         setIs2FAModalOpen(false);
         setTwoFactorDigits(["", "", "", "", "", ""]);
-        router.invalidate();
+        refreshSession(router);
       }
     } catch (err: any) {
       console.error("2FA verification exception:", err);
@@ -357,7 +357,7 @@ function AccountSettingsPage() {
       setEmailStep("input-email");
       setNewEmail("");
       setEmailDigits(["", "", "", "", "", ""]);
-      router.invalidate();
+      refreshSession(router);
     }, 1000);
   };
 

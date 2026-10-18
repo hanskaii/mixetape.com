@@ -1,12 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
-import {
-  CaretDown,
-  FolderSimplePlus,
-  PaperPlaneTilt,
-  Stack,
-  Trash,
-  X,
-} from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { FolderSimplePlus } from "@phosphor-icons/react/FolderSimplePlus";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { Stack } from "@phosphor-icons/react/Stack";
+import { Trash } from "@phosphor-icons/react/Trash";
+import { X } from "@phosphor-icons/react/X";
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,

@@ -5,6 +5,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { authClient } from "#/modules/auth/auth-client";
+import { refreshSession } from "#/modules/auth/auth.fn";
 import { useRouter } from "@tanstack/react-router";
 import { Spinner } from "#/components/ui/spinner";
 import { Turnstile } from "#/components/ui/turnstile";
@@ -137,7 +138,7 @@ export function LoginModal({
         setStep("email");
         setEmail("");
         setOtp("");
-        router.invalidate();
+        refreshSession(router);
         onSuccess?.();
       }
     } catch (err: any) {

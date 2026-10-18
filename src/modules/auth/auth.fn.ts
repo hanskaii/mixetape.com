@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+import type { useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { getAuth } from "./auth.server";
@@ -20,6 +22,20 @@ export const getAuthSession = createServerFn({ method: "GET" }).handler(async ()
     return null;
   }
 });
+
+// Fetched on the server render and then kept on the client, so a click between workspace pages
+// does not wait on this round trip (and its session lookup) before the page's own loader.
+export const sessionQuery = queryOptions({
+  queryKey: ["session"],
+  queryFn: () => getAuthSession(),
+  staleTime: 5 * 60_000,
+});
+
+/** After a sign-in, a sign-out or a change to the user: drop the kept session, then reload. */
+export function refreshSession(router: ReturnType<typeof useRouter>) {
+  router.options.context.queryClient.removeQueries({ queryKey: sessionQuery.queryKey });
+  return router.invalidate();
+}
 
 export const getUserLinkedAccounts = createServerFn({ method: "GET" }).handler(async () => {
   try {

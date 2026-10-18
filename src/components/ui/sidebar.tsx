@@ -5,7 +5,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
-import { SidebarSimple } from "@phosphor-icons/react";
+import { SidebarSimple } from "@phosphor-icons/react/SidebarSimple";
 
 import { colors } from "./tokens.stylex";
 

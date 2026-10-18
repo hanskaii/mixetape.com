@@ -1,7 +1,10 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { toast } from "sonner";
-import { PaperPlaneTilt, Plus, Power, Trash } from "@phosphor-icons/react";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { Plus } from "@phosphor-icons/react/Plus";
+import { Power } from "@phosphor-icons/react/Power";
+import { Trash } from "@phosphor-icons/react/Trash";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { colors } from "../../../../components/ui/tokens.stylex";

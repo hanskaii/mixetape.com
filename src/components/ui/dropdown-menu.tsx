@@ -3,11 +3,9 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
-import {
-  Check as CheckIcon,
-  CaretRight as ChevronRightIcon,
-  Circle as CircleIcon,
-} from "@phosphor-icons/react";
+import { Check as CheckIcon } from "@phosphor-icons/react/Check";
+import { CaretRight as ChevronRightIcon } from "@phosphor-icons/react/CaretRight";
+import { Circle as CircleIcon } from "@phosphor-icons/react/Circle";
 
 import { colors, radius } from "./tokens.stylex";
 import { customClassName } from "./stylex-utils";

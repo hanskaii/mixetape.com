@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { ImageSquare, X } from "@phosphor-icons/react";
+import { ImageSquare } from "@phosphor-icons/react/ImageSquare";
+import { X } from "@phosphor-icons/react/X";
 import { Button } from "#/components/ui/button";
 import { Field } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
-import { File as FileIcon } from "@phosphor-icons/react";
+import { File as FileIcon } from "@phosphor-icons/react/File";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors } from "../../../../../components/ui/tokens.stylex";
 import { imageThumb, videoFrame, type ThumbWidth } from "../-lib/thumbs";

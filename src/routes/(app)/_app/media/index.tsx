@@ -1,7 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { MagnifyingGlass, UploadSimple, WarningCircle } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
+import { UploadSimple } from "@phosphor-icons/react/UploadSimple";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";

@@ -1,6 +1,9 @@
 import { memo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { CalendarCheck, Check, Hourglass, Play } from "@phosphor-icons/react";
+import { CalendarCheck } from "@phosphor-icons/react/CalendarCheck";
+import { Check } from "@phosphor-icons/react/Check";
+import { Hourglass } from "@phosphor-icons/react/Hourglass";
+import { Play } from "@phosphor-icons/react/Play";
 import { Badge } from "#/components/ui/badge";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";

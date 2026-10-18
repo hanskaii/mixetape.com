@@ -1,5 +1,5 @@
 import { HeadContent, Scripts, createRootRouteWithContext, Link } from "@tanstack/react-router";
-import { getAuthSession } from "../modules/auth/auth.fn";
+import { sessionQuery } from "../modules/auth/auth.fn";
 import { ModalProvider } from "../components/providers/modal-providers";
 import { Toaster } from "../components/ui/sonner";
 import { StyleXDev } from "../components/providers/stylex-dev";
@@ -19,7 +19,9 @@ export interface MyRouterContext {
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
 
 import { Button } from "../components/ui/button";
-import { Warning, ArrowLeft, ArrowsClockwise } from "@phosphor-icons/react";
+import { Warning } from "@phosphor-icons/react/Warning";
+import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
+import { ArrowsClockwise } from "@phosphor-icons/react/ArrowsClockwise";
 
 function RootNotFound() {
   return (
@@ -84,8 +86,8 @@ function RootError({ error, reset }: { error: any; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
-    const session = await getAuthSession();
+  beforeLoad: async ({ context }) => {
+    const session = await context.queryClient.fetchQuery(sessionQuery);
     return {
       session,
       user: session?.user ?? null,

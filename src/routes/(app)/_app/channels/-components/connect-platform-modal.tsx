@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";

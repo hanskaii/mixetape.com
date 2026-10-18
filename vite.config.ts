@@ -11,9 +11,17 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 
 const config = defineConfig({
   // .wrangler holds local D1 files and the emails Miniflare writes; watching it made the
-  // page reload mid-login every time a sign-in code was "sent".
-  server: { allowedHosts: true, watch: { ignored: ["**/.wrangler/**"] } },
+  // page reload mid-login every time a sign-in code was "sent". docs/ (separate Astro project)
+  // and .claude/ (agent worktrees are full repo copies) are not part of the app.
+  server: {
+    allowedHosts: true,
+    watch: { ignored: ["**/.wrangler/**", "**/docs/**", "**/.claude/**"] },
+  },
   resolve: { tsconfigPaths: true },
+  // Icons are imported one file each (@phosphor-icons/react/X). Pre-bundling them made the SSR
+  // optimizer find them a page at a time and reload after each; served as-is they are small ESM.
+  optimizeDeps: { exclude: ["@phosphor-icons/react"] },
+  environments: { ssr: { optimizeDeps: { exclude: ["@phosphor-icons/react"] } } },
   plugins: [
     devtools(),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
