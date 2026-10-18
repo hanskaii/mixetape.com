@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react/Check";
+import { Copy } from "@phosphor-icons/react/Copy";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Modal, ModalDescription, ModalHeader, ModalTitle } from "#/components/ui/modal";

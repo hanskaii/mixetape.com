@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { Button } from "#/components/ui/button";
 import { useModal } from "#/components/providers/modal-providers";
 import { siteConfig } from "#/config/site";

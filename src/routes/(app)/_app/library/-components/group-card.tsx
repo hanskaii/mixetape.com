@@ -1,13 +1,11 @@
 import { memo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  CalendarCheck,
-  PaperPlaneTilt,
-  PencilSimpleLine,
-  Plus,
-  Robot,
-  Stack,
-} from "@phosphor-icons/react";
+import { CalendarCheck } from "@phosphor-icons/react/CalendarCheck";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { PencilSimpleLine } from "@phosphor-icons/react/PencilSimpleLine";
+import { Plus } from "@phosphor-icons/react/Plus";
+import { Robot } from "@phosphor-icons/react/Robot";
+import { Stack } from "@phosphor-icons/react/Stack";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import type { GroupView } from "#/modules/library/groups.service";

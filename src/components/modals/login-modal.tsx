@@ -6,7 +6,7 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { authClient } from "#/modules/auth/auth-client";
 import { useRouter } from "@tanstack/react-router";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   return (

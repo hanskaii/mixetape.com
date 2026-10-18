@@ -1,16 +1,14 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowCounterClockwise,
-  ArrowSquareOut,
-  CalendarBlank,
-  CaretDown,
-  ChatCircleDots,
-  Globe,
-  SpinnerGap,
-  SquaresFour,
-  X,
-} from "@phosphor-icons/react";
+import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
+import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { ChatCircleDots } from "@phosphor-icons/react/ChatCircleDots";
+import { Globe } from "@phosphor-icons/react/Globe";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
+import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
+import { X } from "@phosphor-icons/react/X";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {

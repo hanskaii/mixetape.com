@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
-import { CheckCircle, XCircle } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { XCircle } from "@phosphor-icons/react/XCircle";
 import { Button } from "#/components/ui/button";
 import { siteConfig } from "#/config/site";
 

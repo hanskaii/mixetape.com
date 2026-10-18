@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { FolderSimplePlus } from "@phosphor-icons/react";
+import { FolderSimplePlus } from "@phosphor-icons/react/FolderSimplePlus";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { FloatingBar } from "./floating-bar";
 import { FILES_TYPE } from "./group-card";

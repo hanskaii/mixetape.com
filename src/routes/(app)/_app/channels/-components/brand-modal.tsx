@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { Button } from "#/components/ui/button";
 import { ChannelAvatar } from "#/components/ui/channel-avatar";
 import { Input } from "#/components/ui/input";

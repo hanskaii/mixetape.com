@@ -1,14 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
-import {
-  Butterfly,
-  FacebookLogo,
-  InstagramLogo,
-  MastodonLogo,
-  PinterestLogo,
-  ThreadsLogo,
-  TiktokLogo,
-  YoutubeLogo,
-} from "@phosphor-icons/react";
+import { Butterfly } from "@phosphor-icons/react/Butterfly";
+import { FacebookLogo } from "@phosphor-icons/react/FacebookLogo";
+import { InstagramLogo } from "@phosphor-icons/react/InstagramLogo";
+import { MastodonLogo } from "@phosphor-icons/react/MastodonLogo";
+import { PinterestLogo } from "@phosphor-icons/react/PinterestLogo";
+import { ThreadsLogo } from "@phosphor-icons/react/ThreadsLogo";
+import { TiktokLogo } from "@phosphor-icons/react/TiktokLogo";
+import { YoutubeLogo } from "@phosphor-icons/react/YoutubeLogo";
 import { colors } from "../../../components/ui/tokens.stylex";
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';

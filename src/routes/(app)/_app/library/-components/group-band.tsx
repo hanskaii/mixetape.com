@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  CaretUp,
-  DotsThree,
-  PaperPlaneTilt,
-  PencilSimpleLine,
-  Robot,
-  Stack,
-  Trash,
-  UploadSimple,
-  X,
-} from "@phosphor-icons/react";
+import { CaretUp } from "@phosphor-icons/react/CaretUp";
+import { DotsThree } from "@phosphor-icons/react/DotsThree";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { PencilSimpleLine } from "@phosphor-icons/react/PencilSimpleLine";
+import { Robot } from "@phosphor-icons/react/Robot";
+import { Stack } from "@phosphor-icons/react/Stack";
+import { Trash } from "@phosphor-icons/react/Trash";
+import { UploadSimple } from "@phosphor-icons/react/UploadSimple";
+import { X } from "@phosphor-icons/react/X";
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,

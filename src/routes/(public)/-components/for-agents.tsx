@@ -1,6 +1,8 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { ArrowRight, Check, Copy } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
+import { Check } from "@phosphor-icons/react/Check";
+import { Copy } from "@phosphor-icons/react/Copy";
 import { siteConfig } from "#/config/site";
 import { colors } from "../../../components/ui/tokens.stylex";
 

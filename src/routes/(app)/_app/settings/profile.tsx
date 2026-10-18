@@ -1,6 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import { UploadSimple, Check, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
+import { UploadSimple } from "@phosphor-icons/react/UploadSimple";
+import { Check } from "@phosphor-icons/react/Check";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { authClient } from "#/modules/auth/auth-client";
 import { getProfileData, updateProfileData } from "./-fn/profile.fn";
 import { Button } from "#/components/ui/button";

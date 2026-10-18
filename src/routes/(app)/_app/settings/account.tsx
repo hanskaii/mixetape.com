@@ -1,15 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
-import {
-  EnvelopeSimple,
-  ArrowRight,
-  ArrowLeft,
-  Copy,
-  Check,
-  SpinnerGap,
-  WarningCircle,
-  DownloadSimple,
-} from "@phosphor-icons/react";
+import { EnvelopeSimple } from "@phosphor-icons/react/EnvelopeSimple";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
+import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
+import { Copy } from "@phosphor-icons/react/Copy";
+import { Check } from "@phosphor-icons/react/Check";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
+import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import QRCode from "qrcode";
 import { authClient } from "#/modules/auth/auth-client";
 import { getUserLinkedAccounts, unlinkUserAccount } from "#/modules/auth/auth.fn";

@@ -6,7 +6,8 @@ import {
   ModalTitle,
   ModalDescription,
 } from "#/components/ui/modal";
-import { Warning, SpinnerGap as Loader2 } from "@phosphor-icons/react";
+import { Warning } from "@phosphor-icons/react/Warning";
+import { SpinnerGap as Loader2 } from "@phosphor-icons/react/SpinnerGap";
 import type { ReactNode } from "react";
 
 export interface ConfirmModalProps {

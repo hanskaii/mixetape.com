@@ -1,6 +1,10 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { CalendarBlank, CaretDown, Check, PaperPlaneTilt, SpinnerGap } from "@phosphor-icons/react";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
+import { Check } from "@phosphor-icons/react/Check";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";

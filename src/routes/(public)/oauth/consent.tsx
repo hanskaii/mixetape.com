@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
 import { Button } from "#/components/ui/button";
 import { siteConfig } from "#/config/site";
 import { authClient } from "#/modules/auth/auth-client";

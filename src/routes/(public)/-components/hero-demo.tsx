@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
-import { CheckCircle, Robot } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { Robot } from "@phosphor-icons/react/Robot";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { colors } from "../../../components/ui/tokens.stylex";
 import { Bubble, BubbleContent } from "../../../components/ui/bubble";

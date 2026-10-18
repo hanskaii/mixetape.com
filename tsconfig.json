@@ -1,7 +1,7 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
-  // docs/ is its own Astro project with its own tsconfig.
-  "exclude": ["docs", "node_modules", "dist"],
+  // docs/ is its own Astro project with its own tsconfig; .claude/worktrees holds full repo copies.
+  "exclude": ["docs", "node_modules", "dist", ".claude", ".wrangler", ".tanstack"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

@@ -1,19 +1,17 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  BookmarkSimple,
-  CaretLeft,
-  CaretRight,
-  ChatCircle,
-  DotsThree,
-  Globe,
-  Heart,
-  PaperPlaneTilt,
-  Play,
-  Repeat,
-  ShareFat,
-  ThumbsUp,
-} from "@phosphor-icons/react";
+import { BookmarkSimple } from "@phosphor-icons/react/BookmarkSimple";
+import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
+import { CaretRight } from "@phosphor-icons/react/CaretRight";
+import { ChatCircle } from "@phosphor-icons/react/ChatCircle";
+import { DotsThree } from "@phosphor-icons/react/DotsThree";
+import { Globe } from "@phosphor-icons/react/Globe";
+import { Heart } from "@phosphor-icons/react/Heart";
+import { PaperPlaneTilt } from "@phosphor-icons/react/PaperPlaneTilt";
+import { Play } from "@phosphor-icons/react/Play";
+import { Repeat } from "@phosphor-icons/react/Repeat";
+import { ShareFat } from "@phosphor-icons/react/ShareFat";
+import { ThumbsUp } from "@phosphor-icons/react/ThumbsUp";
 import type { FileView } from "#/modules/storage/files.service";
 import { colors, radius } from "../../../../../components/ui/tokens.stylex";
 import { formatDuration } from "../-lib/format";

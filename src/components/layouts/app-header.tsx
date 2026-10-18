@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { Route as RootRoute } from "#/routes/__root";
 import { siteConfig } from "#/config/site";
 import { colors } from "../ui/tokens.stylex";

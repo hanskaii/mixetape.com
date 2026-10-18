@@ -8,7 +8,7 @@ import {
 import { cn } from "./utils";
 
 import { Button } from "#/components/ui/button.tsx";
-import { ArrowDownIcon } from "@phosphor-icons/react";
+import { ArrowDownIcon } from "@phosphor-icons/react/ArrowDown";
 
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,

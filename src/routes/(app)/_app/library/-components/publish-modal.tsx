@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { Check, CheckCircle, SpinnerGap, Warning, WarningCircle } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react/Check";
+import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
+import { Warning } from "@phosphor-icons/react/Warning";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { AvatarStack } from "#/components/ui/avatar-stack";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";

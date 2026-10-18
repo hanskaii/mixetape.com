@@ -1,17 +1,15 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import * as stylex from "@stylexjs/stylex";
-import {
-  ArrowSquareOut,
-  ArrowsClockwise,
-  Check,
-  DotsThree,
-  Plus,
-  LinkBreak,
-  PencilSimple,
-  Trash,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
+import { ArrowsClockwise } from "@phosphor-icons/react/ArrowsClockwise";
+import { Check } from "@phosphor-icons/react/Check";
+import { DotsThree } from "@phosphor-icons/react/DotsThree";
+import { Plus } from "@phosphor-icons/react/Plus";
+import { LinkBreak } from "@phosphor-icons/react/LinkBreak";
+import { PencilSimple } from "@phosphor-icons/react/PencilSimple";
+import { Trash } from "@phosphor-icons/react/Trash";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { Check } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react/Check";
 import { siteConfig } from "#/config/site";
 import { Button } from "#/components/ui/button";
 import { colors } from "../../components/ui/tokens.stylex";

@@ -3,7 +3,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
-import { X as XIcon } from "@phosphor-icons/react";
+import { X as XIcon } from "@phosphor-icons/react/X";
 import * as React from "react";
 
 import { colors, radius } from "./tokens.stylex";

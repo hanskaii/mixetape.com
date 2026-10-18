@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { PlugsConnected, WarningCircle } from "@phosphor-icons/react";
+import { PlugsConnected } from "@phosphor-icons/react/PlugsConnected";
+import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 import { colors } from "../../../../components/ui/tokens.stylex";
 
 const MONO = '"Geist Mono Variable", ui-monospace, monospace';
