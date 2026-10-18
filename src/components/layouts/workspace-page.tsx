@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
-import { SpinnerGap } from "@phosphor-icons/react/SpinnerGap";
+import { Skeleton } from "../ui/skeleton";
 import { colors } from "../ui/tokens.stylex";
 
 /**
@@ -133,12 +133,15 @@ const styles = stylex.create({
     paddingInline: "1rem",
     textAlign: "center",
   },
-  pending: {
-    color: colors.mutedForeground,
-    display: "flex",
-    justifyContent: "center",
-    paddingBlock: "6rem",
-  },
+  // Placeholders in PagePending, sized like the text they stand in for.
+  skeletonTitle: { height: "1.6rem", width: "9rem" },
+  skeletonDescription: { height: "0.875rem", marginBlockStart: "0.5rem", width: "16rem" },
+  skeletonAction: { borderRadius: "999px", height: "2rem", width: "6.5rem" },
+  skeletonPanelTitle: { height: "0.75rem", width: "6rem" },
+  skeletonLead: { borderRadius: "999px", height: "2rem", width: "2rem" },
+  skeletonLineLong: { height: "0.8125rem", width: "60%" },
+  skeletonLineShort: { height: "0.8125rem", width: "40%" },
+  skeletonMeta: { height: "0.625rem", marginBlockStart: "0.25rem", width: "25%" },
   notice: {
     alignItems: "center",
     borderRadius: "0.75rem",
@@ -271,11 +274,36 @@ export function Notice({
   return <p {...stylex.props(styles.notice, styles[tone])}>{children}</p>;
 }
 
-/** In place of a page whose loader is still out, so a click shows at once that it landed. */
+/**
+ * In place of a page whose loader is still out: the page's frame (header, a panel of rows)
+ * so a click shows at once that it landed.
+ */
 export function PagePending() {
   return (
-    <div {...stylex.props(styles.pending)} role="status" aria-label="Loading">
-      <SpinnerGap className="size-5 animate-spin" />
+    <div role="status" aria-label="Loading">
+      <Page>
+        <div {...stylex.props(styles.header)}>
+          <div {...stylex.props(styles.heading)}>
+            <Skeleton style={styles.skeletonTitle} />
+            <Skeleton style={styles.skeletonDescription} />
+          </div>
+          <Skeleton style={styles.skeletonAction} />
+        </div>
+        <div {...stylex.props(styles.panel)}>
+          <div {...stylex.props(styles.panelHeader)}>
+            <Skeleton style={styles.skeletonPanelTitle} />
+          </div>
+          {[0, 1, 2, 3, 4].map((row) => (
+            <div key={row} {...stylex.props(styles.row, styles.withLead)}>
+              <Skeleton style={styles.skeletonLead} />
+              <div {...stylex.props(styles.rowMain)}>
+                <Skeleton style={row % 2 ? styles.skeletonLineShort : styles.skeletonLineLong} />
+                <Skeleton style={styles.skeletonMeta} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Page>
     </div>
   );
 }
