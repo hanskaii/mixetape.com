@@ -31,14 +31,22 @@ export function monthDays(key: string): string[] {
   return days;
 }
 
+// A formatter costs far more to make than to use, and the board reads every post's day.
+const dayFormats = new Map<string, Intl.DateTimeFormat>();
+
 /** The calendar date of an instant in a time zone. */
 export function dayKey(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+  let format = dayFormats.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    dayFormats.set(timeZone, format);
+  }
+  const parts = format.formatToParts(date);
   const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
   return `${part("year")}-${part("month")}-${part("day")}`;
 }

@@ -33,11 +33,17 @@ export function postTitle(post: Post) {
   return (post.metadata as { title?: string } | null)?.title ?? post.caption ?? "Untitled post";
 }
 
-/** "5:30 PM" in the viewer's zone. */
-export const timeIn = (date: Date | string, timeZone: string) =>
-  new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(
-    new Date(date),
-  );
+const timeFormats = new Map<string, Intl.DateTimeFormat>();
+
+/** "5:30 PM" in the viewer's zone; one formatter per zone, made once. */
+export function timeIn(date: Date | string, timeZone: string) {
+  let format = timeFormats.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" });
+    timeFormats.set(timeZone, format);
+  }
+  return format.format(new Date(date));
+}
 
 export const COMMON_ZONES = [
   "Asia/Jakarta",

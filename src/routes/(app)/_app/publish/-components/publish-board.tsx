@@ -1,5 +1,17 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Ref,
+} from "react";
 import { Link } from "@tanstack/react-router";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CalendarPlus } from "@phosphor-icons/react/CalendarPlus";
@@ -58,17 +70,21 @@ const tone = (post: Post) =>
         ? "border-dashed border-border bg-card"
         : "border-border bg-card";
 
-function usePhone() {
-  const [phone, setPhone] = useState(false);
+function useMedia(query: string) {
+  const [matches, setMatches] = useState(false);
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 639px)");
-    const update = () => setPhone(query.matches);
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
     update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return phone;
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+  return matches;
 }
+
+/** A day column's width, and the space between columns and at the board's ends (px). */
+const COLUMN = 280;
+const GAP = 12;
 
 /**
  * The Publish board: a month as a strip of dates and a row of day columns, scrolled
@@ -95,7 +111,8 @@ export function PublishBoard({
   loading?: boolean;
   failed?: boolean;
 }) {
-  const phone = usePhone();
+  const phone = useMedia("(max-width: 639px)");
+  const wide = useMedia("(min-width: 768px)");
   const Title = useContext(PageTitleLevel);
   const { selected, setSelected } = useChannelSelection(accounts);
   const [shown, setShown] = useState<Shown>("all");
@@ -117,34 +134,32 @@ export function PublishBoard({
     for (const post of posts) {
       if (!chosen.has(post.accountId) || !shows(shown, post)) continue;
       const day = dayKey(new Date(post.scheduledAt), timeZone);
-      map.set(day, [...(map.get(day) ?? []), post]);
+      const list = map.get(day);
+      if (list) list.push(post);
+      else map.set(day, [post]);
     }
     for (const list of map.values())
       list.sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt));
     return map;
   }, [posts, selected, shown, timeZone]);
 
-  // Which columns are in view, for the strip: measured as the board scrolls.
-  const board = useRef<HTMLDivElement>(null);
-  const strip = useRef<HTMLElement>(null);
+  // The days in view, reported by the columns as they scroll: only a change re-renders the
+  // toolbar and the strip, not every frame of a scroll.
   const [inView, setInView] = useState<[string, string]>([anchor, anchor]);
-  const measure = () => {
-    const box = board.current;
-    if (!box) return;
-    const columns = [...box.querySelectorAll<HTMLElement>("[data-day]")];
-    const left = box.scrollLeft;
-    const right = left + box.clientWidth;
-    const seen = columns.filter(
-      (column) =>
-        column.offsetLeft + column.offsetWidth * 0.5 > left &&
-        column.offsetLeft + column.offsetWidth * 0.5 < right,
-    );
-    if (!seen.length) return;
-    const first = seen[0].dataset.day!;
-    setInView([first, seen.at(-1)!.dataset.day!]);
-    // The strip keeps the days in view on screen (a phone shows a week of it at a time).
+  const onRange = useCallback(
+    (first: string, last: string) =>
+      setInView((current) =>
+        current[0] === first && current[1] === last ? current : [first, last],
+      ),
+    [],
+  );
+  const board = useRef<BoardHandle>(null);
+  const strip = useRef<HTMLElement>(null);
+  // The strip keeps the days in view on screen (a phone shows a week of it at a time).
+  const firstInView = inView[0];
+  useEffect(() => {
     const row = strip.current;
-    const item = row?.querySelector<HTMLElement>(`[data-strip="${first}"]`);
+    const item = row?.querySelector<HTMLElement>(`[data-strip="${firstInView}"]`);
     if (
       row &&
       item &&
@@ -152,30 +167,19 @@ export function PublishBoard({
         item.offsetLeft + item.offsetWidth > row.scrollLeft + row.clientWidth)
     )
       row.scrollLeft = item.offsetLeft - row.clientWidth / 3;
-  };
-  const scrollTo = (day: string, behavior: ScrollBehavior) => {
-    const box = board.current;
-    const column = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
-    if (!box || !column) return;
-    box.scrollTo({
-      left: column.offsetLeft - (box.clientWidth - column.offsetWidth) / 2,
-      behavior,
-    });
-  };
-  // Open on the day asked for (today, or the 1st of another month), centred.
-  useLayoutEffect(() => {
-    scrollTo(anchor, "instant");
-    measure();
-  }, [anchor]);
+  }, [firstInView]);
 
   const pickedPosts = posts.filter((post) => picked.has(post.id));
-  const togglePick = (post: Post) =>
-    setPicked((current) => {
-      const next = new Set(current);
-      if (next.has(post.id)) next.delete(post.id);
-      else next.add(post.id);
-      return next;
-    });
+  const togglePick = useCallback(
+    (post: Post) =>
+      setPicked((current) => {
+        const next = new Set(current);
+        if (next.has(post.id)) next.delete(post.id);
+        else next.add(post.id);
+        return next;
+      }),
+    [],
+  );
   const stopSelecting = () => {
     setSelecting(false);
     setPicked(new Set());
@@ -264,7 +268,7 @@ export function PublishBoard({
               key={day}
               data-strip={day}
               type="button"
-              onClick={() => scrollTo(day, "smooth")}
+              onClick={() => board.current?.scrollTo(day)}
               aria-label={`${weekdayName(day, "long")} ${dayOfMonth(day)}, ${count} ${count === 1 ? "post" : "posts"}`}
               aria-current={day === today ? "date" : undefined}
               className={cn(
@@ -291,86 +295,21 @@ export function PublishBoard({
         })}
       </nav>
 
-      <div
+      <DayColumns
         ref={board}
-        onScroll={measure}
-        className="relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:-mx-7 md:px-7"
-      >
-        {days.map((day) => {
-          const list = byDay.get(day) ?? [];
-          const past = day < today;
-          return (
-            <section
-              key={day}
-              data-day={day}
-              aria-label={`${weekdayName(day, "long")} ${dayOfMonth(day)}`}
-              className="flex w-[78vw] max-w-[17.5rem] shrink-0 snap-center flex-col gap-2.5 sm:w-[17.5rem]"
-            >
-              <header className="flex items-center gap-2.5">
-                <span
-                  className={cn(
-                    "grid size-10 shrink-0 place-items-center rounded-xl border text-base font-semibold tabular-nums",
-                    day === today
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground",
-                  )}
-                >
-                  {dayOfMonth(day)}
-                </span>
-                <div className="min-w-0 flex-1 leading-tight">
-                  <p className="m-0 truncate text-sm font-semibold text-foreground">
-                    {day === today
-                      ? "Today"
-                      : day === addDays(today, 1)
-                        ? "Tomorrow"
-                        : weekdayName(day, "long")}
-                  </p>
-                  <p className="m-0 text-xs text-muted-foreground">
-                    {list.length} {list.length === 1 ? "post" : "posts"}
-                  </p>
-                </div>
-                {!past && (
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    aria-label={`Schedule on ${weekdayName(day, "long")} ${dayOfMonth(day)}`}
-                    render={<Link to="/media" />}
-                  >
-                    <Plus />
-                  </Button>
-                )}
-              </header>
-
-              {list.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  account={accountById.get(post.accountId)}
-                  timeZone={timeZone}
-                  selecting={selecting}
-                  picked={picked.has(post.id)}
-                  onPick={() => togglePick(post)}
-                />
-              ))}
-
-              {list.length === 0 &&
-                (past ? (
-                  <p className="m-0 rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
-                    No posts
-                  </p>
-                ) : (
-                  <Link
-                    to="/media"
-                    className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-3 py-8 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground"
-                  >
-                    <CalendarPlus size={18} />
-                    Schedule a post
-                  </Link>
-                ))}
-            </section>
-          );
-        })}
-      </div>
+        days={days}
+        anchor={anchor}
+        today={today}
+        byDay={byDay}
+        accountById={accountById}
+        timeZone={timeZone}
+        selecting={selecting}
+        picked={picked}
+        onPick={togglePick}
+        phone={phone}
+        wide={wide}
+        onRange={onRange}
+      />
 
       {selecting && (
         <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-popover py-1.5 pr-1.5 pl-4 text-sm text-popover-foreground shadow-lg">
@@ -398,6 +337,207 @@ export function PublishBoard({
     </div>
   );
 }
+
+type BoardHandle = { scrollTo: (day: string) => void };
+const NO_POSTS: Post[] = [];
+
+/**
+ * The day columns, scrolled sideways. Only the columns in view (and one either side) are
+ * rendered: a busy month is hundreds of cards. Columns are a fixed width, so nothing needs
+ * measuring, and a scroll re-renders this alone.
+ */
+function DayColumns({
+  ref,
+  days,
+  anchor,
+  today,
+  byDay,
+  accountById,
+  timeZone,
+  selecting,
+  picked,
+  onPick,
+  phone,
+  wide,
+  onRange,
+}: {
+  ref: Ref<BoardHandle>;
+  days: string[];
+  anchor: string;
+  today: string;
+  byDay: Map<string, Post[]>;
+  accountById: Map<string, Account>;
+  timeZone: string;
+  selecting: boolean;
+  picked: Set<string>;
+  onPick: (post: Post) => void;
+  phone: boolean;
+  wide: boolean;
+  onRange: (first: string, last: string) => void;
+}) {
+  const board = useRef<HTMLDivElement>(null);
+  const width = phone ? Math.min(Math.round(window.innerWidth * 0.78), COLUMN) : COLUMN;
+  const edge = wide ? 28 : 16;
+  const anchorIndex = Math.max(days.indexOf(anchor), 0);
+  const virtualizer = useVirtualizer({
+    horizontal: true,
+    count: days.length,
+    getScrollElement: () => board.current,
+    estimateSize: () => width,
+    gap: GAP,
+    paddingStart: edge,
+    paddingEnd: edge,
+    overscan: 1,
+    // A scroll need not render synchronously; the browser keeps scrolling meanwhile.
+    useFlushSync: false,
+    // The server and the first client render show the days around the one asked for.
+    initialRect: { width: 1100, height: 600 },
+    initialOffset: () => Math.max(edge + anchorIndex * (width + GAP) - (1100 - width) / 2, 0),
+  });
+  useEffect(() => virtualizer.measure(), [virtualizer, width, edge]);
+
+  const range = virtualizer.range;
+  const first = range ? days[range.startIndex] : undefined;
+  const last = range ? days[range.endIndex] : undefined;
+  useEffect(() => {
+    if (first && last) onRange(first, last);
+  }, [first, last, onRange]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollTo: (day) =>
+        virtualizer.scrollToIndex(days.indexOf(day), { align: "center", behavior: "smooth" }),
+    }),
+    [virtualizer, days],
+  );
+  // Open on the day asked for (today, or the 1st of another month), centred.
+  useLayoutEffect(() => {
+    virtualizer.scrollToIndex(days.indexOf(anchor), { align: "center" });
+  }, [anchor]);
+
+  const columns = virtualizer.getVirtualItems();
+  return (
+    <div ref={board} className="-mx-4 overflow-x-auto overscroll-x-contain pb-4 md:-mx-7">
+      {/* The month's full width, so the scrollbar is true; the rendered columns sit at their
+          place in it, and the row takes the height of the tallest of them. No scroll
+          snapping: it would only know the rendered columns and pull the board back to them. */}
+      <div style={{ width: virtualizer.getTotalSize() }}>
+        <div className="flex items-start" style={{ gap: GAP, paddingLeft: columns[0]?.start ?? 0 }}>
+          {columns.map(({ index }) => (
+            <DayColumn
+              key={days[index]}
+              day={days[index]}
+              posts={byDay.get(days[index]) ?? NO_POSTS}
+              today={today}
+              width={width}
+              accountById={accountById}
+              timeZone={timeZone}
+              selecting={selecting}
+              picked={picked}
+              onPick={onPick}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** One day: its date, how many posts, a + to schedule, and the posts in time order. */
+const DayColumn = memo(function DayColumn({
+  day,
+  posts,
+  today,
+  width,
+  accountById,
+  timeZone,
+  selecting,
+  picked,
+  onPick,
+}: {
+  day: string;
+  posts: Post[];
+  today: string;
+  width: number;
+  accountById: Map<string, Account>;
+  timeZone: string;
+  selecting: boolean;
+  picked: Set<string>;
+  onPick: (post: Post) => void;
+}) {
+  const past = day < today;
+  return (
+    <section
+      data-day={day}
+      aria-label={`${weekdayName(day, "long")} ${dayOfMonth(day)}`}
+      style={{ width }}
+      className="flex shrink-0 flex-col gap-2.5"
+    >
+      <header className="flex items-center gap-2.5">
+        <span
+          className={cn(
+            "grid size-10 shrink-0 place-items-center rounded-xl border text-base font-semibold tabular-nums",
+            day === today
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card text-foreground",
+          )}
+        >
+          {dayOfMonth(day)}
+        </span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="m-0 truncate text-sm font-semibold text-foreground">
+            {day === today
+              ? "Today"
+              : day === addDays(today, 1)
+                ? "Tomorrow"
+                : weekdayName(day, "long")}
+          </p>
+          <p className="m-0 text-xs text-muted-foreground">
+            {posts.length} {posts.length === 1 ? "post" : "posts"}
+          </p>
+        </div>
+        {!past && (
+          <Button
+            size="icon-sm"
+            variant="outline"
+            aria-label={`Schedule on ${weekdayName(day, "long")} ${dayOfMonth(day)}`}
+            render={<Link to="/media" />}
+          >
+            <Plus />
+          </Button>
+        )}
+      </header>
+
+      {posts.map((post) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          account={accountById.get(post.accountId)}
+          timeZone={timeZone}
+          selecting={selecting}
+          picked={picked.has(post.id)}
+          onPick={() => onPick(post)}
+        />
+      ))}
+
+      {posts.length === 0 &&
+        (past ? (
+          <p className="m-0 rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
+            No posts
+          </p>
+        ) : (
+          <Link
+            to="/media"
+            className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-3 py-8 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground"
+          >
+            <CalendarPlus size={18} />
+            Schedule a post
+          </Link>
+        ))}
+    </section>
+  );
+});
 
 function PostCard({
   post,
