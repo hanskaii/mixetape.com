@@ -189,6 +189,9 @@ export const socialPosts = sqliteTable(
   (table) => [
     index("social_posts_user_scheduled_idx").on(table.userId, table.scheduledAt),
     index("social_posts_status_idx").on(table.status),
+    // A user's posts in a state (those still needing their files): without it, a scan of
+    // everything they ever published.
+    index("social_posts_user_status_idx").on(table.userId, table.status),
     index("social_posts_group_idx").on(table.groupId),
   ],
 );

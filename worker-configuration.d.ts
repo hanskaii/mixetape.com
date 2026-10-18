@@ -6,6 +6,7 @@ interface __BaseEnv_Env {
 	BUCKET: R2Bucket;
 	DATABASE: D1Database;
 	EMAIL: SendEmail;
+	CF_VERSION_METADATA: WorkerVersionMetadata;
 	SS_BETTER_AUTH_SECRET: SecretsStoreSecret;
 	SS_CREDENTIALS_KEY: SecretsStoreSecret;
 	SS_GITHUB_CLIENT_ID: SecretsStoreSecret;

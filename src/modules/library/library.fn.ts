@@ -27,18 +27,18 @@ export const getLibraryData = createServerFn({ method: "GET" }).handler(async ()
     files.listFiles(userId, { loose: true, limit: 80 }),
     social.listAccounts(userId),
     brands.listBrands(userId),
-    social.listPosts(userId, { status: files.NEEDS_FILES, limit: 500 }),
+    files.postsNeedingFiles(userId),
   ]);
   // How many posts not yet out use each file, for the "scheduled" mark on its card.
   const scheduled: Record<string, number> = {};
-  for (const post of pending.posts)
+  for (const post of pending)
     if (PENDING.has(post.status))
       for (const item of social.postMedia(post))
         scheduled[item.url] = (scheduled[item.url] ?? 0) + 1;
   // Files storage keeps for a post (failed and paused ones, thumbnails included): no
   // countdown on their cards.
   const held = files.heldBy(
-    pending.posts,
+    pending,
     fileList.files.map((file) => file.url),
   );
 

@@ -37,6 +37,22 @@ const UNATTACHED = UNATTACHED_HOURS * 60 * 60 * 1000;
 export const NEEDS_FILES = ["scheduled", "publishing", "uploaded", "failed", "paused"];
 
 /**
+ * Every post of a user's that still needs its files, with only what says which files: no
+ * captions, no page limit (a cap would drop marks once someone has that many posts queued).
+ */
+export function postsNeedingFiles(userId: string) {
+  return db
+    .select({
+      status: socialPosts.status,
+      mediaUrl: socialPosts.mediaUrl,
+      media: socialPosts.media,
+      metadata: socialPosts.metadata,
+    })
+    .from(socialPosts)
+    .where(and(eq(socialPosts.userId, userId), inArray(socialPosts.status, NEEDS_FILES)));
+}
+
+/**
  * The files posts still need, by r2:// URL — read the way `expireFiles` reads them (the
  * post's media, and its metadata, where a YouTube thumbnail lives), so the library never
  * shows a countdown for a file storage is keeping.
