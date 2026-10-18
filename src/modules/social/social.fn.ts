@@ -14,15 +14,6 @@ import { setChannelLock } from "#/modules/billing/billing.service";
 // ── queue ─────────────────────────────────────────────────────────────────────
 // Posts arrive from agents (MCP / API); the workspace only watches and steps in.
 
-export const getQueueData = createServerFn({ method: "GET" }).handler(async () => {
-  const userId = await payingUserId();
-  const [accounts, { posts }] = await Promise.all([
-    social.listAccounts(userId),
-    social.listPosts(userId, { limit: 200 }),
-  ]);
-  return { accounts, posts };
-});
-
 export const cancelScheduledPost = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => social.cancelPost(await currentUserId(), data.id));

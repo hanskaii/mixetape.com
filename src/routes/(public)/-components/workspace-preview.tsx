@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { WorkspaceLayout } from "#/components/layouts/workspace-layout";
 import { PageTitleLevel } from "#/components/layouts/workspace-page";
-import { PublishView, type PublishData } from "../../(app)/_app/publish/-components/publish-view";
+import { PublishBoard } from "../../(app)/_app/publish/-components/publish-board";
+import type { PublishData } from "../../(app)/_app/publish/-lib/posts";
 import { colors } from "../../../components/ui/tokens.stylex";
 
 /**
@@ -59,6 +60,9 @@ const post = (
   createdAt: created,
   updatedAt: created,
 });
+
+// The board opens on the sample's busiest days, whatever today is.
+const SAMPLE_DAY = "2026-10-02";
 
 const SAMPLE: PublishData = {
   accounts: [
@@ -138,7 +142,13 @@ export function WorkspacePreview() {
         <div inert {...stylex.props(styles.window)}>
           <PageTitleLevel value="p">
             <WorkspaceLayout activePath="/publish">
-              <PublishView {...SAMPLE} />
+              <PublishBoard
+                {...SAMPLE}
+                date={SAMPLE_DAY}
+                timeZone="UTC"
+                onZone={() => {}}
+                onNavigate={() => {}}
+              />
             </WorkspaceLayout>
           </PageTitleLevel>
         </div>

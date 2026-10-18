@@ -1,12 +1,9 @@
-import type { getQueueData } from "#/modules/social/social.fn";
+import type { getCalendarPosts, getPublishAccounts } from "../-fn/calendar.fn";
 
-/** What the Publish page shows; also rendered with sample data on the landing page. */
-export type PublishData = Awaited<ReturnType<typeof getQueueData>>;
-export type Post = PublishData["posts"][number];
-export type Account = PublishData["accounts"][number];
-
-/** Statuses of a post that has not gone out yet (the queue). */
-export const ACTIVE = new Set(["scheduled", "publishing", "uploaded", "failed", "paused"]);
+export type Post = Awaited<ReturnType<typeof getCalendarPosts>>[number];
+export type Account = Awaited<ReturnType<typeof getPublishAccounts>>[number];
+/** What the Publish board shows; also rendered with sample data on the landing page. */
+export type PublishData = { accounts: Account[]; posts: Post[] };
 
 export const STATUS: Record<
   string,

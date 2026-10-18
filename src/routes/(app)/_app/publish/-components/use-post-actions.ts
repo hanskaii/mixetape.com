@@ -7,7 +7,7 @@ import { cancelScheduledPost, retryFailedPost } from "#/modules/social/social.fn
 import { PUBLISH_KEY } from "../-fn/calendar.fn";
 import type { Post } from "../-lib/posts";
 
-/** Cancel and retry from the list or the calendar; both refresh whichever is showing. */
+/** Cancel and retry from the board; each refreshes the posts it shows. */
 export function usePostActions() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -29,6 +29,24 @@ export function usePostActions() {
       },
     });
 
+  /** Several posts at once, from Select; one confirmation for all of them. */
+  const cancelMany = (posts: Post[], onDone: () => void) =>
+    confirm({
+      title: `Cancel ${posts.length} ${posts.length === 1 ? "post" : "posts"}?`,
+      description: "They will not be uploaded. Your agent can schedule them again.",
+      confirmText: "Cancel posts",
+      variant: "destructive",
+      onConfirm: async () => {
+        const results = await Promise.allSettled(
+          posts.map((post) => cancelScheduledPost({ data: { id: post.id } })),
+        );
+        const failed = results.filter((result) => result.status === "rejected").length;
+        if (failed) toast.error(`${failed} could not be cancelled`);
+        await refresh();
+        onDone();
+      },
+    });
+
   const retry = async (post: Post) => {
     setRetrying(post.id);
     try {
@@ -41,5 +59,5 @@ export function usePostActions() {
     }
   };
 
-  return { cancel, retry, retrying };
+  return { cancel, cancelMany, retry, retrying };
 }
