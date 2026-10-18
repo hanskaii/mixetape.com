@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { z } from "zod";
+import * as z from "zod/mini";
 import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
 import { ListBullets } from "@phosphor-icons/react/ListBullets";
 import { Segmented } from "#/components/ui/segmented";
@@ -15,12 +15,9 @@ import { PublishView } from "./-components/publish-view";
 
 // The view lives in the URL, so a reload or a shared link opens the same days.
 const search = z.object({
-  view: z.enum(["calendar", "list"]).optional(),
-  mode: z.enum(["month", "week", "days"]).optional(),
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+  view: z.optional(z.enum(["calendar", "list"])),
+  mode: z.optional(z.enum(["month", "week", "days"])),
+  date: z.optional(z.string().check(z.regex(/^\d{4}-\d{2}-\d{2}$/))),
 });
 
 export const Route = createFileRoute("/(app)/_app/publish/")({

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { z } from "zod";
+import * as z from "zod/mini";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
 import { XCircle } from "@phosphor-icons/react/XCircle";
 import { Button } from "#/components/ui/button";
@@ -13,10 +13,10 @@ import { siteConfig } from "#/config/site";
 export const Route = createFileRoute("/(public)/connect/done")({
   // The router parses "?choose=1" into a number, so each value is read back as a string.
   validateSearch: z.object({
-    connected: z.coerce.string().optional(),
-    choose: z.coerce.string().optional(),
-    via: z.coerce.string().optional(),
-    error: z.coerce.string().optional(),
+    connected: z.optional(z.coerce.string()),
+    choose: z.optional(z.coerce.string()),
+    via: z.optional(z.coerce.string()),
+    error: z.optional(z.coerce.string()),
   }),
   head: () => ({ meta: [{ title: `Connect | ${siteConfig.name}` }] }),
   component: ConnectDone,

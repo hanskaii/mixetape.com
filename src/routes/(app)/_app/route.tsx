@@ -23,6 +23,13 @@ export const Route = createFileRoute("/(app)/_app")({
   // Only on the way in (from the landing page, say): the sidebar is already up, with the
   // page's own pending view in it, rather than one placeholder for the whole screen.
   pendingComponent: WorkspacePending,
+  // The pending view draws the whole layout (sidebar, its icons): kept in the layout's lazy
+  // chunk rather than in the main bundle every page loads.
+  codeSplitGroupings: [
+    ["component", "pendingComponent"],
+    ["errorComponent"],
+    ["notFoundComponent"],
+  ],
 });
 
 function WorkspacePending() {

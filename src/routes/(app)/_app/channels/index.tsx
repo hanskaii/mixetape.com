@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { z } from "zod";
+import * as z from "zod/mini";
 import * as stylex from "@stylexjs/stylex";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { ArrowsClockwise } from "@phosphor-icons/react/ArrowsClockwise";
@@ -49,7 +49,7 @@ import { PlatformLogo } from "#/components/ui/platform-logo";
 import { channelUrl } from "./-lib/channel-url";
 
 export const Route = createFileRoute("/(app)/_app/channels/")({
-  validateSearch: z.object({ connected: z.string().optional(), error: z.string().optional() }),
+  validateSearch: z.object({ connected: z.optional(z.string()), error: z.optional(z.string()) }),
   loader: () => getChannelsData(),
   head: () => ({ meta: [{ title: `Channels | ${siteConfig.name}` }] }),
   component: ChannelsPage,
