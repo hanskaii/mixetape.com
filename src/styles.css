@@ -283,6 +283,14 @@ body {
 }
 
 /* Shadcn Chat & Scroller Utilities */
+/* Scrolls as before, by wheel, trackpad, touch or keys, with no bar drawn. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility scroll-fade-b {
   mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent 100%);
 }

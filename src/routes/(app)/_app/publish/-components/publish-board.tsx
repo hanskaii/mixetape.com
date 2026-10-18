@@ -259,7 +259,7 @@ export function PublishBoard({
       <nav
         ref={strip}
         aria-label="Days"
-        className="relative -mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
+        className="scrollbar-none relative -mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
       >
         {days.map((day) => {
           const count = byDay.get(day)?.length ?? 0;
@@ -421,7 +421,7 @@ function DayColumns({
   return (
     <div
       ref={board}
-      className="-mx-4 min-h-0 flex-1 overflow-auto overscroll-contain pb-6 md:-mx-7"
+      className="scrollbar-none -mx-4 min-h-0 flex-1 overflow-auto overscroll-contain pb-6 md:-mx-7"
     >
       {/* The month's full width, so the scrollbar is true; the rendered columns sit at their
           place in it, and the row takes the height of the tallest of them. No scroll
