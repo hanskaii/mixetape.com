@@ -421,13 +421,18 @@ function DayColumns({
   return (
     <div
       ref={board}
-      className="scrollbar-none -mx-4 min-h-0 flex-1 overflow-auto overscroll-contain pb-6 md:-mx-7"
+      className="scrollbar-none -mx-4 min-h-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain md:-mx-7"
     >
-      {/* The month's full width, so the scrollbar is true; the rendered columns sit at their
-          place in it, and the row takes the height of the tallest of them. No scroll
-          snapping: it would only know the rendered columns and pull the board back to them. */}
-      <div style={{ width: virtualizer.getTotalSize() }}>
-        <div className="flex items-start" style={{ gap: GAP, paddingLeft: columns[0]?.start ?? 0 }}>
+      {/* The board only moves sideways; each day scrolls its own posts up and down, so a
+          swipe on a phone moves one or the other instead of the whole board drifting both
+          ways. The month's full width keeps the scroll true; the rendered columns sit at
+          their place in it. No scroll snapping: it would only know the rendered columns and
+          pull the board back to them. */}
+      <div className="h-full" style={{ width: virtualizer.getTotalSize() }}>
+        <div
+          className="flex h-full items-stretch"
+          style={{ gap: GAP, paddingLeft: columns[0]?.start ?? 0 }}
+        >
           {columns.map(({ index }) => (
             <DayColumn
               key={days[index]}
@@ -476,10 +481,9 @@ const DayColumn = memo(function DayColumn({
       data-day={day}
       aria-label={`${weekdayName(day, "long")} ${dayOfMonth(day)}`}
       style={{ width }}
-      className="flex shrink-0 flex-col gap-2.5"
+      className="flex h-full min-h-0 shrink-0 flex-col gap-2.5"
     >
-      {/* Stays at the top of the board as its posts scroll under it. */}
-      <header className="sticky top-0 z-10 flex items-center gap-2.5 bg-background pb-1">
+      <header className="flex shrink-0 items-center gap-2.5">
         <span
           className={cn(
             "grid size-10 shrink-0 place-items-center rounded-xl border text-base font-semibold tabular-nums",
@@ -514,32 +518,35 @@ const DayColumn = memo(function DayColumn({
         )}
       </header>
 
-      {posts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          account={accountById.get(post.accountId)}
-          timeZone={timeZone}
-          selecting={selecting}
-          picked={picked.has(post.id)}
-          onPick={() => onPick(post)}
-        />
-      ))}
-
-      {posts.length === 0 &&
-        (past ? (
-          <p className="m-0 rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
-            No posts
-          </p>
-        ) : (
-          <Link
-            to="/media"
-            className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-3 py-8 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground"
-          >
-            <CalendarPlus size={18} />
-            Schedule a post
-          </Link>
+      {/* The day's own scroll; it stops at its ends rather than pulling the board along. */}
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-y-contain pb-6">
+        {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            account={accountById.get(post.accountId)}
+            timeZone={timeZone}
+            selecting={selecting}
+            picked={picked.has(post.id)}
+            onPick={() => onPick(post)}
+          />
         ))}
+
+        {posts.length === 0 &&
+          (past ? (
+            <p className="m-0 rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
+              No posts
+            </p>
+          ) : (
+            <Link
+              to="/media"
+              className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-3 py-8 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground"
+            >
+              <CalendarPlus size={18} />
+              Schedule a post
+            </Link>
+          ))}
+      </div>
     </section>
   );
 });
